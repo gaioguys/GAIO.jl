@@ -17,7 +17,7 @@ Donnerstags, 14:15-15:45, room https://bbb.ma.tum.de/oli-gee-vk2
 - Ende Juli: Workshop/Präsentationen
 
 ### Verantwortungsbereiche
-- Dokumentation
+- Dokumentation/Beispiel
 - Package-Infrastruktur
 - Tests
 - Parallelisierung (insb. GPU)
