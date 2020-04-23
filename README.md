@@ -19,7 +19,7 @@ Donnerstags, 14:15-15:45, room https://bbb.ma.tum.de/oli-gee-vk2
 ### Verantwortungsbereiche
 - Dokumentation/Beispiel
 - Package-Infrastruktur
-- Tests
+- Tests/Beispiele
 - Parallelisierung (insb. GPU)
 - Visualisierung
 - ...
