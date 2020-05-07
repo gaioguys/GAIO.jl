@@ -31,6 +31,7 @@ Folgende Ideen sind etwas sehr unsortiert (und lang geworden...) und recht allge
     * Hat Informationen über Zentrum, Ecken, Level, etc. (bleibt so auch erhalten, wenn unterteilt; kann aber danach nicht mehr aufgerufen werden)
     * Implementiert Methoden wie `contains(::Cell{T}, ::Vector{T})` usw.
     * Zusätzlich noch: `T` als Payload-generischen Parameter (wird auf alle Unterzellen kopiert beim Unterteilen)
+    * Implementierung: Wird nur bei Bedarf aus dem `Mesh{T}` erzeugt und danach wieder zerstört. Ist immutable. Eigentlich nur eine lokale Repräsentation einer Zelle...
 * `function_map(::SubMesh{T}, func::FUNCTION_TYPE) -> ::SubMesh{T}`: Gedacht als Typ, der einer Funktion entspricht
     * zum Anwenden einer Funktion auf das `SubMesh{T}`, gibt eine Untermenge der bestehenden Cells im `Mesh{T}` zurück (d.h. implementiert effektiv das „es gibt ein B', sodass f(B') \cap B nichtleer ist“, wobei alle Bs und B's als aus dem Mesh entnommen betrachtet werden)... Alternativ auch einen `IntersectionTester` als generischen Typen auf das Mesh erlauben, um so dann `func(mesh)` schreiben zu können
         * Beispiel: `gridpoint_intersecter(num_points::Integer) -> ::Function{::SubMesh{T}} -> ::SubMesh{T}`
@@ -44,6 +45,7 @@ Folgende Ideen sind etwas sehr unsortiert (und lang geworden...) und recht allge
 # Offene Fragen
 
 * Erlauben wir Zugriff auf bereits zerteilte Zellen?
+* Andere?
 
 # Beispiele
 (vermutlich alles andere als Julia-konform...)
