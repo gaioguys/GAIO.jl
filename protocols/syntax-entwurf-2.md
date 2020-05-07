@@ -12,7 +12,8 @@ Folgende Ideen sind etwas sehr unsortiert (und lang geworden...) und recht allge
     * `SubMesh{T}` analog zu `SubArray{T}`; implementiert auch `AbstractSet{Cell{T}}`
         * Generelle Idee: `Mesh{T}` als Grundmenge, `SubMesh{T}` als Untermengen, die entsprechend verarbeitet werden können. Aber nur `Mesh{T}` hält die Daten
         * `Mesh{T}` ist selber ein `SubMesh{T}`
-        * Implementierungsidee: Hauptsächlich auf Iteratoren setzen (die lazy entfaltet werden) und KEINE Kopien von Indizes anfertigen (so haben Testfunktionen auch noch eine Berechtigung)
+        * Implementierungsidee: Hauptsächlich auf Iteratoren setzen (die lazy entfaltet werden) und KEINE Kopien von Indizes anfertigen, außer bei `function_map` (so haben Testfunktionen auch noch eine Berechtigung)
+            * Vielleicht noch weiter gedacht (sofern der Compiler das nicht bereits übernimmt, natürlich...): Am schönsten wäre es, entsprechend hintereinander auf die SubMeshes gelegte Operationen im Code optimieren zu können. Z.B.: Subdivision-Algorithmus, wo wir `intersect(function_map(x), x)` berechnen. Hier meint es dann, entsprechend das `intersect` in die vorherige Operation hineinziehen und direkt bei der Ausführung von `function_map` alle `Cell`s zu verwerfen, welche nicht in `x` liegen.
         * `SubMesh{T}`es sind an das zugehörige Mesh gebunden, ähnlich wie SubArrays
         * `SubMesh{T}` ist immutable
         * Testfunktionen bilden auch ein `SubMesh{T}`
@@ -90,6 +91,10 @@ end
 ```
 
 ## Subdivision Alternativ (vermutlich ungeeignet und nicht wirklich in Julia geschrieben)
+Die Idee hierhinter ist: Eventuell Task-Parallelisierung erlauben.
+Also: Jede Zelle zu verarbeiten stellt einen Task dar – und die Tasks sind voneinander abhängig.
+Es stellt sich schnell heraus, dass das Parallelisieren etwas schwierig wegen der f(B') \cap B - Bedingung ist... Mit etwas viel Speicheraufwand geht der untere Code vielleicht, wenn man ihn in korrektem Julia umschreibt.
+
 ```
 # Experimentelle Idee... Viel von dem hier ist noch nicht oben beschrieben
 # Der Gedanke ist: Die Algorithmen nur über Operationen auf Zellen zu beschreiben, nicht auf die Ebenen
