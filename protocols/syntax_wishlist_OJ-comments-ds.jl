@@ -26,7 +26,7 @@ function unstable_set!(B::BoxSet, f::DynamicalSystem)
     C = B
     fB = f(B) # lieber f.(B), siehe oben
     while fB ≠ ∅             # or !isempty(fB) ... vllt. beides?
-        B = setdiff(fB,C) # <-- intersect lieber, da wird AbstractSet implementieren (siehe oben), so sollte das möglich sein
+        B = setdiff(fB,C) # passt
         C = union(C,fB) # passt
         fB = f(B) # lieber f.(B), siehe oben
     end
