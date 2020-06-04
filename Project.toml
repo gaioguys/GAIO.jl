@@ -1,0 +1,7 @@
+name = "GAIO"
+uuid = "33d280d1-ac47-4b0f-9c2e-fa6a385d0226"
+authors = ["The GAIO.jl Team"]
+version = "0.1.0"
+
+[compat]
+julia = "1.4"
