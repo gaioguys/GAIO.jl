@@ -3,7 +3,7 @@ module GAIO
 using StaticArrays
 
 export Box, BoxSet
-export boxset_empty, boxset_full, subdivide, subdivide!
+export boxset_empty, subdivide, subdivide!
 
 export BoxPartition, RegularPartition, TreePartition
 export dimension, depth

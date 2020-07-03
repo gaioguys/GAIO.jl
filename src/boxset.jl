@@ -7,7 +7,29 @@ function boxset_empty(partition::P) where P <: BoxPartition
     return BoxSet(partition, Set{keytype(P)}())
 end
 
-function boxset_full(partition::BoxPartition)
+function Base.getindex(partition::BoxPartition, points_or_point)
+    # check if points is only a single point
+    if eltype(points_or_point) <: Number
+        points = (points_or_point,)
+    else
+        points = points_or_point
+    end
+
+    set = Set{keytype(typeof(partition))}()
+    sizehint!(set, length(points))
+
+    for point in points
+        key = point_to_key(partition, point)
+
+        if key !== nothing
+            push!(set, key)
+        end
+    end
+
+    return BoxSet(partition, set)
+end
+
+function Base.getindex(partition::BoxPartition, ::Colon)
     return BoxSet(partition, Set(keys_all(partition)))
 end
 
@@ -30,19 +52,31 @@ end
 Base.isempty(boxset::BoxSet) = isempty(boxset.set)
 Base.length(boxset::BoxSet) = length(boxset.set)
 Base.eltype(::Type{BoxSet{P,S}}) where {P <: BoxPartition{B},S} where B = B
-Base.iterate(boxset::BoxSet, state...) = iterate((boxset.partition[key] for key in boxset.set), state...)
+Base.iterate(boxset::BoxSet, state...) = iterate((key_to_box(boxset.partition, key) for key in boxset.set), state...)
 
-function subdivide(boxset::BoxSet{P,S}) where {P,S}
+function subdivide(boxset::BoxSet{<:RegularPartition,S}) where {S}
+    partition = boxset.partition
+    box_indices = CartesianIndices(size(partition))
+
+    sd = (depth(partition) % dimension(partition)) + 1
+
+    partition_subdivided = subdivide(boxset.partition)
+    linear_indices = LinearIndices(CartesianIndices(size(partition_subdivided)))
+
     set = S()
     sizehint!(set, 2 * length(boxset.set))
 
-    for index in boxset.set
-        child1, child2 = subdivide_key(boxset.partition, index)
-        push!(set, child1)
-        push!(set, child2)
+    for key in boxset.set
+        box_index = box_indices[key].I
+
+        child1 = Base.setindex(box_index, 2 * box_index[sd] - 1, sd)
+        child2 = Base.setindex(box_index, 2 * box_index[sd], sd)
+
+        push!(set, linear_indices[CartesianIndex(child1)])
+        push!(set, linear_indices[CartesianIndex(child2)])
     end
 
-    return BoxSet(subdivide(boxset.partition), set)
+    return BoxSet(partition_subdivided, set)
 end
 
 function subdivide!(boxset::BoxSet{<:TreePartition}, key::Tuple{Int,Int})
@@ -50,9 +84,10 @@ function subdivide!(boxset::BoxSet{<:TreePartition}, key::Tuple{Int,Int})
 
     delete!(boxset.set, key)
 
-    subdivide!(boxset.partition, key)
+    tree = boxset.partition
+    subdivide!(tree, key)
 
-    child1, child2 = subdivide_key(RegularPartition(boxset.partition.domain, key[1]), key[2])
+    child1, child2 = subdivide(BoxSet(tree.regular_partitions[key[1] + 1], Set(key[2]))).set
 
     push!(boxset.set, (key[1] + 1, child1))
     push!(boxset.set, (key[1] + 1, child2))

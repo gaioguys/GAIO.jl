@@ -7,19 +7,14 @@ end
 
 boxmap(f, points) = PointDiscretizedMap(f, points)
 
-struct ParallelBoxIterator{M <: BoxMap,SP,SS,TP,TPK}
+struct ParallelBoxIterator{M <: BoxMap,SP,SS,TP}
     boxmap::M
     boxset::BoxSet{SP,SS}
     target_partition::TP
-    target_keys::TPK
 end
 
-sourcekeytype(::Type{ParallelBoxIterator{M,SP,SS,TP,TPK}}) where {M,SP,SS,TP,TPK} = keytype(SP)
-targetkeytype(::Type{ParallelBoxIterator{M,SP,SS,TP,TPK}}) where {M,SP,SS,TP,TPK} = keytype(TP)
-
-function ParallelBoxIterator(boxmap::BoxMap, boxset::BoxSet, target_partition::BoxPartition)
-    return ParallelBoxIterator(boxmap, boxset, target_partition, keys(target_partition))
-end
+sourcekeytype(::Type{ParallelBoxIterator{M,SP,SS,TP}}) where {M,SP,SS,TP} = keytype(SP)
+targetkeytype(::Type{ParallelBoxIterator{M,SP,SS,TP}}) where {M,SP,SS,TP} = keytype(TP)
 
 function ParallelBoxIterator(boxmap::BoxMap, boxset::BoxSet)
     return ParallelBoxIterator(boxmap, boxset, boxset.partition)
@@ -33,7 +28,7 @@ end
     while boxes_iter <= length(boxes) && j < length(workinput)
         source = boxes[boxes_iter]
         boxes_iter += 1
-        box = source_partition[source]
+        box = key_to_box(source_partition, source)
 
         for point in iter.boxmap.points
             j += 1
@@ -47,14 +42,14 @@ end
         return boxes_iter
     end
 
-    keys = iter.target_keys
+    target_partition = iter.target_partition
     f = iter.boxmap.f
 
     @Threads.threads for i = 1:length(workoutput)
         point, source, box = workinput[i]
         center, radius = box.center, box.radius
         fp = f(center .+ radius .* point)
-        target = keys[fp]
+        target = point_to_key(target_partition, fp)
 
         workoutput[i] = target
     end
