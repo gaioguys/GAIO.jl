@@ -47,9 +47,6 @@ function lorenz()
 
     x0 = (sqrt(b*(rh-1)), sqrt(b*(rh-1)), rh-1)
 
-    boxset = boxset_empty(partition)
-
-    push!(boxset.set, keys(partition)[x0])
-
+    boxset = partition[x0]
     return unstable_set!(boxset, g)
 end

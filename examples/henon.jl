@@ -10,7 +10,7 @@ function henon()
 
     g = PointDiscretizedMap(f, generate_points(20))
     partition = RegularPartition(Box(SVector(0.0, 0.0), SVector(1.0, 1.0)))
-    boxset = boxset_full(partition)
+    boxset = partition[:]
 
     return relative_attractor(boxset, g, 20)
 end
