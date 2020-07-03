@@ -3,5 +3,5 @@ uuid = "33d280d1-ac47-4b0f-9c2e-fa6a385d0226"
 authors = ["The GAIO.jl Team"]
 version = "0.1.0"
 
-[compat]
-julia = "1.4"
+[deps]
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
