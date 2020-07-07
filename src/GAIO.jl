@@ -11,7 +11,7 @@ export dimension, depth
 export BoxMap, PointDiscretizedMap
 export boxmap
 
-export relative_attractor, unstable_set!
+export relative_attractor, unstable_set!, chain_recurrent_set
 
 include("box.jl")
 
@@ -24,7 +24,13 @@ include("boxmap.jl")
 include("algorithms.jl")
 
 # examples. TODO: move away from here
+using QuadGK
+using Interpolations
+using LinearAlgebra
+using LightGraphs
+
 include("../examples/henon.jl")
 include("../examples/lorenz.jl")
+include("../examples/knotted_flow.jl")
 
 end # module
