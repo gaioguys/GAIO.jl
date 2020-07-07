@@ -98,7 +98,7 @@ function Base.eltype(t::Type{<:ParallelBoxIterator})
     return Union{Tuple{sourcekeytype(t),targetkeytype(t)},Tuple{sourcekeytype(t),Nothing}}
 end
 
-function map_boxes(g, source::BoxSet)
+function map_boxes(g::BoxMap, source::BoxSet)
     result = boxset_empty(source.partition)
 
     for (_, hit) in ParallelBoxIterator(g, source)
@@ -110,7 +110,7 @@ function map_boxes(g, source::BoxSet)
     return result
 end
 
-function map_boxes_with_target(g, source::BoxSet, target::BoxSet)
+function map_boxes_with_target(g::BoxMap, source::BoxSet, target::BoxSet)
     result = boxset_empty(target.partition)
 
     for (_, hit) in ParallelBoxIterator(g, source, target.partition)
@@ -130,4 +130,38 @@ function (g::PointDiscretizedMap)(source::BoxSet; target = nothing)
     else
         return map_boxes_with_target(g, source, target)
     end
+end
+
+function map_boxes_to_edges(g::BoxMap, source::BoxSet)
+    K = keytype(typeof(source.partition))
+    edges = Set{Tuple{K,K}}()
+
+    for (src, hit) in ParallelBoxIterator(g, source)
+        if hit !== nothing # check that point was inside domain
+            if hit in source.set
+                push!(edges, (src, hit))
+            end
+        end
+    end
+
+    vertex_to_key = K[]
+    key_to_vertex = Dict{K,Int}()
+    keyset = keys(key_to_vertex)
+    edges_translated = Tuple{Int,Int}[]
+    
+    for (src, hit) in edges
+        if !(src in keyset)
+            push!(vertex_to_key, src)
+            key_to_vertex[src] = length(vertex_to_key)
+        end
+
+        if !(hit in keyset)
+            push!(vertex_to_key, hit)
+            key_to_vertex[hit] = length(vertex_to_key)
+        end
+
+        push!(edges_translated, (key_to_vertex[src], key_to_vertex[hit]))
+    end
+
+    return edges_translated, vertex_to_key
 end
