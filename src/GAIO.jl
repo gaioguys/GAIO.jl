@@ -11,7 +11,7 @@ export dimension, depth
 export BoxMap, PointDiscretizedMap
 export boxmap
 
-export relative_attractor, unstable_set!, chain_recurrent_set
+export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots
 
 include("box.jl")
 
@@ -28,9 +28,11 @@ using QuadGK
 using Interpolations
 using LinearAlgebra
 using LightGraphs
+using ForwardDiff
 
 include("../examples/henon.jl")
 include("../examples/lorenz.jl")
 include("../examples/knotted_flow.jl")
+include("../examples/cover_roots.jl")
 
 end # module
