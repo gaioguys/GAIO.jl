@@ -1,4 +1,4 @@
-function v(x, tol)
+function knotted_v(x, tol)
     A = 2
     B = 1
     L = 0.9
@@ -8,20 +8,27 @@ function v(x, tol)
     q = 4
     T = 2*π*A
 
-    γ = t -> (cos(t) - (L*A)/(A+B) * cos((A+B)/A * t),
-                sin(t) - (L*A)/(A+B) * sin((A+B)/A * t),
-                -sin(B/A * t) + h * (1-2*t/T)^p)
+    γ = t -> (
+        cos(t) - (L*A)/(A+B) * cos((A+B)/A * t),
+        sin(t) - (L*A)/(A+B) * sin((A+B)/A * t),
+       -sin(B/A * t) + h * (1-2*t/T)^p
+    )
 
-    γ_t = t -> (-sin(t) + (L*A)/A * sin((A+B)/A * t),
-                cos(t) - (L*A)/A * cos((A+B)/A * t),
-                -cos(B/A * t) * B/A - h * p * (1-2*t/T)^(p-1) * 2/T)
+    γ_t = t -> (
+       -sin(t) + (L*A)/A * sin((A+B)/A * t),
+        cos(t) - (L*A)/A * cos((A+B)/A * t),
+       -cos(B/A * t) * B/A - h * p * (1-2*t/T)^(p-1) * 2/T
+    )
     
     d = (x, y) -> inv(sum(abs.(x .- y) .^ q))
 
     σ = x -> (x[1]/(1-x[3]), x[2]/(1-x[3]))
 
-
-    σ_inv = x -> (2*x[1]/(1 + x[1]^2 + x[2]^2), 2*x[2]/(1 + x[1]^2 + x[2]^2), 1 - 2/(1 + x[1]^2 + x[2]^2))
+    σ_inv = x -> (
+        2*x[1]/(1 + x[1]^2 + x[2]^2),
+        2*x[2]/(1 + x[1]^2 + x[2]^2),
+         1 - 2/(1 + x[1]^2 + x[2]^2)
+    )
 
     # approximate the integral with adaptive Gauss quadrature for given tolerance
     int, = quadgk(t -> begin 
@@ -47,8 +54,8 @@ end
 # interpolate the function v on the mesh [a,b]^3 with n equidistant nodes
 # for simplicity we use linear B-Splines, using the equidistant mesh
 # the interpolant will only be defined on [a,b]^3, so we have to adjust it to the dynamical system
-function interpolate_v(a, b, n, tol)
-    val = Array{SVector{3,Float64}, 3}(undef, n, n, n)
+function knotted_interpolate_v(a, b, n, tol)
+    val = Array{SVector{3,Float64},3}(undef, n, n, n)
     x = range(a, b, length = n)
     y = range(a, b, length = n)
     z = range(a, b, length = n)
@@ -56,7 +63,7 @@ function interpolate_v(a, b, n, tol)
     @Threads.threads for i in 1:n
         for j in 1:n
             for k in 1:n
-                val[i,j,k] = SVector(v((x[i], y[j], z[k]), tol))
+                val[i,j,k] = SVector(knotted_v((x[i], y[j], z[k]), tol))
             end
         end
     end
@@ -80,7 +87,9 @@ function knotted_f(v::F, x) where F
 end
 
 function knotted_flow(depth)
-    generate_points = n -> [
+    n = 40
+
+    points = [
         [(x, -1.0, 1.0) for x in LinRange(-1, 1, n)];
         [(x,  1.0, 1.0) for x in LinRange(-1, 1, n)];
         [(x, -1.0, -1.0) for x in LinRange(-1, 1, n)];
@@ -97,9 +106,9 @@ function knotted_flow(depth)
         [(1.0, -1.0, x) for x in LinRange(-1, 1, n)];
     ]
 
-    f = interpolate_v(-3.5, 3.5, 30, 1e-12)
+    f = knotted_interpolate_v(-3.5, 3.5, 30, 1e-12)
 
-    g = PointDiscretizedMap(x -> knotted_f(f, x), generate_points(40))
+    g = PointDiscretizedMap(x -> knotted_f(f, x), points)
     partition = RegularPartition(Box(SVector(0.0, 0.0, 0.0), SVector(2.0, 2.0, 2.0)))
     boxset = partition[:]
 
@@ -107,7 +116,9 @@ function knotted_flow(depth)
 end
 
 function knotted_flow_rga(depth)
-    generate_points = n -> [
+    n = 40
+
+    points = [
         [(x, -1.0, 1.0) for x in LinRange(-1, 1, n)];
         [(x,  1.0, 1.0) for x in LinRange(-1, 1, n)];
         [(x, -1.0, -1.0) for x in LinRange(-1, 1, n)];
@@ -124,9 +135,9 @@ function knotted_flow_rga(depth)
         [(1.0, -1.0, x) for x in LinRange(-1, 1, n)];
     ]
 
-    f = interpolate_v(-4.5, 4.5, 40, 1e-12)
+    f = knotted_interpolate_v(-4.5, 4.5, 40, 1e-12)
 
-    g = PointDiscretizedMap(x -> knotted_f(f, x), generate_points(40))
+    g = PointDiscretizedMap(x -> knotted_f(f, x), points)
     partition = RegularPartition(Box(SVector(0.0, 0.0, 0.0), SVector(3.0, 3.0, 3.0)))
     boxset = partition[:]
 
