@@ -40,6 +40,9 @@ function plot(boxes::Vector{Box{2,Float32}})
     fragment_shader = compile_shader(read(joinpath(@__DIR__, "box2d.frag"), String), GL_FRAGMENT_SHADER)
     shader_program = link_program(vertex_shader, fragment_shader)
 
+    camera_offset_loc = glGetUniformLocation(shader_program, "camera_offset")
+    camera_scale_loc = glGetUniformLocation(shader_program, "camera_scale")
+
     camera_state = CameraState(Float32[0.0, 0.0], Float32[1.0, 1.0])
     mouse_state = MouseState((0.0, 0.0), false, 0.0)
     window_state = WindowState(640, 640)
@@ -162,8 +165,8 @@ function plot(boxes::Vector{Box{2,Float32}})
         last_pos = mouse_state.pos
         last_scroll = mouse_state.scroll
 
-        glUniform2f(0, camera_state.offset[1], camera_state.offset[2])
-        glUniform2f(1, camera_state.scale[1], camera_state.scale[2])
+        glUniform2f(camera_offset_loc, camera_state.offset[1], camera_state.offset[2])
+        glUniform2f(camera_scale_loc, camera_state.scale[1], camera_state.scale[2])
 
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
@@ -209,6 +212,8 @@ function plot(boxes::Vector{Box{3,Float32}})
     vertex_shader = compile_shader(read(joinpath(@__DIR__, "box3d.vert"), String), GL_VERTEX_SHADER)
     fragment_shader = compile_shader(read(joinpath(@__DIR__, "box3d.frag"), String), GL_FRAGMENT_SHADER)
     shader_program = link_program(vertex_shader, fragment_shader)
+
+    camera_loc = glGetUniformLocation(shader_program, "camera")
 
     window_state = WindowState(640, 640)
     camera_state = CameraState(Float32[0.0, 0.0], Float32[1.0, 1.0])
@@ -348,7 +353,7 @@ function plot(boxes::Vector{Box{3,Float32}})
         camera_mat = projection_matrix(0.87266, window_state.width / window_state.height, 1.0, 1000.0)
         camera_mat *= view_matrix(camerafps)
 
-        glUniformMatrix4fv(0, 1, GL_FALSE, Float32.(camera_mat))
+        glUniformMatrix4fv(camera_loc, 1, GL_FALSE, Float32.(camera_mat))
 
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

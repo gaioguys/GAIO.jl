@@ -1,5 +1,4 @@
 #version 330 core
-#extension GL_ARB_explicit_uniform_location : require
 
 const vec3 positions[14] = vec3[](
     vec3(-1.f, 1.f, 1.f),
@@ -21,7 +20,7 @@ const vec3 positions[14] = vec3[](
 layout(location = 0) in vec3 center;
 layout(location = 1) in vec3 radius;
 
-layout(location = 0) uniform mat4 camera;
+uniform mat4 camera;
 
 out vec3 color;
 
