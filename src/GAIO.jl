@@ -26,6 +26,7 @@ abstract type BoxPartition{B <: Box} end
 include("partition_regular.jl")
 include("partition_tree.jl")
 include("boxset.jl")
+include("boxgraph.jl")
 include("boxmap.jl")
 include("algorithms.jl")
 
