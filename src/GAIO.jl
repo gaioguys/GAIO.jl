@@ -1,6 +1,10 @@
 module GAIO
 
+using LinearAlgebra
 using StaticArrays
+using GLFW
+using ModernGL
+using LightGraphs
 
 export Box, BoxSet
 export boxset_empty, subdivide, subdivide!
@@ -25,24 +29,9 @@ include("boxset.jl")
 include("boxmap.jl")
 include("algorithms.jl")
 
-# simple visualization. TODO: move away from here
-using GLFW
-using ModernGL
-using LinearAlgebra
-
+# visualization
 include("plot/shader.jl")
 include("plot/camera.jl")
 include("plot/plot.jl")
-
-# examples. TODO: move away from here
-using QuadGK
-using Interpolations
-using LightGraphs
-using ForwardDiff
-
-include("../examples/henon.jl")
-include("../examples/lorenz.jl")
-include("../examples/knotted_flow.jl")
-include("../examples/cover_roots.jl")
 
 end # module
