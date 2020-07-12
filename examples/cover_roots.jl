@@ -42,9 +42,11 @@ function example_cover_roots(depth)
     n = 40
     points = tuple.([2 .* rand(n) .- 1 for _ in 1:dim]...)
     
-    g = PointDiscretizedMap(example_g4, points)
+    g = example_g4
+    g_jacobian = x -> ForwardDiff.jacobian(g, x)
+
     partition = RegularPartition(Box([0.0 for _ in 1:dim], [40.0 for _ in 1:dim]))
     boxset = partition[:]
 
-    return cover_roots(boxset, g, depth)
+    return cover_roots(boxset, g, g_jacobian, points, depth)
 end

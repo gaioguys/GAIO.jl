@@ -54,9 +54,9 @@ function chain_recurrent_set(boxset::BoxSet, g::BoxMap, depth::Int)
     return boxset
 end
 
-function adaptive_newton_step(g, x, k)
+function adaptive_newton_step(g, g_jacobian, x, k)
     armijo_rule = (g, x, α, σ, ρ) -> begin
-        Dg = ForwardDiff.jacobian(g, x)
+        Dg = g_jacobian(x)
         d = Dg\g(x)
         while any(g(x + α * d) .> g(x) + σ * α * Dg' * d) && α > 0.1
             α = ρ * α
@@ -70,17 +70,17 @@ function adaptive_newton_step(g, x, k)
     n = expon(0.2, k, h, 0.1)
 
     for _ in 1:n
-        Dg = ForwardDiff.jacobian(g, x)
+        Dg = g_jacobian(x)
         x = x - h * (Dg \ g(x))
     end
     
     return x
 end
 
-function cover_roots(boxset::BoxSet, g::BoxMap, depth::Int)
+function cover_roots(boxset::BoxSet, g, g_jacobian, points, depth::Int)
     for k in 1:depth
         boxset = subdivide(boxset)
-        g_k = PointDiscretizedMap(x -> adaptive_newton_step(g.f, x, k), g.points)
+        g_k = PointDiscretizedMap(x -> adaptive_newton_step(g, g_jacobian, x, k), points)
         boxset = g_k(boxset)
     end
 
