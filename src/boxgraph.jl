@@ -46,12 +46,8 @@ function strongly_connected_components(boxgraph::BoxGraph)
             for i in 1:n
                 push!(connected_vertices, scc[k][i])
             end
-        end
-    end
-
-    for (i, k) in enumerate(int_to_key)
-        if (k, k) in keys(boxgraph.edges)
-            push!(connected_vertices, i)
+        elseif (scc[k][1], scc[k][1]) in keys(boxgraph.edges)
+            push!(connected_vertices, scc[k][1])
         end
     end
 
