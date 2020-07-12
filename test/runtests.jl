@@ -21,4 +21,7 @@ using SafeTestsets
     @safetestset "Algorithms" begin
         include("algorithms.jl")
     end
+    @safetestset "BoxGraph" begin
+        include("boxgraph.jl")
+    end
 end

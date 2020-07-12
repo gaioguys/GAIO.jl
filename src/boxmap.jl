@@ -132,36 +132,44 @@ function (g::PointDiscretizedMap)(source::BoxSet; target = nothing)
     end
 end
 
-function map_boxes_to_edges(g::BoxMap, source::BoxSet)
-    K = keytype(typeof(source.partition))
-    edges = Set{Tuple{K,K}}()
+function invert_vector(x::AbstractVector{T}) where T
+    dict = Dict{T,Int}()
+    sizehint!(dict, length(x))
 
-    for (src, hit) in ParallelBoxIterator(g, source)
+    for i in 1:length(x)
+        dict[x[i]] = i
+    end
+
+    return dict
+end
+
+function transition_graph(g::BoxMap, boxlist::BoxList)
+    boxset = BoxSet(boxlist)
+    K = keytype(typeof(boxset.partition))
+    edges = Dict{Tuple{K,K},Int}()
+    n = 0
+
+    for (src, hit) in ParallelBoxIterator(g, boxset)
         if hit !== nothing # check that point was inside domain
-            if hit in source.set
-                push!(edges, (src, hit))
+            if hit in boxset.set
+                # TODO: this calculates the hash of (src, hit) twice
+                # improve this once https://github.com/JuliaLang/julia/issues/31199 is resolved
+                edges[(src, hit)] = get(edges, (src, hit), 0) + 1
+                n += 1
             end
         end
     end
 
-    vertex_to_key = K[]
-    key_to_vertex = Dict{K,Int}()
-    keyset = keys(key_to_vertex)
-    edges_translated = Tuple{Int,Int}[]
-    
-    for (src, hit) in edges
-        if !(src in keyset)
-            push!(vertex_to_key, src)
-            key_to_vertex[src] = length(vertex_to_key)
-        end
+    key_to_int = invert_vector(boxlist.keylist)
 
-        if !(hit in keyset)
-            push!(vertex_to_key, hit)
-            key_to_vertex[hit] = length(vertex_to_key)
-        end
+    edges_normed = Dict{Tuple{Int,Int},Float64}()
+    sizehint!(edges_normed, length(edges))
 
-        push!(edges_translated, (key_to_vertex[src], key_to_vertex[hit]))
+    for (edge, weight) in edges
+        edges_normed[(key_to_int[edge[1]], key_to_int[edge[2]])] = weight / n
     end
 
-    return edges_translated, vertex_to_key
+    return BoxGraph(boxlist, edges_normed)
 end
+
+transition_graph(g::BoxMap, boxset::BoxSet) = transition_graph(g, BoxList(boxset))
