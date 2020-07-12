@@ -1,6 +1,6 @@
 struct BoxGraph{P <: BoxPartition,K}
     partition::P
-    edges::Dict{Tuple{K,K},Int}
+    edges::Dict{Tuple{K,K},Rational{Int}}
 end
 
 function vertex_set(boxgraph::BoxGraph{P,K}) where {P,K}
@@ -63,7 +63,7 @@ function matrix(boxgraph::BoxGraph)
     key_to_int = invert_vector(vertices)
 
     n = length(int_to_key)
-    mat = zeros(Int, n, n)
+    mat = zeros(Rational{Int}, n, n)
 
     for (edge, weight) in boxgraph.edges
         mat[key_to_int[edge[1]], key_to_int[edge[2]]] = weight

@@ -135,6 +135,7 @@ end
 function transition_graph(g::BoxMap, boxset::BoxSet)
     K = keytype(typeof(boxset.partition))
     edges = Dict{Tuple{K,K},Int}()
+    n = 0
 
     for (src, hit) in ParallelBoxIterator(g, boxset)
         if hit !== nothing # check that point was inside domain
@@ -142,9 +143,10 @@ function transition_graph(g::BoxMap, boxset::BoxSet)
                 # TODO: this calculates the hash of (src, hit) twice
                 # improve this once https://github.com/JuliaLang/julia/issues/31199 is resolved
                 edges[(src, hit)] = get(edges, (src, hit), 0) + 1
+                n += 1
             end
         end
     end
 
-    return BoxGraph(boxset.partition, edges)
+    return BoxGraph(boxset.partition, Dict(edge => weight // n for (edge, weight) in edges))
 end
