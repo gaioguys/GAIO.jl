@@ -60,7 +60,7 @@ end
 
 function matrix(boxgraph::BoxGraph)
     int_to_key = collect(vertex_set(boxgraph))
-    key_to_int = invert_vector(vertices)
+    key_to_int = invert_vector(int_to_key)
 
     n = length(int_to_key)
     mat = zeros(Rational{Int}, n, n)
