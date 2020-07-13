@@ -8,6 +8,10 @@ struct RegularPartition{N,T} <: BoxPartition{Box{N,T}}
 end
 
 function RegularPartition(domain::Box{N,T}, depth::Int) where {N,T}
+    if any(x -> x <= 0, domain.radius)
+        error("domain radius must be positive in every component")
+    end
+
     left = domain.center .- domain.radius
 
     sd = map(let de = depth, dim = N
