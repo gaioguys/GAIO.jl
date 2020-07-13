@@ -1,6 +1,9 @@
 # GAIO.jl
 
-This will be the next generation of [https://github.com/gaioguy/GAIO](GAIO) - currently under development.
+Documentation:
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://gaioguys.github.io/GAIO.jl/dev/)
+
+This will be the next generation of [GAIO](https://github.com/gaioguy/GAIO) - currently under development.
 
 The package provides a framework for set oriented computations, in particular for dynamical systems.
 It allows to compute, e.g.,

@@ -1,12 +1,3 @@
-```@meta
-CurrentModule = GAIO
-```
+# GAIO.jl
 
-# GAIO
-
-```@index
-```
-
-```@autodocs
-Modules = [GAIO]
-```
+Hello world!
