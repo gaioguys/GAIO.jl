@@ -11,7 +11,7 @@ Pages = ["algorithms.md"]
     Consider a time discrete dynamical system induced by the diffeomorphism ``g: \mathbb{R}^d \to \mathbb{R}^d``. Let ``Q \subset \mathbb{R}^d`` compact.
     The set 
     ```math
-    A_Q := \Cap_{k \leq 0} g^k(Q)
+    A_Q := \bigcap_{k \leq 0} g^k(Q)
     ```
     is called the global attractor relative to ``Q``.
 The relative global attractor can be seen as the set which is eventually approached by every orbit originating in ``Q``. In particular, ``A_Q`` contains each invariant set in ``Q`` and therefore all the potentially interesting dynamics. Thus it is of great interest to be able to compute a relative global attractor numerically. 
