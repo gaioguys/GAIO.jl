@@ -1,9 +1,9 @@
-struct BoxGraph{P <: BoxPartition,K}
+struct BoxGraph{P <: BoxPartition,K,W}
     partition::P
-    edges::Dict{Tuple{K,K},Rational{Int}}
+    edges::Dict{Tuple{K,K},W}
 end
 
-function vertex_set(boxgraph::BoxGraph{P,K}) where {P,K}
+function vertex_set(boxgraph::BoxGraph{P,K,W}) where {P,K,W}
     edges = boxgraph.edges
 
     result = Set{K}()
@@ -36,34 +36,42 @@ function strongly_connected_components(boxgraph::BoxGraph)
         [Edge(key_to_int[edge[1]], key_to_int[edge[2]]) for edge in keys(boxgraph.edges)]
     )
 
-    scc = LightGraphs.strongly_connected_components(graph)
+    sccs = LightGraphs.strongly_connected_components(graph)
 
     connected_vertices = Int[]
 
-    for k in 1:length(scc)
-        n = length(scc[k])
-        if n > 1
-            for i in 1:n
-                push!(connected_vertices, scc[k][i])
-            end
-        elseif (scc[k][1], scc[k][1]) in keys(boxgraph.edges)
-            push!(connected_vertices, scc[k][1])
+    for scc in sccs
+        if length(scc) > 1 || has_edge(graph, scc[1], scc[1])
+            append!(connected_vertices, scc)
         end
     end
 
     return BoxSet(boxgraph.partition, Set(int_to_key[connected_vertices]))
 end
 
-function matrix(boxgraph::BoxGraph)
+function matrix(boxgraph::BoxGraph{P,K,W}) where {P,K,W}
     int_to_key = collect(vertex_set(boxgraph))
     key_to_int = invert_vector(int_to_key)
 
-    n = length(int_to_key)
-    mat = zeros(Rational{Int}, n, n)
+    num_edges = length(boxgraph.edges)
+
+    I = Vector{Int}()
+    sizehint!(I, num_edges)
+
+    J = Vector{Int}()
+    sizehint!(J, num_edges)
+
+    V = Vector{W}()
+    sizehint!(V, num_edges)
 
     for (edge, weight) in boxgraph.edges
-        mat[key_to_int[edge[1]], key_to_int[edge[2]]] = weight
+        push!(I, key_to_int[edge[1]])
+        push!(J, key_to_int[edge[2]])
+        push!(V, weight)
     end
+
+    n = length(int_to_key)
+    mat = sparse(I, J, V, n, n)
 
     ints_to_boxset = let part = boxgraph.partition, int_to_key = int_to_key
         ints -> BoxSet(part, Set(int_to_key[ints]))
