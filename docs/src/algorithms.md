@@ -9,7 +9,8 @@ Pages = ["algorithms.md"]
 ## The Relative Global Attractor
 !!! tip "Relative Global Attractor"
     Consider a time discrete dynamical system induced by the diffeomorphism ``g: \mathbb{R}^d \to \mathbb{R}^d``. Let ``Q \subset \mathbb{R}^d`` compact.
-    The set ```math
+    The set 
+    ```math
     A_Q := \Cap_{k \leq 0} g^k(Q)
     ```
     is called the global attractor relative to ``Q``.
@@ -17,9 +18,9 @@ The relative global attractor can be seen as the set which is eventually approac
 The idea of the algorithm is to cover the relative global attractor with boxes and recursively tighten the covering by refining appropriately selected boxes.
 
 ### Mathematical Background of the Algorithm
-Mathematically, the algorithm to compute the global attractor relative to ``Q`` takes two input arguments: a compact set ``G`` as well as a map ``g``, which describes the dynamics. Now in each iteration, two steps happen:
+Mathematically, the algorithm to compute the global attractor relative to ``Q`` takes two input arguments: a compact set ``Q`` as well as a map ``f``, which describes the dynamics. Now in each iteration, two steps happen:
 1. **subdivision-step:** The domain ``B_{k-1}`` is subdivided once, i.e. every box is bisected along one axis, which gives rise to a new partition of the domain, ``\hat{B}_k``, with double the amount of boxes.
-2. **selection_step:** For each box ``B`` of the new partition we check, if there is another Box ``B'`` that is mapped into ``B`` under ``g``, i.e. if ``g(B') \cap B \neq \emptyset``. If not, we remove ``B`` from the domain.
+2. **selection_step:** For each box ``B`` of the new partition we check, if there is another Box ``B'`` that is mapped into ``B`` under ``g``, i.e. if ``f(B') \cap B \neq \emptyset``. If not, we remove ``B`` from the domain.
 
 After removing every non-hit box, we arrive at the new domain ``B_k``, and as ``k \to \infty``, the collection of boxes ``B_k`` converges to the relative global attractor ``A_Q``.
 
@@ -118,7 +119,7 @@ end
 Let us start with the input arguments for the algorithm:
 Again, like in the relative attractor Algorithm from above, ``g`` is the `BoxMap` describing the underlying dynamics ``f``. It thus stores ``f`` and a set of reference points necessary for the discretization of the boxes.
 The other input argument ``boxset`` includes two things:
-1. The domain ``Q`` we are going to compute the unstable manifold in (``Q`` can be implemented as a large `Box`) and the underlying partition of the domain. Unlike in the previous algorithm, the domain will not be subdivided along the algorithms course, but we need to pass a partition which is already subdivided to the depth `d` (and therefore the level of accuracy) we want our final boxcovering to have.
+1. The domain ``Q`` we are going to compute the unstable manifold in (``Q`` can be implemented as a large `Box`) and the underlying partition of the domain. Unlike in the previous algorithm, the domain will not be subdivided along the algorithms course, but we need to pass a partition which is already subdivided to the depth ``d`` (and therefore the level of accuracy) we want our final boxcovering to have.
 2. Since `boxset` is going to store all the new boxes we aquire in every iteration of the algorithm, it has to be initialized containing no other box than the single box of size ``\frac{1}{2^d}`` around the fixed point that is part of the unstable manifold we intend to compute.
 
 Note: This algorithm works with two mutable sets of boxes: `boxset`, which collects the boxes we aquire in each iteration and will eventually cover part of the unstable manifold, and `boxset_new`, which will be overwritten in each iteration and contains only the boxes which will be newly added to our collection.
@@ -131,7 +132,7 @@ First, we map the newly aquired boxes one step forward in time
 ```julia
 boxset_new = g(boxset_new)
 ```
-Note: Mapping only the newly aquired boxes from the previous step saves memory and computation time since we already computed the images of the old boxes in previous steps and thus those boximages are already part of the collector ``boxset``.
+Note: Mapping only the newly aquired boxes from the previous step saves memory and computation time since we already computed the images of the old boxes in previous steps and thus those boximages are already part of the collector `boxset`.
 Now we need to update `boxset_new` and `boxset`.
 As mentioned prior, we only want to consider boxes in each iteration step, that have not been 'hit' under `g` by any boxes we aquired in a previous iteration step, because that would mean that this box image already is part of our box collection. To differ between truly new boxes and boxes we already added, we take the setdifference between the images of boxes `boxset_new` and the whole boxcollection `boxset`:
 ```julia
