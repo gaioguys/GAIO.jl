@@ -2,5 +2,5 @@ using GAIO
 using Test
 
 @testset "GAIO.jl" begin
-    # TODO (include files here)
+    @test 1==2
 end
