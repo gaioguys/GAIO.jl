@@ -11,14 +11,15 @@ using GAIO, StaticArrays, Test
     @test dimension(partition) == 4
 
 
-    partition = RegularPartition(Box(SVector(0.0,1.),SVector(1.,0.)),3)
+    partition = RegularPartition(Box(SVector(0.0,1.),SVector(1.,1.)),3)
     @test depth(partition) == 3
     @test Base.size(partition) == (4,2)
     @test prod(Base.size(partition)) == 2^depth(partition)
 
     center = SVector(0.0,0.0)
     radius = SVector(1.0,0.0)
-    @test_throws ErrorException RegularPartition(Box(center,radius))
+    box = Box(center,radius)
+    @test_throws ErrorException RegularPartition(box)
 
     int_box = Box(SVector(0,0),SVector(1,1))
     # this should either throw a clearer error message or convert int to float
@@ -50,6 +51,9 @@ end
     key_left = GAIO.point_to_key(partition,left)
     @test typeof(GAIO.key_to_box(partition,key_inside)) <: typeof(partition.domain)
     @test GAIO.key_to_box(partition,key_inside) != GAIO.key_to_box(partition,key_left)
+
+    key = GAIO.point_to_key(partition,partition.domain.center)
+    @test typeof(key) <: GAIO.keytype(typeof(partition))
 
     # round trip
     point = SVector(0.3,0.3,0.3)
