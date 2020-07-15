@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: julia --project -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Run tests
-      - run:  xvfb-run julia --project -e 'using Pkg; Pkg.test()'
+        run:  xvfb-run julia --project -e 'using Pkg; Pkg.test()'
   docs:
     name: Documentation
     runs-on: ubuntu-latest
