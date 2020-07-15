@@ -1,4 +1,4 @@
-name: Documentation
+name: CI
 
 on:
   push:
@@ -20,12 +20,14 @@ jobs:
         arch:
           - x64
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: julia-actions/julia-buildpkg@latest
+      - name: Install dependencies
+        run: julia --project -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+      - name: Run tests
       - run:  xvfb-run julia --project -e 'using Pkg; Pkg.test()'
   docs:
     name: Documentation
