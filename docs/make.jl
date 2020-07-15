@@ -10,5 +10,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/gaioguys/GAIO.jl.git",
+    repo = "github.com/cafaxo/GAIO.jl.git",
+    devbranch = "actions"
 )
