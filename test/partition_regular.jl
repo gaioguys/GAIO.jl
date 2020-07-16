@@ -21,7 +21,7 @@ using Test
         partition = RegularPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), 3)
         @test depth(partition) == 3
         @test size(partition) == (4, 2)
-        @test prod(Base.size(partition)) == 2^depth(partition)
+        @test prod(size(partition)) == 2^depth(partition)
     end
     @testset "domain with zero radius" begin
         center = SVector(0.0, 0.0)
