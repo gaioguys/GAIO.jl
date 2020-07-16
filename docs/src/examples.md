@@ -51,11 +51,11 @@ Let us consider the *Lorenz System*, which is the following three-dimensional co
 ```math
 \begin{align} 
 &\frac{\mathcal{d}x}{\mathcal{d}t} = s(y-x) \\ 
-&frac{\mathcal{d}y}{\mathcal{d}t} = rx - y-xz \\
-& frac{\mathcal{d}z}{\mathcal{d}t} = xy - bz. \\ 
+&\frac{\mathcal{d}y}{\mathcal{d}t} = rx - y-xz \\
+&\frac{\mathcal{d}z}{\mathcal{d}t} = xy - bz. \\ 
 \end{align}
 ```
-In this example, we will choose the parameter values as ``s = 10, r = 28, b = 0.4`` and we are looking for the *unstable manifold* through the equilibrium point ``x_0 = (\sqrt(b*(r-1)), \sqrt(b*(r-1)), r-1 ) ``, which is a subset of the Lorenz attractor.
+In this example, we will choose the parameter values as ``s = 10, r = 28, b = 0.4`` and we are looking for the *unstable manifold* through the equilibrium point ``x_0 = (\sqrt{b(r-1)}, \sqrt{b(r-1)}, r-1 ) ``, which is a subset of the Lorenz attractor.
 
 In order to compute this, we first need to initialize the function ```lorenz_f```, which we will achieve by solving the Lorenz System with a Runge-Kutta 4th order ODE solver. 
 By choosing an equally spaced covering of the cube `` [-1,1]^3`` we can initialize the boxmap `g`:
