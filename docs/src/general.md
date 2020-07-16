@@ -1,4 +1,4 @@
-# General usage
+# Usage
 The base of the numerical set oriented methods of this framework are `BoxSet` (the discretization of a set) and `BoxMap` (the discretization of a map), thus, in the following, we will have a closer look at the two and other useful things to know when working with GAIO.
 
 To create a `Box` given its center point `C` as well as its extent in every axis direction `(t_1, t_2, ...)`, simply do
