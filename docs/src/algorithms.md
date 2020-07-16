@@ -1,19 +1,16 @@
 # Algorithms and Mathematical Background
 !!! note "Note"
     In the following, ``f`` will always refer to the map describing the dynamics of a system, while ``g`` will be the corresponding `BoxMap`.
-## Table of Contents
-```@contents
-Pages = ["algorithms.md"]
-```
+
 
 ## The Relative Global Attractor
-!!! tip "Relative Global Attractor"
-    Consider a time discrete dynamical system induced by the diffeomorphism ``g: \mathbb{R}^d \to \mathbb{R}^d``. Let ``Q \subset \mathbb{R}^d`` compact.
-    The set 
-    ```math
-    A_Q := \bigcap_{k \leq 0} g^k(Q)
-    ```
-    is called the global attractor relative to ``Q``.
+
+Consider a time discrete dynamical system induced by the map ``f: \mathbb{R}^d \to \mathbb{R}^d``. Let ``Q \subset \mathbb{R}^d`` compact.
+The set 
+```math
+A_Q := \bigcap_{k \geq 0} f^k(Q)
+```
+is called the global attractor relative to ``Q``.
 The relative global attractor can be seen as the set which is eventually approached by every orbit originating in ``Q``. In particular, ``A_Q`` contains each invariant set in ``Q`` and therefore all the potentially interesting dynamics. Thus it is of great interest to be able to compute a relative global attractor numerically. 
 The idea of the algorithm is to cover the relative global attractor with boxes and recursively tighten the covering by refining appropriately selected boxes.
 
@@ -85,8 +82,11 @@ Usually, the computation of the unstable manifold is relatively simple in 1D, bu
     
 ### Mathematical Background of the Algorithm
 The unstable manifold is defined as
-> [Pretty definition]
-> 
+```math
+W^U(x_0) = \{x: \lim_{k \to - \infty} f^k(x) = x_0 \}
+```
+where ``x_0`` is a fixed point of ``f``.
+
 The idea behind the algorithm to compute the unstable manifold can be explained in two steps. Before starting we need to identify a hyperbolic fixed point and the region ``Q``, which we are going to compute the manifold in. The region ``Q`` needs to be already partitioned into small boxes.
 1. Since a fixed point is always part of the unstable manifold, we need to identify a small region/box containing this fixed point.
 2. The small box containing the fixed point is then mapped forward under the dynamics defined by ``f`` and the boxes that are hit under the image are added to the box collection. Then those newly included boxes are mapped forward and the procedure is repeated. 
@@ -132,9 +132,9 @@ First, we map the newly aquired boxes one step forward in time
 ```julia
 boxset_new = g(boxset_new)
 ```
-Note: Mapping only the newly aquired boxes from the previous step saves memory and computation time since we already computed the images of the old boxes in previous steps and thus those boximages are already part of the collector `boxset`.
+Note: Mapping only the newly acquired boxes from the previous step saves memory and computation time since we already computed the images of the old boxes in previous steps and thus those boximages are already part of the collector `boxset`.
 Now we need to update `boxset_new` and `boxset`.
-As mentioned prior, we only want to consider boxes in each iteration step, that have not been 'hit' under `g` by any boxes we aquired in a previous iteration step, because that would mean that this box image already is part of our box collection. To differ between truly new boxes and boxes we already added, we take the setdifference between the images of boxes `boxset_new` and the whole boxcollection `boxset`:
+As mentioned prior, we only want to consider boxes in each iteration step, that have not been 'hit' under `g` by any boxes we acquired in a previous iteration step, because that would mean that this box image already is part of our box collection. To differ between truly new boxes and boxes we already added, we take the setdifference between the images of boxes `boxset_new` and the whole boxcollection `boxset`:
 ```julia
 setdiff!(boxset_new, boxset)
 ```
