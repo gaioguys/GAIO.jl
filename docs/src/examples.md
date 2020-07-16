@@ -7,10 +7,10 @@ In the following, we will showcase some of the algorithms GAIO is capable of bas
 ## Relative Global Attractor of the Hénon System 
 The Hénon map is the two-dimensional quadratic map 
 ```math 
-\begin{align} 
+\begin{aligned} 
 &x_{n+1} = 1-\alpha x_n^2+y_n \\
 &y_{n+1} = \beta x_n 
-\end{align} 
+\end{aligned} 
 ```
 
 characterizing the Hénon system. The so called *classical Hénon map* has the parameters ``\alpha = 1.4`` and ``\beta = 0.3 ``. 
@@ -49,11 +49,11 @@ which will return the boxset corresponding to the relative global attractor we r
 ## Unstable Manifold for the Lorenz System
 Let us consider the *Lorenz System*, which is the following three-dimensional continuous system 
 ```math
-\begin{align} 
+\begin{aligned} 
 &\frac{\mathcal{d}x}{\mathcal{d}t} = s(y-x) \\ 
 &\frac{\mathcal{d}y}{\mathcal{d}t} = rx - y-xz \\
 &\frac{\mathcal{d}z}{\mathcal{d}t} = xy - bz. \\ 
-\end{align}
+\end{aligned}
 ```
 In this example, we will choose the parameter values as ``s = 10, r = 28, b = 0.4`` and we are looking for the *unstable manifold* through the equilibrium point ``x_0 = (\sqrt{b(r-1)}, \sqrt{b(r-1)}, r-1 ) ``, which is a subset of the Lorenz attractor.
 
