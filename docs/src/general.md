@@ -7,7 +7,7 @@ box = Box(C, (t_1, t_2, ...))
 ```
 
 ## BoxSet
-The idea is to approximate an `AbstractSet`via a collection of small boxes.
+The idea is to approximate an `AbstractSet` via a collection of small boxes.
 Thus, given an `AbstractSet` `S` construct the 'discretized set' `boxset` as 
 ```julia
 boxset = BoxSet(P,S)
