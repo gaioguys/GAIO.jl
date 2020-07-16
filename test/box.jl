@@ -1,4 +1,6 @@
-using GAIO, StaticArrays, Test
+using GAIO
+using StaticArrays
+using Test
 
 @testset "exported functionality" begin
     @testset "basics" begin
@@ -37,20 +39,17 @@ using GAIO, StaticArrays, Test
         @test outside_left ∉ box
         @test outside_right ∉ box
     end
-
     @testset "non matching dimensions" begin
         center = SVector(0.0, 0.0, 0.0)
         radius = SVector(1.0, 1.0)
         @test_throws Exception Box(center, radius)
     end
-
     @testset "negative radii" begin
         center = SVector(0.0, 0.0)
         radius = SVector(1.0, -1.0)
         @test_throws Exception Box(center, radius)
     end
 end
-
 @testset "internal functionality" begin
     box = Box(SVector(0.0, 0.0), SVector(1.0, 1.0))
     @testset "integer point in box" begin
@@ -59,8 +58,5 @@ end
         @test point_int_inside ∈ box
         @test point_int_outside ∉ box
     end
-    @testset "point in box error" begin
-        point_3D = SVector(0.0, 0.0, 0.0)
-        @test_throws DimensionMismatch point_3D ∈ box
-    end
+    @test_throws DimensionMismatch SVector(0.0, 0.0, 0.0) ∈ box
 end

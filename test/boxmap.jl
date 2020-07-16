@@ -1,6 +1,6 @@
-using GAIO, StaticArrays, Test
-
-# this is still very basic functionality only
+using GAIO
+using StaticArrays
+using Test
 
 @testset "exported functionality" begin
     f(x) = x .^ 2
@@ -8,7 +8,6 @@ using GAIO, StaticArrays, Test
     g = boxmap(f, test_points)
     @testset "basics" begin
         @test typeof(g) <: PointDiscretizedMap
-
         partition = RegularPartition(Box(SVector(0.0, 0.0), SVector(1.0, 1.0)), 10)
         p1 = SVector(0.0, 0.0)
         p2 = SVector(0.5, 0.0)
@@ -36,21 +35,19 @@ using GAIO, StaticArrays, Test
         @test !isempty(mapped1) && !isempty(mapped2)
         @test !isempty(mapped3) && !isempty(mapped4)
         # easiest way right now to check for equality
-        @test Base.length(union(image, mapped1)) == Base.length(intersect(image, mapped1))
-        @test Base.length(union(image, mapped2)) != Base.length(intersect(image, mapped2))
-        @test Base.length(union(image, mapped3)) == Base.length(intersect(image, mapped4))
-        @test Base.length(union(image, mapped4)) == Base.length(intersect(image, mapped3))
+        @test length(union(image, mapped1)) == Base.length(intersect(image, mapped1))
+        @test length(union(image, mapped2)) != Base.length(intersect(image, mapped2))
+        @test length(union(image, mapped3)) == Base.length(intersect(image, mapped4))
+        @test length(union(image, mapped4)) == Base.length(intersect(image, mapped3))
         # check for subset
-        @test Base.length(intersect(boxset, mapped2)) == Base.length(mapped2)
+        @test length(intersect(boxset, mapped2)) == Base.length(mapped2)
     end
-    @testset "points in BoxMaps" begin
+    @testset "points in boxmaps" begin
         f(x) = x .^ 2
         test_points = [(-1.0, -1.0), (-1.0, 1.0), (1.0, -1.0), (1.0, 1.0)]
         g = boxmap(f, test_points)
         x = (-2.0, 3.0)
         y = SVector(4.0, 1)
-        @test f(x) == (4.0, 9.0)    #sanity checks
-        @test f(y) == [16.0, 1.0]
         @test_throws MethodError g(x)
         @test_throws MethodError g(y)
     end

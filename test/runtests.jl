@@ -1,4 +1,6 @@
-using GAIO, Test, SafeTestsets
+using GAIO
+using Test
+using SafeTestsets
 
 @testset "GAIO.jl" begin
     @safetestset "Box" begin

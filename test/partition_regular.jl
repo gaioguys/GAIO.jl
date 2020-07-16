@@ -1,4 +1,6 @@
-using GAIO, StaticArrays, Test
+using GAIO
+using StaticArrays
+using Test
 
 @testset "exported functionality" begin
     partition = RegularPartition(Box(SVector(0.0, 0.0, 0.0, 0.0),
@@ -9,7 +11,7 @@ using GAIO, StaticArrays, Test
     end
     @testset "subdivision" begin
         n = 10
-        for _ = 1:n
+        for _ in 1:n
             partition = subdivide(partition)
         end
         @test depth(partition) == n
@@ -18,7 +20,7 @@ using GAIO, StaticArrays, Test
     @testset "size" begin
         partition = RegularPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), 3)
         @test depth(partition) == 3
-        @test Base.size(partition) == (4, 2)
+        @test size(partition) == (4, 2)
         @test prod(Base.size(partition)) == 2^depth(partition)
     end
     @testset "domain with zero radius" begin
@@ -33,8 +35,6 @@ using GAIO, StaticArrays, Test
         @test_throws MethodError RegularPartition(int_box)
     end
 end
-
-
 @testset "internal functionality" begin
     partition = RegularPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), 5)
     @testset "keys all" begin
@@ -73,10 +73,10 @@ end
         @test key == key_2
     end
     @testset "points with wrong dimension" begin
-        point_2D = SVector(0.0, 0.0)
-        point_4D = SVector(0.0, 0.0, 0.0, 0.0)
-        @test_throws Exception GAIO.point_to_key(partition, point_2D)
-        @test_throws Exception GAIO.point_to_key(partition, point_4D)
+        point_2d = SVector(0.0, 0.0)
+        point_4d = SVector(0.0, 0.0, 0.0, 0.0)
+        @test_throws Exception GAIO.point_to_key(partition, point_2d)
+        @test_throws Exception GAIO.point_to_key(partition, point_4d)
     end
     @testset "non existing keys" begin
         @test_throws Exception GAIO.key_to_box(partition, -1)
