@@ -41,8 +41,6 @@ Optionally, one can choose a different image domain, e.g. if `boximage` needs to
 boximage = g(boxset; target = boxset_new)
 ```
 
-## The Subdivision Algorithm
-
 ## Miscellaneous
 To plot a `BoxSet` `boxset` simply do
 ```julia
