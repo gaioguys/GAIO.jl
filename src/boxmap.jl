@@ -148,5 +148,12 @@ function transition_graph(g::BoxMap, boxset::BoxSet)
         end
     end
 
-    return BoxGraph(boxset.partition, Dict(edge => weight / n for (edge, weight) in edges))
+    edges_normed = Dict{Tuple{K,K},Float64}()
+    sizehint!(edges_normed, length(edges))
+
+    for (edge, weight) in edges
+        edges_normed[edge] = weight / n
+    end
+
+    return BoxGraph(boxset.partition, edges_normed)
 end

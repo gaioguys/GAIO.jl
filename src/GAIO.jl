@@ -1,6 +1,7 @@
 module GAIO
 
 using LinearAlgebra
+using SparseArrays
 using StaticArrays
 using GLFW
 using ModernGL
@@ -9,11 +10,13 @@ using LightGraphs
 export Box, BoxSet
 export boxset_empty, subdivide, subdivide!
 
+export matrix
+
 export BoxPartition, RegularPartition, TreePartition
 export dimension, depth
 
-export BoxMap, PointDiscretizedMap, transition_graph
-export boxmap
+export BoxMap, PointDiscretizedMap
+export boxmap, transition_graph
 
 export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots
 
