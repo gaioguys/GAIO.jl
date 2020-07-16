@@ -1,6 +1,6 @@
 # Algorithms and Mathematical Background
 !!! note "Note"
-    In the following, ``f`` will always refer to the map describing the dynamics of a system, while ``g`` will be the corresponding `BoxMap`.
+    In the following, ``f`` will always refer to the map describing the dynamics of a system, while `g` will be the corresponding `BoxMap`.
 
 
 ## The Relative Global Attractor
@@ -17,7 +17,7 @@ The idea of the algorithm is to cover the relative global attractor with boxes a
 ### Mathematical Background of the Algorithm
 Mathematically, the algorithm to compute the global attractor relative to ``Q`` takes two input arguments: a compact set ``Q`` as well as a map ``f``, which describes the dynamics. Now in each iteration, two steps happen:
 1. **subdivision-step:** The domain ``B_{k-1}`` is subdivided once, i.e. every box is bisected along one axis, which gives rise to a new partition of the domain, ``\hat{B}_k``, with double the amount of boxes.
-2. **selection_step:** For each box ``B`` of the new partition we check, if there is another Box ``B'`` that is mapped into ``B`` under ``g``, i.e. if ``f(B') \cap B \neq \emptyset``. If not, we remove ``B`` from the domain.
+2. **selection_step:** For each box ``B`` of the new partition we check, if there is another Box ``B'`` that is mapped into ``B`` under `g`, i.e. if ``f(B') \cap B \neq \emptyset``. If not, we remove ``B`` from the domain.
 
 After removing every non-hit box, we arrive at the new domain ``B_k``, and as ``k \to \infty``, the collection of boxes ``B_k`` converges to the relative global attractor ``A_Q``.
 
@@ -117,7 +117,7 @@ function unstable_set!(boxset::BoxSet, g::BoxMap)
 end
 ```
 Let us start with the input arguments for the algorithm:
-Again, like in the relative attractor Algorithm from above, ``g`` is the `BoxMap` describing the underlying dynamics ``f``. It thus stores ``f`` and a set of reference points necessary for the discretization of the boxes.
+Again, like in the relative attractor Algorithm from above, `g` is the `BoxMap` describing the underlying dynamics ``f``. It thus stores ``f`` and a set of reference points necessary for the discretization of the boxes.
 The other input argument ``boxset`` includes two things:
 1. The domain ``Q`` we are going to compute the unstable manifold in (``Q`` can be implemented as a large `Box`) and the underlying partition of the domain. Unlike in the previous algorithm, the domain will not be subdivided along the algorithms course, but we need to pass a partition which is already subdivided to the depth ``d`` (and therefore the level of accuracy) we want our final boxcovering to have.
 2. Since `boxset` is going to store all the new boxes we aquire in every iteration of the algorithm, it has to be initialized containing no other box than the single box of size ``\frac{1}{2^d}`` around the fixed point that is part of the unstable manifold we intend to compute.
