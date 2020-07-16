@@ -29,19 +29,19 @@ using GAIO, StaticArrays, Test
         @testset "boxsets created on points" begin
             box_set = partition[(p1, p2, p3, p4)]
             @test Base.length(box_set) == 3
-            @test any(box -> box ∈ p1, box_set)
-            @test any(box -> box ∈ p2, box_set)
-            @test any(box -> box ∈ p3, box_set)
-            @test any(box -> box ∈ p4, box_set)
+            @test any(box -> p1 ∈ box, box_set)
+            @test any(box -> p2 ∈ box, box_set)
+            @test any(box -> p3 ∈ box, box_set)
+            @test any(box -> p4 ∈ box, box_set)
             n = 10
             for _ = 1:n
                 box_set = subdivide(box_set)
             end
             @test Base.length(box_set) == 3 * 2^n
-            @test any(box -> box ∈ p1, box_set)
-            @test any(box -> box ∈ p2, box_set)
-            @test any(box -> box ∈ p3, box_set)
-            @test any(box -> box ∈ p4, box_set)
+            @test any(box -> p1 ∈ box, box_set)
+            @test any(box -> p2 ∈ box, box_set)
+            @test any(box -> p3 ∈ box, box_set)
+            @test any(box -> p4 ∈ box, box_set)
         end
         @testset "set operations" begin
             p1_box_set = partition[p1]
@@ -82,8 +82,8 @@ using GAIO, StaticArrays, Test
             @test Base.isempty(empty_boxset)
             @test Base.length(empty_boxset) == 0
         end
+        full_boxset = partition[:]
         @testset "full" begin
-            full_boxset = partition[:]
             @test !Base.isempty(full_boxset)
             @test Base.length(full_boxset) == 1
             n = 10
@@ -94,7 +94,8 @@ using GAIO, StaticArrays, Test
             @test Base.length(full_boxset) == 2^n
         end
         # this seems to be the easiest way right now
-        # to get a full tree at a certain depth
+        # to get a full tree at a certain depth. Not
+        # really very clean
         partition = full_boxset.partition
         p1 = SVector(0.5, 0.5, 0.5)
         p2 = SVector(-0.5, 0.5, 0.5)
@@ -103,19 +104,19 @@ using GAIO, StaticArrays, Test
         @testset "box sets created on points" begin
             box_set = partition[(p1, p2, p3, p4)]
             @test Base.length(box_set) == 3
-            @test any(box -> box ∈ p1, box_set)
-            @test any(box -> box ∈ p2, box_set)
-            @test any(box -> box ∈ p3, box_set)
-            @test any(box -> box ∈ p4, box_set)
+            @test any(box -> p1 ∈ box, box_set)
+            @test any(box -> p2 ∈ box, box_set)
+            @test any(box -> p3 ∈ box, box_set)
+            @test any(box -> p4 ∈ box, box_set)
             n = 10
             for _ = 1:n
                 box_set = subdivide(box_set)
             end
             @test Base.length(box_set) == 3 * 2^n
-            @test any(box -> box ∈ p1, box_set)
-            @test any(box -> box ∈ p2, box_set)
-            @test any(box -> box ∈ p3, box_set)
-            @test any(box -> box ∈ p4, box_set)
+            @test any(box -> p1 ∈ box, box_set)
+            @test any(box -> p2 ∈ box, box_set)
+            @test any(box -> p3 ∈ box, box_set)
+            @test any(box -> p4 ∈ box, box_set)
         end
         @testset "set operations" begin
             p1_box_set = partition[p1]
