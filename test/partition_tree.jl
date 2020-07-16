@@ -3,8 +3,7 @@ using GAIO, StaticArrays, Test
 # this is still very basic functionality only
 
 @testset "exported functionality" begin
-    partition = TreePartition(Box(SVector(0.0, 0.0, 0.0, 0.0),
-                                  SVector(1.0, 1.0, 1.0, 1.0)))
+    partition = TreePartition(Box(SVector(0.0, 0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0, 1.0)))
     @testset "basics" begin
         @test depth(partition) == 0
         @test dimension(partition) == 4
