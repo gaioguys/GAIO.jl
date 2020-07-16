@@ -4,21 +4,18 @@ In the following, we will showcase some of the algorithms GAIO is capable of bas
 !!! tip "Tip"
     Using `SVector` instead of `Vector` for higher-dimensional objects will in general reduce the computation time. However, in the GAIO environment, you are free to use any of the two.
 
-## Table of Contents
-```@contents
-Pages = ["examples.md"]
-```
-
 ## Relative Global Attractor of the Hénon System 
 The Hénon map is the two-dimensional quadratic map 
 ```math 
-\begin{align} &x_{n+1} = 1-\alpha x_n^2+y_n \\
-&y_{n+1} = \beta x_n\end{align} 
+\begin{align} 
+&x_{n+1} = 1-\alpha x_n^2+y_n \\
+&y_{n+1} = \beta x_n 
+\end{align} 
 ```
 
 characterizing the Hénon system. The so called *classical Hénon map* has the parameters ``\alpha = 1.4`` and ``\beta = 0.3 ``. 
 In the following, we will demonstrate how to compute the *relative global attractor* for the classical Hénon map.
-Let us start by generating ``n`` points on each face of the square ``[-1,1]^2 \subset \mathbb{R}^2`` as well as initializing the Hénon map ``f`` and the boxmap ``g`` corresponding to the dynamics of ``f``
+Let us start by generating ``n`` points on each face of the square ``[-1,1]^2 \subset \mathbb{R}^2`` as well as initializing the Hénon map ``f`` and the boxmap `g` corresponding to the dynamics of ``f``
 ```julia
 function henon()
     generate_points = n -> [
@@ -52,9 +49,11 @@ which will return the boxset corresponding to the relative global attractor we r
 ## Unstable Manifold for the Lorenz System
 Let us consider the *Lorenz System*, which is the following three-dimensional continuous system 
 ```math
-\begin{align} &\frac{\mathcal{d}x}{\mathcal{d}t} = s(y-x) \\ 
+\begin{align} 
+&\frac{\mathcal{d}x}{\mathcal{d}t} = s(y-x) \\ 
 &frac{\mathcal{d}y}{\mathcal{d}t} = rx - y-xz \\
-& frac{\mathcal{d}z}{\mathcal{d}t} = xy - bz. \\ \end{align}
+& frac{\mathcal{d}z}{\mathcal{d}t} = xy - bz. \\ 
+\end{align}
 ```
 In this example, we will choose the parameter values as ``s = 10, r = 28, b = 0.4`` and we are looking for the *unstable manifold* through the equilibrium point ``x_0 = (\sqrt(b*(r-1)), \sqrt(b*(r-1)), r-1 ) ``, which is a subset of the Lorenz attractor.
 
