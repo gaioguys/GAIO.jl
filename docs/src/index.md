@@ -10,3 +10,5 @@ Thus, it allows the set oriented computation and/or visualization of
 - invariant manifolds (stable/unstable manifolds of an arbitrary invariant set)
 - invariant measures, almost invariant sets, coherent sets
 
+## Project origin
+This framework originated as a university seminar for master students, with the aim to enhance and convert the already existing Matlab GAIO framework to julia.
