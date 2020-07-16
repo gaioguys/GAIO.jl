@@ -14,5 +14,5 @@ makedocs(
 
 deploydocs(
     repo = "github.com/gaioguys/GAIO.jl.git",
-    devbranch = "initialdocs2"
+    push_preview = true
 )
