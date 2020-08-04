@@ -23,6 +23,11 @@ end
 glGenBuffer() = glGenOne(glGenBuffers)
 glGenVertexArray() = glGenOne(glGenVertexArrays)
 
+"""
+    plot(boxes::Vector{Box{2,Float32}})
+
+Plot a set of boxes with `N=2` on a two-dimensional surface and open a new window to look at the result.
+"""
 function plot(boxes::Vector{Box{2,Float32}})
     GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
     GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 3)
@@ -194,6 +199,11 @@ function projection_matrix(fovy, aspect, zNear, zFar)
     ]
 end
 
+"""
+    plot(boxes::Vector{Box{3,Float32}})
+
+Plot a set of boxes with `N=3` into a three-dimensional space and open a new window to look at the result.
+"""
 function plot(boxes::Vector{Box{3,Float32}})
     GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
     GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 3)
@@ -370,6 +380,11 @@ function plot(boxes::Vector{Box{3,Float32}})
     return nothing
 end
 
+"""
+    plot(boxset)
+
+Plot a `boxset` in two or three dimensions using OpenGL, and open a new window to look at the result.
+"""
 function plot(boxset::BoxSet)
     return plot([Box(Float32.(box.center), Float32.(box.radius)) for box in boxset])
 end

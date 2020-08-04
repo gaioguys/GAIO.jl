@@ -1,8 +1,20 @@
+"""
+    BoxSet{P <: BoxPartition,S <: AbstractSet}
+
+A subset of a given box partition of type `P`.
+The box indices from the box partition which are contained in the `BoxSet`
+are encoded in a set of type `S`.
+"""
 struct BoxSet{P <: BoxPartition,S <: AbstractSet}
     partition::P
     set::S
 end
 
+"""
+    boxset_empty(partition)
+
+Create an empty BoxSet on the given BoxPartition `partition`.
+"""
 function boxset_empty(partition::P) where P <: BoxPartition
     return BoxSet(partition, Set{keytype(P)}())
 end
@@ -54,6 +66,14 @@ Base.length(boxset::BoxSet) = length(boxset.set)
 Base.eltype(::Type{BoxSet{P,S}}) where {P <: BoxPartition{B},S} where B = B
 Base.iterate(boxset::BoxSet, state...) = iterate((key_to_box(boxset.partition, key) for key in boxset.set), state...)
 
+"""
+    subdivide(boxset::BoxSet{<: RegularPartition, S})
+
+Subdivide the given `boxset` which uses a `RegularPartition` as underlying `BoxPartition`.
+
+This subdivides the underlying `RegularPartition`, effectively increasing its depth attribute by 1.
+Note that there is no in-place variant of this method, since a new `BoxSet` is created in the process.
+"""
 function subdivide(boxset::BoxSet{<:RegularPartition,S}) where {S}
     partition = boxset.partition
     box_indices = CartesianIndices(size(partition))
@@ -79,6 +99,13 @@ function subdivide(boxset::BoxSet{<:RegularPartition,S}) where {S}
     return BoxSet(partition_subdivided, set)
 end
 
+"""
+    subdivide!(boxset::BoxSet{<:TreePartition}, key::Tuple{Int,Int})
+
+Subdivide in-place the box specified by `key` which is contained in the `TreePartition` associated with `boxset`.
+
+This method additionally subdivides this box in the underlying `TreePartition` associated with `boxset`.
+"""
 function subdivide!(boxset::BoxSet{<:TreePartition}, key::Tuple{Int,Int})
     @assert key in boxset.set
 
@@ -95,6 +122,14 @@ function subdivide!(boxset::BoxSet{<:TreePartition}, key::Tuple{Int,Int})
     return boxset
 end
 
+"""
+    subdivide(boxset::BoxSet{<:TreePartition})
+
+Subdivide the given `boxset` which uses a `TreePartition` as underlying `BoxPartition`.
+
+This method effectively calls `subdivide!(boxset::BoxSet{<:TreePartition}, key::Tuple{Int,Int})`
+on each box contained in `boxset`.
+"""
 function subdivide(boxset::BoxSet{<:TreePartition})
     boxset_new = BoxSet(copy(boxset.partition), copy(boxset.set))
 

@@ -3,6 +3,12 @@ struct Node
     right::Int
 end
 
+"""
+    TreePartition{N,T}
+
+A partition which is implemented using a tree data structure and
+hence also allows non-regular partitions by e.g. having boxes of different sizes.
+"""
 struct TreePartition{N,T} <: BoxPartition{Box{N,T}}
     domain::Box{N,T}
     nodes::Vector{Node}
@@ -11,6 +17,11 @@ end
 
 Base.copy(partition::TreePartition) = TreePartition(partition.domain, copy(partition.nodes), copy(partition.regular_partitions))
 
+"""
+    depth(partition::TreePartition)
+
+Return the current partitioning depth of `partition`.
+"""
 depth(partition::TreePartition) = length(partition.regular_partitions) - 1
 keytype(::Type{<:TreePartition}) = Tuple{Int,Int}
 
@@ -22,10 +33,25 @@ function keys_all(partition::TreePartition)
     return [(0, 1)]
 end
 
+"""
+    TreePartition(domain::Box)
+
+Create a new `TreePartition` on the given `domain` (radius must be non-negative).
+"""
 TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)], [RegularPartition(domain, 0)])
 
+"""
+    dimension(partition::TreePartition{N,T})
+
+Return the dimension `N` of `partition`.
+"""
 dimension(partition::TreePartition{N,T}) where {N,T} = N
 
+"""
+    key_to_box(partition::TreePartition, key)
+
+Return the box associated to some index `key` in the BoxPartition `partition`.
+"""
 function key_to_box(partition::TreePartition, key::Tuple{Int,Int})
     return key_to_box(partition.regular_partitions[key[1] + 1], key[2])
 end
@@ -67,6 +93,11 @@ function tree_search(tree::TreePartition{N,T}, point) where {N,T}
     return key, node_idx
 end
 
+"""
+    point_to_key(partition::TreePartition, point)
+
+Map `point` to the key of the box in `partition` which contains `point` or return `nothing`, if there is not such box.
+"""
 function point_to_key(partition::TreePartition, point)
     if point_to_key(partition.regular_partitions[1], point) === nothing
         return nothing
@@ -75,6 +106,11 @@ function point_to_key(partition::TreePartition, point)
     return tree_search(partition, point)[1]
 end
 
+"""
+    subdivide!(tree::TreePartition, key::Tuple{Int,Int})
+
+Subdivide in-place the box specified by `key` which is contained in `tree`.
+"""
 function subdivide!(tree::TreePartition, key::Tuple{Int,Int})
     search_key, node_idx = tree_search(tree, key_to_box(tree, key).center)
 

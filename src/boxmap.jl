@@ -1,10 +1,38 @@
+"""
+    BoxMap
+
+An abstract base type for a map which can map boxes to boxes.
+A BoxMap `g` should be usable as follows:
+```
+g(boxset)
+```
+This should output a subset (i.e. a BoxSet) of the BoxPartition associated with `boxset`.
+
+We should also be able to specify a target set:
+```
+g(source_boxset, target=target_boxset)
+```
+Here, we should get a subset of `target_boxset`, instead of a subset of the BoxPartition of `source_boxset`.
+"""
 abstract type BoxMap end
 
+"""
+    PointDiscretizedMap{F,P} <: BoxMap
+
+A special type of a `BoxMap` which discretizes some function of type `F`
+by mapping some points stored in a data structure of type `P`.
+The points in `points` are assumed to lie in the range of [-1, 1] in each dimension.
+"""
 struct PointDiscretizedMap{F,P} <: BoxMap
     f::F
     points::P
 end
 
+"""
+    boxmap(f, points) -> PointDiscretizedMap
+
+Create a PointDiscretizedMap using the given function `f` and points `points`.
+"""
 boxmap(f, points) = PointDiscretizedMap(f, points)
 
 struct ParallelBoxIterator{M <: BoxMap,SP,SS,TP}
@@ -98,6 +126,11 @@ function Base.eltype(t::Type{<:ParallelBoxIterator})
     return Union{Tuple{sourcekeytype(t),targetkeytype(t)},Tuple{sourcekeytype(t),Nothing}}
 end
 
+"""
+    map_boxes(g::BoxMap, source::BoxSet) -> BoxSet
+
+Alias for `g(source)`.
+"""
 function map_boxes(g::BoxMap, source::BoxSet)
     result = boxset_empty(source.partition)
 
@@ -110,6 +143,11 @@ function map_boxes(g::BoxMap, source::BoxSet)
     return result
 end
 
+"""
+    map_boxes_with_target(g::BoxMap, source::BoxSet, target::BoxSet) -> BoxSet
+
+Alias for `g(source, target=target)`.
+"""
 function map_boxes_with_target(g::BoxMap, source::BoxSet, target::BoxSet)
     result = boxset_empty(target.partition)
 
@@ -124,6 +162,22 @@ function map_boxes_with_target(g::BoxMap, source::BoxSet, target::BoxSet)
     return result
 end
 
+"""
+    (g::PointDiscretizedMap)(source::BoxSet [; target::BoxSet]) -> BoxSet
+
+Compute the image of the BoxSet `source` applied to the PointDiscretizedMap `g`.
+`source` and `target` may refer to the same set.
+
+The semantics are as follows:
+we check each Box `source_box` from `source` separately, and map all points from `g.points` (cf. definition of PointDiscretizedMap)
+affinely to `source_box`. Then, we compute the image of each point using `g.f`. The next action depends, if the `target` parameter is specified:
+
+* If it is not given, or `target=nothing`, then we look for the Box in the BoxPartition associated with `source` (given, that we map inside of it) and add it to the output BoxSet.
+* If it is given, then we check if a mapped point is contained in the `target` BoxSet. If so, the corresponding Box is added to the output BoxSet.
+In the case that `source` and `target` share the same underlying `BoxPartition`, this can be seen as computing `intersect(g(source), target)` with less intermediate steps.
+
+After we did this for each box from `source`, we return the output BoxSet.
+"""
 function (g::PointDiscretizedMap)(source::BoxSet; target = nothing)
     if isnothing(target)
         return map_boxes(g, source)
@@ -132,6 +186,17 @@ function (g::PointDiscretizedMap)(source::BoxSet; target = nothing)
     end
 end
 
+"""
+    map_boxes_to_edges(g::BoxMap, source::BoxSet)
+
+Build a digraph from `g(source, target=source)`
+which has the boxes from `source` as vertices and edges from box `a` to box `b`,
+iff. `b` lies in the image of `a` under `g`.
+
+It returns the results in the format `(edges, vertex_mapping)` where `vertex_mapping` gives a map from BoxPartition keys
+to indices ranging from 0 to n-1 (n denoting the number of vertices), and `edges`
+being a list of the edges which are encoded by these indices.
+"""
 function map_boxes_to_edges(g::BoxMap, source::BoxSet)
     K = keytype(typeof(source.partition))
     edges = Set{Tuple{K,K}}()

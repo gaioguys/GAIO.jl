@@ -21,6 +21,11 @@ export plot
 
 include("box.jl")
 
+"""
+    BoxPartition{B <: Box}
+
+Represents a partition of a given domain box of type `B` into several boxes of type `B`.
+"""
 abstract type BoxPartition{B <: Box} end
 
 include("partition_regular.jl")
