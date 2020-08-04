@@ -132,28 +132,20 @@ function (g::PointDiscretizedMap)(source::BoxSet; target = nothing)
     end
 end
 
-function transition_graph(g::BoxMap, boxset::BoxSet)
+function transition_graph(g::PointDiscretizedMap, boxset::BoxSet)
     K = keytype(typeof(boxset.partition))
-    edges = Dict{Tuple{K,K},Int}()
-    n = 0
+    edges = Dict{Tuple{K,K},Float64}()
+    n = length(g.points)
 
     for (src, hit) in ParallelBoxIterator(g, boxset)
         if hit !== nothing # check that point was inside domain
             if hit in boxset.set
                 # TODO: this calculates the hash of (src, hit) twice
                 # improve this once https://github.com/JuliaLang/julia/issues/31199 is resolved
-                edges[(src, hit)] = get(edges, (src, hit), 0) + 1
-                n += 1
+                edges[(src, hit)] = get(edges, (src, hit), 0) + 1.0/n
             end
         end
     end
 
-    edges_normed = Dict{Tuple{K,K},Float64}()
-    sizehint!(edges_normed, length(edges))
-
-    for (edge, weight) in edges
-        edges_normed[edge] = weight / n
-    end
-
-    return BoxGraph(boxset.partition, edges_normed)
+    return BoxGraph(boxset.partition, edges)
 end
