@@ -18,3 +18,5 @@ struct Box{N,T}
         return new{N,T}(SVector{N,T}(center), SVector{N,T}(radius))
     end
 end
+
+Base.in(point, box::Box) = all(point .>= box.center - box.radius) && all(point .< box.center + box.radius)
