@@ -12,7 +12,8 @@ Thus, given an `AbstractSet` `S` construct the 'discretized set' `boxset` as
 ```julia
 boxset = BoxSet(P,S)
 ```
-where `P` denotes the underlying `BoxPartition`, that is the information about how small the boxes we use to approximate `S` with are. The `BoxPartition` is always constructed for a larger `Box` completely containing `S`.
+where `P` denotes the underlying `BoxPartition`, that is the information about the size of each of the boxes we use to approximate `S` with. The `BoxPartition` is always constructed for a larger `Box` completely containing `S`.
+
 
 In general one has two choices to construct the partition:
 * Using a **regular partition**, that is a partition where the small boxes all have the same size. 
@@ -25,7 +26,7 @@ In general one has two choices to construct the partition:
   > [TODO]
  
 ## BoxMap
-Given a pointmap `f`, initialize the corresponding `BoxMap` `g` by
+A BoxMap is a function which maps boxes to boxes. Given a pointmap `f`, initialize the corresponding `BoxMap` `g` by
 ```julia
 g = PointDiscretizedMap(f, points)
 ```
