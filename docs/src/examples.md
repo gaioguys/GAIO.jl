@@ -1,8 +1,6 @@
 # Examples
 In the following, we will showcase some of the algorithms GAIO is capable of based on one example each.
 
-!!! tip "Tip"
-    Using `SVector` instead of `Vector` for higher-dimensional objects will in general reduce the computation time. However, in the GAIO environment, you are free to use any of the two.
 
 ## Relative Global Attractor of the Hénon System 
 The Hénon map is the two-dimensional quadratic map 
