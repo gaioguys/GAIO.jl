@@ -1,7 +1,7 @@
 # Algorithms and Mathematical Background
 !!! note "Note"
     In the following, ``f`` will always refer to the map describing the dynamics of a system, while `g` will be the corresponding `BoxMap`.
-
+    
 
 ## The Relative Global Attractor
 
@@ -33,27 +33,13 @@ function relative_attractor(boxset::BoxSet, g::BoxMap, depth::Int)
     return boxset
 end
 ```
-The first thing one notices is that the implementation has a third input parameter `depth`, which describes the level of approximation. Since in each step of the algorithm the initial domain is divided in half, the final partition after `depth` many steps will contain ``n := 2^{\text{depth}}`` boxes, i.e. every box in the final covering is ``\frac{1}{n}`` times the size of the initial box. Besides `depth` we have the input parameters `boxset` and `g`, which is the `BoxMap` describing the dynamics, that is a function which maps boxes to boxes.
-`g` is going to be implemented as a `PointDiscretizedMap`, which is a `struct` containing the underlying pointwise map corresponding to the dynamics as well as the set of reference points, implemented as an `Array` of `Tuple`s, that will be the discretization of a box.
-```julia
-struct PointDiscretizedMap{F,P} <: BoxMap
-    f::F
-    points::P
-end
-```
-`boxset` is `struct`, which carries both a set and the partition of the set, that is the information about the size of each single box in the set.
-```julia
-struct BoxSet{P <: BoxPartition,S <: AbstractSet}
-    partition::P
-    set::S
-end
-```
+The first thing one notices is that the implementation has a third input parameter `depth`, which describes the level of approximation. Since in each step of the algorithm the initial domain is divided in half, the final partition after `depth` many steps will contain ``n := 2^{\text{depth}}`` boxes, i.e. every box in the final covering is ``\frac{1}{n}`` times the size of the initial box. Besides `depth` we have the input parameters `boxset` and `g`, which is the `BoxMap` describing the dynamics.
 For this algorithm the partition needs to be the full regular partition of the initial set (i.e. the starting domain).
-Now, for each step in the algorithm, the current set is subdivided via the subdivision algorithm:
+Now, for each step in the algorithm, the current set is subdivided via the subdivision algorithm,
 ```julia
 boxset = subdivide(boxset)
 ```
-And it is checked, if a box is hit by another box under the dynamics:
+and it is checked, if a box is hit by another box under the dynamics:
 ```julia
 function map_boxes_with_target(g, source::BoxSet, target::BoxSet)
     result = boxset_empty(target.partition)
