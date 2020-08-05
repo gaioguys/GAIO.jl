@@ -23,16 +23,14 @@ function henon()
         [( 1.0, x) for x in LinRange(-1, 1, n)];
     ]
 
-    f = x -> SVector(1/2 - 2*1.4*x[1]^2 + x[2], 0.3*x[1])
+    f = x -> SVector(1 - 1.4*x[1]^2 + x[2], 0.3*x[1])
        
     g = PointDiscretizedMap(f, generate_points(20))
 ```
-!!! note "Note"
-    In order to fit the relative global attractor into ``[-1,1]^2`` we had to scale the first equation.
     
 In order to create the boxset which is one of the input parameters of the function `relative_attractor`, we first need to initialize the domain, that is the box corrsponding to ``[-1,1]^2``, and how/if it is already partitioned. It is natural to choose a regular partition which is initialized with the whole domain on depth ``0``, that is the partition is not yet subdivided.
 ```julia
-    partition = RegularPartition(Box(SVector(0.0, 0.0), SVector(1.0, 1.0)))
+    partition = RegularPartition(Box(SVector(0.0, 0.0), SVector(2.0, 1.0)))
     boxset = boxset_full(partition)
 ```
 Finally we are able to call `relative_attractor` by
