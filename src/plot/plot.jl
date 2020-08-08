@@ -141,6 +141,64 @@ function update_camera2d!(camera_state, window_state, mouse_state, last_pos, las
     return nothing
 end
 
+function plot(boxes::Vector{GLBox{1}})
+    window, window_state = setup_window()
+
+    shader_program = setup_shader_program("box1d.vert", "boxnd.frag")
+
+    camera_offset_loc = glGetUniformLocation(shader_program, "camera_offset")
+    camera_scale_loc = glGetUniformLocation(shader_program, "camera_scale")
+
+    mouse_state = MouseState()
+    setup_mouse_callbacks!(mouse_state, window)
+
+    vbo = glGenBuffer()
+    glBindBuffer(GL_ARRAY_BUFFER, vbo)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(boxes), boxes, GL_STATIC_DRAW)
+
+    vao = glGenVertexArray()
+    glBindVertexArray(vao)
+    glVertexAttribPointer(0, 1, GL_FLOAT, GL_FALSE, 24, Ptr{Cvoid}(0))
+    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 24, Ptr{Cvoid}(4))
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 24, Ptr{Cvoid}(8))
+
+    glVertexAttribDivisor(0, 1)
+    glVertexAttribDivisor(1, 1)
+    glVertexAttribDivisor(2, 1)
+
+    glEnableVertexAttribArray(0)
+    glEnableVertexAttribArray(1)
+    glEnableVertexAttribArray(2)
+
+    last_pos = mouse_state.pos
+    last_scroll = mouse_state.scroll
+
+    camera_state = CameraState(Float32[0.0, 0.0], Float32[1.0, 1.0])
+
+    while !GLFW.WindowShouldClose(window)
+        update_camera2d!(camera_state, window_state, mouse_state, last_pos, last_scroll)
+
+        last_pos = mouse_state.pos
+        last_scroll = mouse_state.scroll
+
+        glUniform1f(camera_offset_loc, camera_state.offset[1])
+        glUniform1f(camera_scale_loc, camera_state.scale[1])
+
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT)
+
+        glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, length(boxes))
+
+        GLFW.SwapBuffers(window)
+
+        # change to wait events?
+        GLFW.PollEvents()
+    end
+
+    GLFW.DestroyWindow(window)
+    return nothing
+end
+
 function plot(boxes::Vector{GLBox{2}})
     GLFW.WindowHint(GLFW.SAMPLES, 8)
 
