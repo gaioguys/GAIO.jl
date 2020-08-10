@@ -1,9 +1,11 @@
 abstract type BoxMap end
 
-struct PointDiscretizedMap{F,P} <: BoxMap
-    f::F
+struct SampledBoxMap{F,P} <: BoxMap
+    f::F       
     points::P
 end
+
+PointDiscretizedMap(f, points::AbstractArray) = SampledBoxMap(f, (center, radius) -> points)
 
 boxmap(f, points) = PointDiscretizedMap(f, points)
 
@@ -29,10 +31,11 @@ end
         source = boxes[boxes_iter]
         boxes_iter += 1
         box = key_to_box(source_partition, source)
+        center, radius = box.center, box.radius
 
-        for point in iter.boxmap.points
+        for point in iter.boxmap.points(center, radius)
             j += 1
-            workinput[j] = (point, source, box)
+            workinput[j] = (center .+ radius.*point, source, box)
         end
     end
 
@@ -47,8 +50,7 @@ end
 
     @Threads.threads for i = 1:length(workoutput)
         point, source, box = workinput[i]
-        center, radius = box.center, box.radius
-        fp = f(center .+ radius .* point)
+        fp = f(point)
         target = point_to_key(target_partition, fp)
 
         workoutput[i] = target
@@ -81,12 +83,14 @@ end
 @inline function Base.iterate(iter::ParallelBoxIterator)
     boxes = collect(iter.boxset.set)
     boxes_iter = 1
+    box = key_to_box(iter.boxset.partition, boxes[boxes_iter])
+    p = iter.boxmap.points(box.center, box.radius)  # only for testing the eltype and the size
 
     # vector of (point, sourcekey, box)
-    workinput_eltype = Tuple{eltype(iter.boxmap.points),sourcekeytype(typeof(iter)),eltype(iter.boxset)}
-    workinput = Vector{workinput_eltype}(undef, 100 * length(iter.boxmap.points))
+    workinput_eltype = Tuple{typeof(box.center), sourcekeytype(typeof(iter)), eltype(iter.boxset)}
+    workinput = Vector{workinput_eltype}(undef, 100*length(p))
 
-    workoutput = Union{targetkeytype(typeof(iter)),Nothing}[]
+    workoutput = Union{targetkeytype(typeof(iter)), Nothing}[]
     workoutput_iter = 1
 
     return iterate(iter, (boxes, boxes_iter, workinput, workoutput, workoutput_iter))
@@ -124,7 +128,7 @@ function map_boxes_with_target(g::BoxMap, source::BoxSet, target::BoxSet)
     return result
 end
 
-function (g::PointDiscretizedMap)(source::BoxSet; target = nothing)
+function (g::BoxMap)(source::BoxSet; target = nothing)
     if isnothing(target)
         return map_boxes(g, source)
     else
