@@ -12,7 +12,7 @@ export boxset_empty, subdivide, subdivide!
 export BoxPartition, RegularPartition, TreePartition
 export dimension, depth
 
-export BoxMap, PointDiscretizedMap
+export BoxMap, SampledBoxMap, PointDiscretizedMap
 export boxmap
 
 export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots
