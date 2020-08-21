@@ -15,7 +15,10 @@ export dimension, depth
 export BoxMap, PointDiscretizedMap
 export boxmap
 
-export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots
+export BoxFun
+
+export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots,
+       finite_time_lyapunov_exponents
 
 export plot
 
@@ -26,6 +29,7 @@ abstract type BoxPartition{B <: Box} end
 include("partition_regular.jl")
 include("partition_tree.jl")
 include("boxset.jl")
+include("boxfun.jl")  # TODO: borrowed from #33 for now
 include("boxmap.jl")
 include("algorithms.jl")
 
