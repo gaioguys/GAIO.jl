@@ -1,13 +1,43 @@
 abstract type BoxMap end
 
-struct SampledBoxMap{F,P} <: BoxMap
+struct SampledBoxMap{F,P,I} <: BoxMap
     f::F       
     points::P
+    images::I    
 end
 
-PointDiscretizedMap(f, points::AbstractArray) = SampledBoxMap(f, (center, radius) -> points)
+function PointDiscretizedMap(f, p::AbstractArray) 
+    points = (center, radius) -> p
+    images = (center, radius) -> center
+    return SampledBoxMap(f, points, images)
+end
 
 boxmap(f, points) = PointDiscretizedMap(f, points)
+
+function sample_adaptive(Df, center::SVector{N,T}) where {N,T}
+    D = Df(center)
+    _, σ, Vt = svd(D)
+    n = ceil.(Int, σ) 
+    h = 2.0./(n.-1)
+    points = Array{SVector{N,T}}(undef, ntuple(i->n[i], N))
+    for i in CartesianIndices(points)
+        points[i] = ntuple(k -> n[k]==1 ? 0.0 : (i[k]-1)*h[k]-1.0, N)
+        points[i] = Vt'*points[i]
+    end   
+    return points 
+end
+
+function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
+    Df = x -> ForwardDiff.jacobian(f, x)
+    points = (center, radius) -> sample_adaptive(Df, center)
+
+    vertices = Array{SVector{N,T}}(undef, ntuple(k->2, N))
+    for i in CartesianIndices(vertices)
+        vertices[i] = ntuple(k -> (-1.0)^i[k], N)
+    end   
+    images = (center, radius) -> vertices
+    return SampledBoxMap(f, points, images)
+end
 
 struct ParallelBoxIterator{M <: BoxMap,SP,SS,TP}
     boxmap::M
@@ -27,13 +57,15 @@ end
 
     j = 0
 
-    while boxes_iter <= length(boxes) && j < length(workinput)
+    while boxes_iter <= length(boxes) 
         source = boxes[boxes_iter]
         boxes_iter += 1
         box = key_to_box(source_partition, source)
         center, radius = box.center, box.radius
+        points = iter.boxmap.points(center, radius)
+        resize!(workinput, length(workinput) + length(points))
 
-        for point in iter.boxmap.points(center, radius)
+        for point in points
             j += 1
             workinput[j] = (center .+ radius.*point, source, box)
         end
@@ -84,11 +116,11 @@ end
     boxes = collect(iter.boxset.set)
     boxes_iter = 1
     box = key_to_box(iter.boxset.partition, boxes[boxes_iter])
-    p = iter.boxmap.points(box.center, box.radius)  # only for testing the eltype and the size
+    #p = iter.boxmap.points(box.center, box.radius)  # only for testing the eltype and the size
 
     # vector of (point, sourcekey, box)
     workinput_eltype = Tuple{typeof(box.center), sourcekeytype(typeof(iter)), eltype(iter.boxset)}
-    workinput = Vector{workinput_eltype}(undef, 100*length(p))
+    workinput = Vector{workinput_eltype}(undef, 1)
 
     workoutput = Union{targetkeytype(typeof(iter)), Nothing}[]
     workoutput_iter = 1

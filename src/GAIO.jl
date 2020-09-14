@@ -5,6 +5,7 @@ using StaticArrays
 using GLFW
 using ModernGL
 using LightGraphs
+using ForwardDiff
 
 export Box, BoxSet
 export boxset_empty, subdivide, subdivide!
@@ -12,7 +13,7 @@ export boxset_empty, subdivide, subdivide!
 export BoxPartition, RegularPartition, TreePartition
 export dimension, depth
 
-export BoxMap, SampledBoxMap, PointDiscretizedMap
+export BoxMap, SampledBoxMap, PointDiscretizedMap, AdaptiveBoxMap
 export boxmap
 
 export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots
