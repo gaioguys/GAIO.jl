@@ -14,5 +14,5 @@ function henon()
     partition = RegularPartition(Box(SVector(0.0, 0.0), SVector(1.0, 1.0)))
     boxset = partition[:]
 
-    return relative_attractor(boxset, g, 20)
+    return relative_attractor(g, boxset, 20)
 end

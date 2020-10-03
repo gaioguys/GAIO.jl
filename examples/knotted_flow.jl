@@ -141,5 +141,5 @@ function knotted_flow_rga(depth)
     partition = RegularPartition(Box(SVector(0.0, 0.0, 0.0), SVector(3.0, 3.0, 3.0)))
     boxset = partition[:]
 
-    return relative_attractor(boxset, g, depth)
+    return relative_attractor(g, boxset, depth)
 end
