@@ -20,3 +20,7 @@ struct Box{N,T}
 end
 
 Base.in(point, box::Box) = all(point .>= box.center - box.radius) && all(point .< box.center + box.radius)
+
+function Base.show(io::IO, box::Box) 
+    print(io, "Box: center = $(box.center), radius = $(box.radius)")
+end

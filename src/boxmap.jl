@@ -7,6 +7,9 @@ end
 
 boxmap(f, points) = PointDiscretizedMap(f, points)
 
+function Base.show(io::IO, g::PointDiscretizedMap)
+    print(io, "PointDiscretizedMap with $(length(g.points)) sample points")
+end
 struct ParallelBoxIterator{M <: BoxMap,SP,SS,TP}
     boxmap::M
     boxset::BoxSet{SP,SS}
