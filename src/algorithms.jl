@@ -1,4 +1,4 @@
-function relative_attractor(boxset::BoxSet, g::BoxMap, depth::Int)
+function relative_attractor(g::BoxMap, boxset::BoxSet, depth::Int)
     for k = 1:depth
         boxset = subdivide(boxset)
         boxset = g(boxset; target=boxset)
@@ -7,7 +7,7 @@ function relative_attractor(boxset::BoxSet, g::BoxMap, depth::Int)
     return boxset
 end
 
-function unstable_set!(boxset::BoxSet, g::BoxMap)
+function unstable_set!(g::BoxMap, boxset::BoxSet)
     boxset_new = boxset
 
     while !isempty(boxset_new)
@@ -43,7 +43,7 @@ function strongly_connected_vertices(edges)
     return connected_vertices
 end
 
-function chain_recurrent_set(boxset::BoxSet, g::BoxMap, depth::Int)
+function chain_recurrent_set(g::BoxMap, boxset::BoxSet, depth::Int)
     for k in 1:depth
         boxset = subdivide(boxset)
         edges, vertex_to_key = map_boxes_to_edges(g, boxset)
@@ -77,7 +77,7 @@ function adaptive_newton_step(g, g_jacobian, x, k)
     return x
 end
 
-function cover_roots(boxset::BoxSet, g, g_jacobian, points, depth::Int)
+function cover_roots(g, g_jacobian, boxset::BoxSet, points, depth::Int)
     for k in 1:depth
         boxset = subdivide(boxset)
         g_k = PointDiscretizedMap(x -> adaptive_newton_step(g, g_jacobian, x, k), points)

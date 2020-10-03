@@ -48,5 +48,5 @@ function lorenz()
     x0 = (sqrt(b*(rh-1)), sqrt(b*(rh-1)), rh-1)
 
     boxset = partition[x0]
-    return unstable_set!(boxset, g)
+    return unstable_set!(g, boxset)
 end

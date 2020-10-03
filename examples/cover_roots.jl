@@ -48,5 +48,5 @@ function example_cover_roots(depth)
     partition = RegularPartition(Box([0.0 for _ in 1:dim], [40.0 for _ in 1:dim]))
     boxset = partition[:]
 
-    return cover_roots(boxset, g, g_jacobian, points, depth)
+    return cover_roots(g, g_jacobian, boxset, points, depth)
 end

@@ -13,8 +13,8 @@ using Test
     domain = Box(SVector(0.0, 0.0), SVector(1.0, 1.0))
     partition = RegularPartition(domain)
     partition_at_depth_n = RegularPartition(domain, n)
-    rga = relative_attractor(partition[:], g, n)
-    unstable = unstable_set!(partition_at_depth_n[:], g)
+    rga = relative_attractor(g, partition[:], n)
+    unstable = unstable_set!(g, partition_at_depth_n[:])
     # ground truths attractor and unstable set
     x_axis = [SVector(0, x) for x in range(-1, 1, length=100)]
     y_axis = [SVector(x, 0) for x in range(-1, 1, length=100)]
