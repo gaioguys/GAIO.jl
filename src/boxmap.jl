@@ -24,6 +24,7 @@ function sample_adaptive(Df, center::SVector{N,T}) where {N,T}
         points[i] = ntuple(k -> n[k]==1 ? 0.0 : (i[k]-1)*h[k]-1.0, N)
         points[i] = Vt'*points[i]
     end   
+    @show points
     return points 
 end
 
@@ -62,23 +63,23 @@ end
         boxes_iter += 1
         box = key_to_box(source_partition, source)
         center, radius = box.center, box.radius
-        points = iter.boxmap.points(center, radius)
-        resize!(workinput, length(workinput) + length(points))
+        domain_points = iter.boxmap.domain_points(center, radius)
+        image_points  = iter.boxmap.image_points(center, radius)
+        resize!(workinput, length(workinput) + length(domain_points))
+        resize!(workoutput, length(workoutput) + length(image_points))
 
-        for point in points
+        for point in domain_points
             j += 1
             workinput[j] = (center .+ radius.*point, source, box)
         end
     end
-
-    resize!(workoutput, j)
-
+    
     if j == 0
         return boxes_iter
     end
 
     target_partition = iter.target_partition
-    f = iter.boxmap.f
+    f = iter.boxmap.map
 
     @Threads.threads for i = 1:length(workoutput)
         point, source, box = workinput[i]
