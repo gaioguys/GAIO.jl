@@ -7,7 +7,7 @@ using Test
     test_points = [(-1.0, -1.0), (-1.0, 1.0), (1.0, -1.0), (1.0, 1.0)]
     g = boxmap(f, test_points)
     @testset "basics" begin
-        @test typeof(g) <: PointDiscretizedMap
+        @test typeof(g) <: SampledBoxMap
         partition = RegularPartition(Box(SVector(0.0, 0.0), SVector(1.0, 1.0)), 10)
         p1 = SVector(0.0, 0.0)
         p2 = SVector(0.5, 0.0)

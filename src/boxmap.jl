@@ -1,11 +1,43 @@
 abstract type BoxMap end
 
-struct PointDiscretizedMap{F,P} <: BoxMap
-    f::F
-    points::P
+struct SampledBoxMap{F,P,I} <: BoxMap
+    map::F       
+    domain_points::P
+    image_points::I    
+end
+
+function PointDiscretizedMap(map, points::AbstractArray) 
+    domain_points = (center, radius) -> points
+    image_points = (center, radius) -> center
+    return SampledBoxMap(map, domain_points, image_points)
 end
 
 boxmap(f, points) = PointDiscretizedMap(f, points)
+
+function sample_adaptive(Df, center::SVector{N,T}) where {N,T}
+    D = Df(center)
+    _, σ, Vt = svd(D)
+    n = ceil.(Int, σ) 
+    h = 2.0./(n.-1)
+    points = Array{SVector{N,T}}(undef, ntuple(i->n[i], N))
+    for i in CartesianIndices(points)
+        points[i] = ntuple(k -> n[k]==1 ? 0.0 : (i[k]-1)*h[k]-1.0, N)
+        points[i] = Vt'*points[i]
+    end   
+    return points 
+end
+
+function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
+    Df = x -> ForwardDiff.jacobian(f, x)
+    domain_points = (center, radius) -> sample_adaptive(Df, center)
+
+    vertices = Array{SVector{N,T}}(undef, ntuple(k->2, N))
+    for i in CartesianIndices(vertices)
+        vertices[i] = ntuple(k -> (-1.0)^i[k], N)
+    end   
+    image_points = (center, radius) -> vertices
+    return SampledBoxMap(f, domain_points, image_points)
+end
 
 struct ParallelBoxIterator{M <: BoxMap,SP,SS,TP}
     boxmap::M
@@ -25,14 +57,17 @@ end
 
     j = 0
 
-    while boxes_iter <= length(boxes) && j < length(workinput)
+    while boxes_iter <= length(boxes) 
         source = boxes[boxes_iter]
         boxes_iter += 1
         box = key_to_box(source_partition, source)
+        center, radius = box.center, box.radius
+        points = iter.boxmap.points(center, radius)
+        resize!(workinput, length(workinput) + length(points))
 
-        for point in iter.boxmap.points
+        for point in points
             j += 1
-            workinput[j] = (point, source, box)
+            workinput[j] = (center .+ radius.*point, source, box)
         end
     end
 
@@ -47,8 +82,7 @@ end
 
     @Threads.threads for i = 1:length(workoutput)
         point, source, box = workinput[i]
-        center, radius = box.center, box.radius
-        fp = f(center .+ radius .* point)
+        fp = f(point)
         target = point_to_key(target_partition, fp)
 
         workoutput[i] = target
@@ -81,12 +115,14 @@ end
 @inline function Base.iterate(iter::ParallelBoxIterator)
     boxes = collect(iter.boxset.set)
     boxes_iter = 1
+    box = key_to_box(iter.boxset.partition, boxes[boxes_iter])
+    #p = iter.boxmap.points(box.center, box.radius)  # only for testing the eltype and the size
 
     # vector of (point, sourcekey, box)
-    workinput_eltype = Tuple{eltype(iter.boxmap.points),sourcekeytype(typeof(iter)),eltype(iter.boxset)}
-    workinput = Vector{workinput_eltype}(undef, 100 * length(iter.boxmap.points))
+    workinput_eltype = Tuple{typeof(box.center), sourcekeytype(typeof(iter)), eltype(iter.boxset)}
+    workinput = Vector{workinput_eltype}(undef, 1)
 
-    workoutput = Union{targetkeytype(typeof(iter)),Nothing}[]
+    workoutput = Union{targetkeytype(typeof(iter)), Nothing}[]
     workoutput_iter = 1
 
     return iterate(iter, (boxes, boxes_iter, workinput, workoutput, workoutput_iter))
@@ -124,7 +160,7 @@ function map_boxes_with_target(g::BoxMap, source::BoxSet, target::BoxSet)
     return result
 end
 
-function (g::PointDiscretizedMap)(source::BoxSet; target = nothing)
+function (g::BoxMap)(source::BoxSet; target = nothing)
     if isnothing(target)
         return map_boxes(g, source)
     else
