@@ -39,6 +39,14 @@ keys_all(partition::RegularPartition) = 1:2^depth(partition)
 
 Base.size(partition::RegularPartition) = partition.dims.data
 
+function Base.show(io::IO, partition::RegularPartition) 
+    print(io, "$(partition.dims[1])")
+    for k = 2:length(partition.left)
+        print(io, " x $(partition.dims[k])")
+    end 
+    print(io, " RegularPartition")
+end
+
 function key_to_box(partition::RegularPartition{N,T}, key::Int) where {N,T}
     dims = size(partition)
 
