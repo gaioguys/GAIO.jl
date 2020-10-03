@@ -59,7 +59,7 @@ function lorenz(depth)
     #@btime $g_adaptive($B)
     #g1B = g_points_1(B); @show length(g1B)
     gaB = g_adaptive(B); @show length(gaB)
-    @show g_adaptive.images(point, point)
+    @show g_adaptive.image_points(point, point)
 
     #unstable_set!($boxset, $g_points_1)
 end

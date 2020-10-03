@@ -1,15 +1,15 @@
 abstract type BoxMap end
 
 struct SampledBoxMap{F,P,I} <: BoxMap
-    f::F       
-    points::P
-    images::I    
+    map::F       
+    domain_points::P
+    image_points::I    
 end
 
-function PointDiscretizedMap(f, p::AbstractArray) 
-    points = (center, radius) -> p
-    images = (center, radius) -> center
-    return SampledBoxMap(f, points, images)
+function PointDiscretizedMap(map, points::AbstractArray) 
+    domain_points = (center, radius) -> points
+    image_points = (center, radius) -> center
+    return SampledBoxMap(map, domain_points, image_points)
 end
 
 boxmap(f, points) = PointDiscretizedMap(f, points)
@@ -29,14 +29,14 @@ end
 
 function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     Df = x -> ForwardDiff.jacobian(f, x)
-    points = (center, radius) -> sample_adaptive(Df, center)
+    domain_points = (center, radius) -> sample_adaptive(Df, center)
 
     vertices = Array{SVector{N,T}}(undef, ntuple(k->2, N))
     for i in CartesianIndices(vertices)
         vertices[i] = ntuple(k -> (-1.0)^i[k], N)
     end   
-    images = (center, radius) -> vertices
-    return SampledBoxMap(f, points, images)
+    image_points = (center, radius) -> vertices
+    return SampledBoxMap(f, domain_points, image_points)
 end
 
 struct ParallelBoxIterator{M <: BoxMap,SP,SS,TP}
