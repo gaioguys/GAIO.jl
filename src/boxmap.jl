@@ -55,41 +55,36 @@ end
 
 @noinline function fill_cache!(iter, boxes, boxes_iter, workinput, workoutput, workoutput_iter)
     source_partition = iter.boxset.partition
+    target_partition = iter.target_partition
+    f = iter.boxmap
 
     j = 0
-
-    while boxes_iter <= length(boxes) 
+    while boxes_iter <= length(boxes) && j < length(workinput)
         source = boxes[boxes_iter]
-        boxes_iter += 1
         box = key_to_box(source_partition, source)
         center, radius = box.center, box.radius
-        domain_points = iter.boxmap.domain_points(center, radius)
-        image_points  = iter.boxmap.image_points(center, radius)
-        resize!(workinput, length(workinput) + length(domain_points))
-        resize!(workoutput, length(workoutput) + length(domain_points))
-
-        for point in domain_points
+        points = f.domain_points(center, radius)
+        if j + length(points) > length(workinput)
+            resize!(workinput, j+length(points))
+        end
+        for point in points
             j += 1
             workinput[j] = (center .+ radius.*point, source, box)
         end
+        boxes_iter += 1
+     end
+    
+    resize!(workoutput, j)
+    
+    if j > 0
+        @Threads.threads for i = 1:length(workoutput)
+            point, source, box = workinput[i]
+            fp = f.map(point)
+            target = point_to_key(target_partition, fp)
+            workoutput[i] = target
+        end
     end
     
-    if j == 0
-        return boxes_iter
-    end
-
-    target_partition = iter.target_partition
-    f = iter.boxmap.map
-
-    @Threads.threads for i = 1:length(workinput)
-        @show i
-        point, source, box = workinput[i]
-        fp = f(point)
-        target = point_to_key(target_partition, fp)
-
-        workoutput[i] = target
-    end
-
     return boxes_iter
 end
 
@@ -97,38 +92,36 @@ end
     boxes, boxes_iter, workinput, workoutput, workoutput_iter = state
 
     if workoutput_iter > length(workoutput)
+        @show length(workoutput)
         boxes_iter = fill_cache!(iter, boxes, boxes_iter, workinput, workoutput, workoutput_iter)
-
-        if isempty(workoutput)
-            return nothing
-        end
-
         workoutput_iter = 1
     end
 
-    source = workinput[workoutput_iter][2]
-    target = workoutput[workoutput_iter]
-
-    workoutput_iter += 1
-    @show workoutput_iter
-
-    return (source, target), (boxes, boxes_iter, workinput, workoutput, workoutput_iter)
+    if isempty(workoutput)
+        return nothing
+    else
+        source = workinput[workoutput_iter][2]
+        target = workoutput[workoutput_iter]
+        workoutput_iter += 1
+        state = (boxes, boxes_iter, workinput, workoutput, workoutput_iter)
+        return (source, target), state
+    end
 end
 
 @inline function Base.iterate(iter::ParallelBoxIterator)
     boxes = collect(iter.boxset.set)
     boxes_iter = 1
     box = key_to_box(iter.boxset.partition, boxes[boxes_iter])
-    #p = iter.boxmap.points(box.center, box.radius)  # only for testing the eltype and the size
-
+ 
     # tuple of (point, sourcekey, box)
     workinput_eltype = Tuple{typeof(box.center), sourcekeytype(typeof(iter)), eltype(iter.boxset)}
-    workinput = Vector{workinput_eltype}(undef, 0)
+    workinput = Vector{workinput_eltype}(undef, 100)
 
     workoutput = Union{targetkeytype(typeof(iter)), Nothing}[]
     workoutput_iter = 1
 
-    return iterate(iter, (boxes, boxes_iter, workinput, workoutput, workoutput_iter))
+    state = (boxes, boxes_iter, workinput, workoutput, workoutput_iter)
+    return iterate(iter, state)
 end
 
 Base.length(iter::ParallelBoxIterator) = length(iter.boxmap.points) * length(iter.boxset)
