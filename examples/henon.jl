@@ -18,7 +18,8 @@ g_points_1 = PointDiscretizedMap(f, points1)
 partition = RegularPartition(domain, 12)
 point = ntuple(i->rand(2), 1)
 B = partition[point]
-g1B = g_points_1(B); length(g1B)
+g1B = g_points_1(B); 
+length(g1B)
 gaB = g_adaptive(B); length(gaB)
    #A = relative_attractor(boxset, g, 10)
     #gstar = TransferOperator(g, A)
