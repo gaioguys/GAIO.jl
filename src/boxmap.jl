@@ -102,6 +102,23 @@ function Base.eltype(t::Type{<:ParallelBoxIterator})
     return Union{Tuple{sourcekeytype(t),targetkeytype(t)},Tuple{sourcekeytype(t),Nothing}}
 end
 
+function map_boxes_new(g::BoxMap, source::BoxSet)
+    P, keys = source.partition, collect(source.set)
+    image = [ Set{eltype(keys)}() for k = 1:nthreads() ]
+    @threads for key in keys
+        box = key_to_box(P, key)
+        c, r = box.center, box.radius
+        for p in g.points
+            fp = g.f(c.+r.*p)
+            hit = point_to_key(P, fp)
+            if hit !== nothing
+                push!(image[threadid()], hit)
+            end
+        end
+    end
+    BoxSet(P, union(image...))
+end 
+
 function map_boxes(g::BoxMap, source::BoxSet)
     result = boxset_empty(source.partition)
 
