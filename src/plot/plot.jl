@@ -448,3 +448,14 @@ end
 function plot(boxset::BoxSet{<:BoxPartition{<:Box{N}}}) where N
     return plot([GLBox{N}(box.center.data, box.radius.data, (1.0f0, 1.0f0, 1.0f0, 1.0f0)) for box in boxset])
 end
+
+function plot(boxfun::BoxFun)
+    barlist = GLBar1D[]
+
+    for (key, value) in boxfun.dict
+        box = key_to_box(boxfun.partition, key)
+        push!(barlist, GLBar1D(box.center[1], box.radius[1], value))
+    end
+
+    plot(barlist)
+end
