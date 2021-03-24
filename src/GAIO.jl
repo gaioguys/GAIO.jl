@@ -7,6 +7,7 @@ using GLFW
 using ModernGL
 using LightGraphs
 using Arpack
+using Base.Threads
 
 export Box
 
@@ -22,7 +23,7 @@ export TransferOperator
 export strongly_connected_components, matrix, eigs
 
 export BoxMap, PointDiscretizedMap
-export boxmap
+export boxmap, map_boxes, map_boxes_new
 
 export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots
 
