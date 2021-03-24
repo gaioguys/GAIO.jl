@@ -7,6 +7,10 @@ end
 
 boxmap(f, points) = PointDiscretizedMap(f, points)
 
+function Base.show(io::IO, g::PointDiscretizedMap)
+    print(io, "PointDiscretizedMap with $(length(g.points)) sample points")
+end
+
 struct ParallelBoxIterator{M <: BoxMap,SP,SS,TP}
     boxmap::M
     boxset::BoxSet{SP,SS}
@@ -98,6 +102,23 @@ function Base.eltype(t::Type{<:ParallelBoxIterator})
     return Union{Tuple{sourcekeytype(t),targetkeytype(t)},Tuple{sourcekeytype(t),Nothing}}
 end
 
+function map_boxes_new(g::BoxMap, source::BoxSet)
+    P, keys = source.partition, collect(source.set)
+    image = [ Set{eltype(keys)}() for k = 1:nthreads() ]
+    @threads for key in keys
+        box = key_to_box(P, key)
+        c, r = box.center, box.radius
+        for p in g.points
+            fp = g.f(c.+r.*p)
+            hit = point_to_key(P, fp)
+            if hit !== nothing
+                push!(image[threadid()], hit)
+            end
+        end
+    end
+    BoxSet(P, union(image...))
+end 
+
 function map_boxes(g::BoxMap, source::BoxSet)
     result = boxset_empty(source.partition)
 
@@ -132,36 +153,45 @@ function (g::PointDiscretizedMap)(source::BoxSet; target = nothing)
     end
 end
 
-function map_boxes_to_edges(g::BoxMap, source::BoxSet)
-    K = keytype(typeof(source.partition))
-    edges = Set{Tuple{K,K}}()
+function invert_vector(x::AbstractVector{T}) where T
+    dict = Dict{T,Int}()
+    sizehint!(dict, length(x))
 
-    for (src, hit) in ParallelBoxIterator(g, source)
+    for i in 1:length(x)
+        dict[x[i]] = i
+    end
+
+    return dict
+end
+
+# TODO: this code is generally incorrect. only valid for RegularPartition and special choices of points
+function TransferOperator(g::PointDiscretizedMap, boxset::BoxSet)
+    boxlist = BoxList(boxset)
+    K = keytype(typeof(boxset.partition))
+    edges = Dict{Tuple{K,K},Int}()
+    #n = 0
+
+    for (src, hit) in ParallelBoxIterator(g, boxset)
         if hit !== nothing # check that point was inside domain
-            if hit in source.set
-                push!(edges, (src, hit))
+            if hit in boxset.set
+                # TODO: this calculates the hash of (src, hit) twice
+                # improve this once https://github.com/JuliaLang/julia/issues/31199 is resolved
+                edges[(src, hit)] = get(edges, (src, hit), 0) + 1
+                #n += 1
             end
         end
     end
 
-    vertex_to_key = K[]
-    key_to_vertex = Dict{K,Int}()
-    keyset = keys(key_to_vertex)
-    edges_translated = Tuple{Int,Int}[]
-    
-    for (src, hit) in edges
-        if !(src in keyset)
-            push!(vertex_to_key, src)
-            key_to_vertex[src] = length(vertex_to_key)
-        end
+    key_to_int = invert_vector(boxlist.keylist)
 
-        if !(hit in keyset)
-            push!(vertex_to_key, hit)
-            key_to_vertex[hit] = length(vertex_to_key)
-        end
+    edges_normed = Dict{Tuple{Int,Int},Float64}()
+    sizehint!(edges_normed, length(edges))
 
-        push!(edges_translated, (key_to_vertex[src], key_to_vertex[hit]))
+    n = length(g.points)
+
+    for (edge, weight) in edges
+        edges_normed[(key_to_int[edge[1]], key_to_int[edge[2]])] = weight / n
     end
 
-    return edges_translated, vertex_to_key
+    return TransferOperator(boxlist, edges_normed)
 end

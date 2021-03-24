@@ -14,6 +14,10 @@ Base.copy(partition::TreePartition) = TreePartition(partition.domain, copy(parti
 depth(partition::TreePartition) = length(partition.regular_partitions) - 1
 keytype(::Type{<:TreePartition}) = Tuple{Int,Int}
 
+function Base.show(io::IO, partition::TreePartition) 
+    print(io, "TreePartition of depth $(depth(partition))")
+end
+
 function keys_all(partition::TreePartition)
     if depth(partition) != 0
         error("not implemented")

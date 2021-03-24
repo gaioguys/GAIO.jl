@@ -35,3 +35,4 @@ function ∘(f, boxfun::BoxFun{P,K,V}) where {P,K,V}
 
     return BoxFun(boxfun.partition, dict)
 end
+
