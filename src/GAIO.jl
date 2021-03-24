@@ -25,7 +25,10 @@ export strongly_connected_components, matrix, eigs
 export BoxMap, PointDiscretizedMap
 export boxmap, map_boxes, map_boxes_new
 
-export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots
+export BoxFun
+
+export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots,
+       finite_time_lyapunov_exponents
 
 export plot
 
@@ -36,9 +39,9 @@ abstract type BoxPartition{B <: Box} end
 include("partition_regular.jl")
 include("partition_tree.jl")
 include("boxset.jl")
-include("boxfun.jl")
-include("transfer_operator.jl")
 include("boxmap.jl")
+include("boxfun.jl")  
+include("transfer_operator.jl")
 include("algorithms.jl")
 
 # visualization
