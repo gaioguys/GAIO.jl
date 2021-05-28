@@ -445,10 +445,6 @@ function plot(boxes::Vector{GLBox{3}})
     return nothing
 end
 
-function plot(boxset::BoxSet{<:BoxPartition{<:Box{N}}}) where N
-    return plot([GLBox{N}(box.center.data, box.radius.data, (1.0f0, 1.0f0, 1.0f0, 1.0f0)) for box in boxset])
-end
-
 function plot(boxfun::BoxFun)
     barlist = GLBar1D[]
 
