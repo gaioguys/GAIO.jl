@@ -1,3 +1,6 @@
+using GAIO
+using Makie
+
 @inline function rk4(f, x, τ)
     τ½ = τ/2
 
@@ -34,19 +37,17 @@ function lorenz_f(x)
     return x
 end
 
-function lorenz()
-    grid = LinRange(-1, 1, 7)
-    points = collect(Iterators.product(grid, grid, grid))
-    g = PointDiscretizedMap(lorenz_f, points)
+grid = LinRange(-1, 1, 7)
+points = collect(Iterators.product(grid, grid, grid))
 
-    domain = Box(SVector(0.0, 0.0, 27.0), SVector(30.0, 30.0, 40.0))
-    partition = RegularPartition(domain, 24)
+g = PointDiscretizedMap(lorenz_f, points)
 
-    rh = 28.0
-    b = 0.4
+domain = Box((0.0, 0.0, 27.0), (30.0, 30.0, 40.0))
+depth = 18
+partition = RegularPartition(domain, depth)
+rho, b = 28.0, 0.4
+x0 = (sqrt(b*(rho-1)), sqrt(b*(rho-1)), rho-1)
+boxset = partition[x0]
 
-    x0 = (sqrt(b*(rh-1)), sqrt(b*(rh-1)), rh-1)
-
-    boxset = partition[x0]
-    return unstable_set!(g, boxset)
-end
+W = unstable_set!(g, boxset)
+plot(W, color = :red, figure = (resolution = (1200, 900),))

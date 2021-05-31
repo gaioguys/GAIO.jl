@@ -5,6 +5,8 @@ using SparseArrays
 using StaticArrays
 using GLFW
 using ModernGL
+using GeometryBasics
+using Makie, GLMakie, WGLMakie, CairoMakie
 using LightGraphs
 using Arpack
 using Base.Threads
@@ -25,8 +27,6 @@ export strongly_connected_components, matrix, eigs
 export BoxMap, PointDiscretizedMap
 export boxmap, map_boxes, map_boxes_new
 
-export BoxFun
-
 export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots,
        finite_time_lyapunov_exponents
 
@@ -43,10 +43,6 @@ include("boxmap.jl")
 include("boxfun.jl")  
 include("transfer_operator.jl")
 include("algorithms.jl")
-
-# visualization
-include("plot/shader.jl")
-include("plot/camera.jl")
-include("plot/plot.jl")
+include("plot.jl")
 
 end # module
