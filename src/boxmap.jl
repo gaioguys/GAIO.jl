@@ -164,34 +164,4 @@ function invert_vector(x::AbstractVector{T}) where T
     return dict
 end
 
-# TODO: this code is generally incorrect. only valid for RegularPartition and special choices of points
-function TransferOperator(g::PointDiscretizedMap, boxset::BoxSet)
-    boxlist = BoxList(boxset)
-    K = keytype(typeof(boxset.partition))
-    edges = Dict{Tuple{K,K},Int}()
-    #n = 0
 
-    for (src, hit) in ParallelBoxIterator(g, boxset)
-        if hit !== nothing # check that point was inside domain
-            if hit in boxset.set
-                # TODO: this calculates the hash of (src, hit) twice
-                # improve this once https://github.com/JuliaLang/julia/issues/31199 is resolved
-                edges[(src, hit)] = get(edges, (src, hit), 0) + 1
-                #n += 1
-            end
-        end
-    end
-
-    key_to_int = invert_vector(boxlist.keylist)
-
-    edges_normed = Dict{Tuple{Int,Int},Float64}()
-    sizehint!(edges_normed, length(edges))
-
-    n = length(g.points)
-
-    for (edge, weight) in edges
-        edges_normed[(key_to_int[edge[1]], key_to_int[edge[2]])] = weight / n
-    end
-
-    return TransferOperator(boxlist, edges_normed)
-end
