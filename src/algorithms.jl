@@ -23,8 +23,8 @@ end
 function chain_recurrent_set(g::BoxMap, boxset::BoxSet, depth::Int)
     for k in 1:depth
         boxset = subdivide(boxset)
-        G = transition_graph(g, boxset)
-        boxset = strongly_connected_components(G)
+        T = TransferOperator(g, boxset)
+        boxset = strongly_connected_components(T)
     end
 
     return boxset
@@ -117,7 +117,7 @@ end
     return @. x+τ*dx
 end
 
-function rk4_flow_map(v, x, step_size=0.01, steps=20)
+function rk4_flow_map(v, x; step_size=0.01, steps=20)
     for i = 1:steps
         x = rk4(v, x, step_size)
     end
