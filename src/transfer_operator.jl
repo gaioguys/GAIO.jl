@@ -38,7 +38,8 @@ function TransferOperator(g::SampledBoxMap, boxset::BoxSet)
     edges_normed = Dict{Tuple{Int,Int},Float64}()
     sizehint!(edges_normed, length(edges))
 
-    n = length(g.points)
+    Q = g.domain    
+    n = length(g.domain_points(Q.center, Q.radius))
 
     for (edge, weight) in edges
         edges_normed[(key_to_int[edge[1]], key_to_int[edge[2]])] = weight / n
