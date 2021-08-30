@@ -6,7 +6,7 @@ using StaticArrays
 using GLFW
 using ModernGL
 using GeometryBasics
-using Makie, GLMakie, WGLMakie, CairoMakie
+using GLMakie
 using LightGraphs
 using ForwardDiff
 using Arpack
@@ -30,6 +30,8 @@ export SampledBoxMap, AdaptiveBoxMap
 export boxmap
 
 export map_boxes, map_boxes_new
+
+export rk4, rk4_flow_map
 
 export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots, finite_time_lyapunov_exponents
 

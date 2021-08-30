@@ -1,21 +1,30 @@
 abstract type BoxMap end
 
-struct SampledBoxMap{F,P,I} <: BoxMap
-    map::F       
+struct SampledBoxMap{F,N,T,P,I} <: BoxMap
+    map::F
+    domain::Box{N,T}
     domain_points::P
     image_points::I    
 end
 
-function PointDiscretizedMap(map, points::AbstractArray) 
+function PointDiscretizedMap(map, domain, points::AbstractArray) 
     domain_points = (center, radius) -> points
     image_points = (center, radius) -> center
     return SampledBoxMap(map, domain_points, image_points)
 end
 
-boxmap(f, points) = PointDiscretizedMap(f, points)
+function BoxMap(map, domain::Box{N,T}, no_of_points=20*N) where {N,T}
+    points = [ 2.0*rand(N).-1.0 for _ = 1:no_of_points ] 
+    domain_points = (center, radius) -> points
+    image_points = (center, radius) -> center
+    return SampledBoxMap(map, domain, domain_points, image_points)
+end
 
-function Base.show(io::IO, g::PointDiscretizedMap)
-    print(io, "PointDiscretizedMap with $(length(g.points)) sample points")
+function Base.show(io::IO, g::SampledBoxMap)
+    center, radius = g.domain.center, g.domain.radius
+    n = length(g.domain_points(center, radius))
+    print(io, "BoxMap with $(n) sample points")
+end
 
 function sample_adaptive(Df, center::SVector{N,T}) where {N,T}
     D = Df(center)
@@ -95,7 +104,6 @@ end
     boxes, boxes_iter, workinput, workoutput, workoutput_iter = state
 
     if workoutput_iter > length(workoutput)
-        @show length(workoutput)
         boxes_iter = fill_cache!(iter, boxes, boxes_iter, workinput, workoutput, workoutput_iter)
         workoutput_iter = 1
     end

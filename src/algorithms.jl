@@ -97,3 +97,29 @@ function finite_time_lyapunov_exponents(boxset::BoxSet, g; T, num_points=20, ϵ=
     
     return BoxFun(boxset.partition,dict)
 end
+
+# Runge-Kutta scheme of 4th order
+@inline function rk4(f, x, τ)
+    τ½ = τ/2
+
+    k = f(x)
+    dx = @. k/6
+
+    k = f(@. x+τ½*k)
+    dx = @. dx + k/3
+
+    k = f(@. x+τ½*k)
+    dx = @. dx + k/3
+
+    k = f(@. x+τ*k)
+    dx = @. dx + k/6
+
+    return @. x+τ*dx
+end
+
+function rk4_flow_map(v, x, step_size=0.01, steps=20)
+    for i = 1:steps
+        x = rk4(v, x, step_size)
+    end
+    return x
+end
