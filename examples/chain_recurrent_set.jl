@@ -1,3 +1,10 @@
+using GAIO
+using Interpolations
+using QuadGK
+using LinearAlgebra
+using StaticArrays
+
+# a vector field exhibiting a knotted trajectory
 function knotted_v(x, tol)
     A = 2
     B = 1
@@ -38,7 +45,7 @@ function knotted_v(x, tol)
         dγt = d(x, γt)
         σγ = σ(γdt ./ nγdt)
         val = nγdt .* dγt .* σγ
-        return SVector(val[1], val[2], nγdt * dγt)
+        return (val[1], val[2], nγdt * dγt)
     end, 0, T, rtol=tol)
 
     nom = (int[1], int[2])
@@ -50,12 +57,10 @@ function knotted_v(x, tol)
 
     return σ_inv(w)
 end
-
 # interpolate the function v on the mesh [a,b]^3 with n equidistant nodes
-# for simplicity we use linear B-Splines, using the equidistant mesh
-# the interpolant will only be defined on [a,b]^3, so we have to adjust it to the dynamical system
-function knotted_interpolate_v(a, b, n, tol)
-    val = Array{SVector{3,Float64},3}(undef, n, n, n)
+# using linear B-Splines
+function interpolate_v(v, a, b, n, tol)
+    val = Array{Vector{3,Float64},3}(undef, n, n, n)
     x = range(a, b, length = n)
     y = range(a, b, length = n)
     z = range(a, b, length = n)
@@ -63,7 +68,7 @@ function knotted_interpolate_v(a, b, n, tol)
     @Threads.threads for i in 1:n
         for j in 1:n
             for k in 1:n
-                val[i,j,k] = SVector(knotted_v((x[i], y[j], z[k]), tol))
+                val[i,j,k] = v((x[i], y[j], z[k]), tol)
             end
         end
     end
@@ -74,72 +79,17 @@ function knotted_interpolate_v(a, b, n, tol)
     return t -> sitp(t[1], t[2], t[3])
 end
 
-# do n steps of Runge-Kutta 4 with stepsize h
-function knotted_f(v::F, x) where F
-    h = 0.1
-    n = 15
+v = interpolate_v(knotted_v, -3.5, 3.5, 30, 1e-12)
 
-    for i in 1:n
-        x = rk4(v, x, h)
-    end
+center, radius = (0.0, 0.0, 0.0), (2.0, 2.0, 2.0)
+Q = Box(center, radius)
+P = RegularPartition(Q)
 
-    return x
-end
+f(x) = rk4_flow_map(v, x, step_size = 0.075)
+F = BoxMap(f, Q, no_of_points = 200)
 
-function knotted_flow(depth)
-    n = 40
+depth = 18
+@time C = chain_recurrent_set(F, P[:], depth)
 
-    points = [
-        [(x, -1.0, 1.0) for x in LinRange(-1, 1, n)];
-        [(x,  1.0, 1.0) for x in LinRange(-1, 1, n)];
-        [(x, -1.0, -1.0) for x in LinRange(-1, 1, n)];
-        [(x,  1.0, -1.0) for x in LinRange(-1, 1, n)];
-        
-        [(-1.0, x, 1.0) for x in LinRange(-1, 1, n)];
-        [(1.0, x, 1.0) for x in LinRange(-1, 1, n)];
-        [(-1.0, x, -1.0) for x in LinRange(-1, 1, n)];
-        [(1.0, x, -1.0) for x in LinRange(-1, 1, n)];
-        
-        [(-1.0, 1.0, x) for x in LinRange(-1, 1, n)];
-        [(1.0, 1.0, x) for x in LinRange(-1, 1, n)];
-        [(-1.0, -1.0, x) for x in LinRange(-1, 1, n)];
-        [(1.0, -1.0, x) for x in LinRange(-1, 1, n)];
-    ]
+plot(C, color =:red)
 
-    f = knotted_interpolate_v(-3.5, 3.5, 30, 1e-12)
-
-    g = PointDiscretizedMap(x -> knotted_f(f, x), points)
-    partition = RegularPartition(Box(SVector(0.0, 0.0, 0.0), SVector(2.0, 2.0, 2.0)))
-    boxset = partition[:]
-
-    return chain_recurrent_set(boxset, g, depth)
-end
-
-function knotted_flow_rga(depth)
-    n = 40
-
-    points = [
-        [(x, -1.0, 1.0) for x in LinRange(-1, 1, n)];
-        [(x,  1.0, 1.0) for x in LinRange(-1, 1, n)];
-        [(x, -1.0, -1.0) for x in LinRange(-1, 1, n)];
-        [(x,  1.0, -1.0) for x in LinRange(-1, 1, n)];
-        
-        [(-1.0, x, 1.0) for x in LinRange(-1, 1, n)];
-        [(1.0, x, 1.0) for x in LinRange(-1, 1, n)];
-        [(-1.0, x, -1.0) for x in LinRange(-1, 1, n)];
-        [(1.0, x, -1.0) for x in LinRange(-1, 1, n)];
-        
-        [(-1.0, 1.0, x) for x in LinRange(-1, 1, n)];
-        [(1.0, 1.0, x) for x in LinRange(-1, 1, n)];
-        [(-1.0, -1.0, x) for x in LinRange(-1, 1, n)];
-        [(1.0, -1.0, x) for x in LinRange(-1, 1, n)];
-    ]
-
-    f = knotted_interpolate_v(-4.5, 4.5, 40, 1e-12)
-
-    g = PointDiscretizedMap(x -> knotted_f(f, x), points)
-    partition = RegularPartition(Box(SVector(0.0, 0.0, 0.0), SVector(3.0, 3.0, 3.0)))
-    boxset = partition[:]
-
-    return relative_attractor(g, boxset, depth)
-end
