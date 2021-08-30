@@ -1,9 +1,12 @@
 module GAIO
 
 using LinearAlgebra
+using SparseArrays
 using StaticArrays
 using GLFW
 using ModernGL
+using GeometryBasics
+using Makie, GLMakie, WGLMakie, CairoMakie
 using LightGraphs
 using ForwardDiff
 using Arpack
@@ -40,11 +43,9 @@ include("partition_regular.jl")
 include("partition_tree.jl")
 include("boxset.jl")
 include("boxmap.jl")
+include("boxfun.jl")  
+include("transfer_operator.jl")
 include("algorithms.jl")
-
-# visualization
-include("plot/shader.jl")
-include("plot/camera.jl")
-include("plot/plot.jl")
+include("plot.jl")
 
 end # module

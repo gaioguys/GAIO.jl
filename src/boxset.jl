@@ -3,6 +3,12 @@ struct BoxSet{P <: BoxPartition,S <: AbstractSet}
     set::S
 end
 
+function Base.show(io::IO, boxset::BoxSet) 
+    size = length(boxset.set)
+    dim = length(boxset.partition.domain.center)
+    print(io, "$size-element BoxSet in dimension $dim\n")
+end
+
 function boxset_empty(partition::P) where P <: BoxPartition
     return BoxSet(partition, Set{keytype(P)}())
 end

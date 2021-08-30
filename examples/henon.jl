@@ -12,7 +12,7 @@ partition = RegularPartition(domain)
 boxset = partition[:]
 
 steps = 18
-A = relative_attractor(boxset, boxmap, steps)
+A = relative_attractor(boxmap, boxset, steps)
 
 plot(A)
 

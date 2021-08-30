@@ -33,19 +33,9 @@ end
 function yaw!(camera, angle)
     @. camera.forward = cos(angle) * camera.forward + sin(angle) * camera.along
 
-    camera.forward .*= inv(norm(camera.forward))
+    normalize!(camera.forward)
 
     camera.along .= cross(camera.forward, camera.up)
-
-    return camera
-end
-
-function pitch!(camera, angle)
-    @. camera.forward = cos(angle) * camera.forward + sin(angle) * camera.up
-
-    camera.forward .*= inv(norm(camera.forward))
-
-    camera.up .= -cross(camera.forward, camera.along)
 
     return camera
 end

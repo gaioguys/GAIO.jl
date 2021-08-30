@@ -133,6 +133,23 @@ function Base.eltype(t::Type{<:ParallelBoxIterator})
     return Union{Tuple{sourcekeytype(t),targetkeytype(t)},Tuple{sourcekeytype(t),Nothing}}
 end
 
+function map_boxes_new(g::BoxMap, source::BoxSet)
+    P, keys = source.partition, collect(source.set)
+    image = [ Set{eltype(keys)}() for k = 1:nthreads() ]
+    @threads for key in keys
+        box = key_to_box(P, key)
+        c, r = box.center, box.radius
+        for p in g.points
+            fp = g.f(c.+r.*p)
+            hit = point_to_key(P, fp)
+            if hit !== nothing
+                push!(image[threadid()], hit)
+            end
+        end
+    end
+    BoxSet(P, union(image...))
+end 
+
 function map_boxes(g::BoxMap, source::BoxSet)
     result = boxset_empty(source.partition)
 
@@ -167,36 +184,15 @@ function (g::BoxMap)(source::BoxSet; target = nothing)
     end
 end
 
-function map_boxes_to_edges(g::BoxMap, source::BoxSet)
-    K = keytype(typeof(source.partition))
-    edges = Set{Tuple{K,K}}()
+function invert_vector(x::AbstractVector{T}) where T
+    dict = Dict{T,Int}()
+    sizehint!(dict, length(x))
 
-    for (src, hit) in ParallelBoxIterator(g, source)
-        if hit !== nothing # check that point was inside domain
-            if hit in source.set
-                push!(edges, (src, hit))
-            end
-        end
+    for i in 1:length(x)
+        dict[x[i]] = i
     end
 
-    vertex_to_key = K[]
-    key_to_vertex = Dict{K,Int}()
-    keyset = keys(key_to_vertex)
-    edges_translated = Tuple{Int,Int}[]
-    
-    for (src, hit) in edges
-        if !(src in keyset)
-            push!(vertex_to_key, src)
-            key_to_vertex[src] = length(vertex_to_key)
-        end
-
-        if !(hit in keyset)
-            push!(vertex_to_key, hit)
-            key_to_vertex[hit] = length(vertex_to_key)
-        end
-
-        push!(edges_translated, (key_to_vertex[src], key_to_vertex[hit]))
-    end
-
-    return edges_translated, vertex_to_key
+    return dict
 end
+
+
