@@ -45,7 +45,7 @@ function knotted_v(x, tol)
         dγt = d(x, γt)
         σγ = σ(γdt ./ nγdt)
         val = nγdt .* dγt .* σγ
-        return (val[1], val[2], nγdt * dγt)
+        return SVector(val[1], val[2], nγdt * dγt)
     end, 0, T, rtol=tol)
 
     nom = (int[1], int[2])
@@ -60,7 +60,7 @@ end
 # interpolate the function v on the mesh [a,b]^3 with n equidistant nodes
 # using linear B-Splines
 function interpolate_v(v, a, b, n, tol)
-    val = Array{Vector{3,Float64},3}(undef, n, n, n)
+    val = Array{SVector{3,Float64},3}(undef, n, n, n)
     x = range(a, b, length = n)
     y = range(a, b, length = n)
     z = range(a, b, length = n)
@@ -68,7 +68,7 @@ function interpolate_v(v, a, b, n, tol)
     @Threads.threads for i in 1:n
         for j in 1:n
             for k in 1:n
-                val[i,j,k] = v((x[i], y[j], z[k]), tol)
+                val[i,j,k] = SVector(v((x[i], y[j], z[k]), tol))
             end
         end
     end
