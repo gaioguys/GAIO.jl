@@ -14,6 +14,9 @@ end
 
 boxmap(f, points) = PointDiscretizedMap(f, points)
 
+function Base.show(io::IO, g::PointDiscretizedMap)
+    print(io, "PointDiscretizedMap with $(length(g.points)) sample points")
+
 function sample_adaptive(Df, center::SVector{N,T}) where {N,T}
     D = Df(center)
     _, σ, Vt = svd(D)

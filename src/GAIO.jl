@@ -6,17 +6,29 @@ using GLFW
 using ModernGL
 using LightGraphs
 using ForwardDiff
+using Arpack
+using Base.Threads
 
-export Box, BoxSet
-export boxset_empty, subdivide, subdivide!
+export Box
 
 export BoxPartition, RegularPartition, TreePartition
 export dimension, depth
 
-export BoxMap, SampledBoxMap, PointDiscretizedMap, AdaptiveBoxMap
+export BoxSet
+export boxset_empty, subdivide, subdivide!
+
+export BoxFun
+
+export TransferOperator
+export strongly_connected_components, matrix, eigs
+
+export BoxMap, PointDiscretizedMap
+export SampledBoxMap, AdaptiveBoxMap
 export boxmap
 
-export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots
+export map_boxes, map_boxes_new
+
+export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots, finite_time_lyapunov_exponents
 
 export plot
 
