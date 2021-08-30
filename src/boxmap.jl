@@ -10,10 +10,10 @@ end
 function PointDiscretizedMap(map, domain, points::AbstractArray) 
     domain_points = (center, radius) -> points
     image_points = (center, radius) -> center
-    return SampledBoxMap(map, domain_points, image_points)
+    return SampledBoxMap(map, domain, domain_points, image_points)
 end
 
-function BoxMap(map, domain::Box{N,T}, no_of_points=20*N) where {N,T}
+function BoxMap(map, domain::Box{N,T}; no_of_points=20*N) where {N,T}
     points = [ 2.0*rand(N).-1.0 for _ = 1:no_of_points ] 
     domain_points = (center, radius) -> points
     image_points = (center, radius) -> center
