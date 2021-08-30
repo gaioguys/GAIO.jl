@@ -8,6 +8,7 @@ using ModernGL
 using GeometryBasics
 using Makie, GLMakie, WGLMakie, CairoMakie
 using LightGraphs
+using ForwardDiff
 using Arpack
 using Base.Threads
 
@@ -25,10 +26,12 @@ export TransferOperator
 export strongly_connected_components, matrix, eigs
 
 export BoxMap, PointDiscretizedMap
-export boxmap, map_boxes, map_boxes_new
+export SampledBoxMap, AdaptiveBoxMap
+export boxmap
 
-export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots,
-       finite_time_lyapunov_exponents
+export map_boxes, map_boxes_new
+
+export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots, finite_time_lyapunov_exponents
 
 export plot
 
