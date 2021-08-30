@@ -1,3 +1,6 @@
+using GAIO
+using StaticArrays
+
 # example functions
 # domain (-5,5)^2
 function example_g1(x)
@@ -37,16 +40,15 @@ function example_g5(x)
     return StaticArrays.SUnitRange(1, n) .* (1 .- c) - sin.(x) .+ (n - sum(c))
 end
 
-function example_cover_roots(depth)
-    dim = 8
-    n = 40
-    points = tuple.([2 .* rand(n) .- 1 for _ in 1:dim]...)
-    
-    g = example_g4
-    g_jacobian = x -> ForwardDiff.jacobian(g, x)
+dim = 3
+g = example_g4
+Dg = x -> ForwardDiff.jacobian(g, x)
 
-    partition = RegularPartition(Box([0.0 for _ in 1:dim], [40.0 for _ in 1:dim]))
-    boxset = partition[:]
+center, radius = [0.0 for _ in 1:dim], [40.0 for _ in 1:dim]
+Q = Box(center, radius)
+P = RegularPartition(Q)
 
-    return cover_roots(g, g_jacobian, boxset, points, depth)
-end
+depth = dim*8
+R = cover_roots(g, Dg, P[:], depth)
+
+plot(R)

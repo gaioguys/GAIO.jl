@@ -53,11 +53,13 @@ function adaptive_newton_step(g, g_jacobian, x, k)
     return x
 end
 
-function cover_roots(g, g_jacobian, boxset::BoxSet, points, depth::Int)
+function cover_roots(g, Dg, boxset::BoxSet, depth::Int)
+    domain = boxset.partition.domain
     for k in 1:depth
         boxset = subdivide(boxset)
-        g_k = PointDiscretizedMap(x -> adaptive_newton_step(g, g_jacobian, x, k), points)
-        boxset = g_k(boxset)
+        f = x -> adaptive_newton_step(g, Dg, x, k)
+        F_k = BoxMap(f, domain, no_of_points = 40)
+        boxset = F_k(boxset)
     end
 
     return boxset
