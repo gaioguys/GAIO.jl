@@ -72,7 +72,7 @@ boxset = partition[x0]
 g_adaptive = AdaptiveBoxMap(lorenz_f, domain)
 g_points = PointDiscretizedMap(lorenz_f, domain, points)
 
-point = ntuple(i->60.0*rand(3).-30.0, 100)
+point = ntuple(i->60.0*rand(3).-30.0, 10)
 B = partition[point]; @show length(B)
 
 @time g1B = g_points(B); @show length(g1B)
