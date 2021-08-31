@@ -5,10 +5,13 @@ using Test
 @testset "exported functionality" begin
     f(x) = x .^ 2
     test_points = [(-1.0, -1.0), (-1.0, 1.0), (1.0, -1.0), (1.0, 1.0)]
-    g = boxmap(f, test_points)
+    center = SVector(0.0, 0.0)
+    radius = SVector(1.0, 1.0)
+    domain = Box(center, radius)
+    g = PointDiscretizedMap(f, domain, test_points)
     @testset "basics" begin
         @test typeof(g) <: SampledBoxMap
-        partition = RegularPartition(Box(SVector(0.0, 0.0), SVector(1.0, 1.0)), 10)
+        partition = RegularPartition(domain, 10)
         p1 = SVector(0.0, 0.0)
         p2 = SVector(0.5, 0.0)
         p3 = SVector(0.0, -0.5)
@@ -43,9 +46,6 @@ using Test
         @test length(intersect(boxset, mapped2)) == length(mapped2)
     end
     @testset "points in boxmaps" begin
-        f(x) = x .^ 2
-        test_points = [(-1.0, -1.0), (-1.0, 1.0), (1.0, -1.0), (1.0, 1.0)]
-        g = boxmap(f, test_points)
         x = (-2.0, 3.0)
         y = SVector(4.0, 1)
         @test_throws MethodError g(x)

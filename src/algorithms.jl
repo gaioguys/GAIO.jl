@@ -23,8 +23,8 @@ end
 function chain_recurrent_set(g::BoxMap, boxset::BoxSet, depth::Int)
     for k in 1:depth
         boxset = subdivide(boxset)
-        G = transition_graph(g, boxset)
-        boxset = strongly_connected_components(G)
+        T = TransferOperator(g, boxset)
+        boxset = strongly_connected_components(T)
     end
 
     return boxset
@@ -53,11 +53,13 @@ function adaptive_newton_step(g, g_jacobian, x, k)
     return x
 end
 
-function cover_roots(g, g_jacobian, boxset::BoxSet, points, depth::Int)
+function cover_roots(g, Dg, boxset::BoxSet, depth::Int)
+    domain = boxset.partition.domain
     for k in 1:depth
         boxset = subdivide(boxset)
-        g_k = PointDiscretizedMap(x -> adaptive_newton_step(g, g_jacobian, x, k), points)
-        boxset = g_k(boxset)
+        f = x -> adaptive_newton_step(g, Dg, x, k)
+        F_k = BoxMap(f, domain, no_of_points = 40)
+        boxset = F_k(boxset)
     end
 
     return boxset
@@ -96,4 +98,30 @@ function finite_time_lyapunov_exponents(boxset::BoxSet, g; T, num_points=20, ϵ=
     end
     
     return BoxFun(boxset.partition,dict)
+end
+
+# Runge-Kutta scheme of 4th order
+@inline function rk4(f, x, τ)
+    τ½ = τ/2
+
+    k = f(x)
+    dx = @. k/6
+
+    k = f(@. x+τ½*k)
+    dx = @. dx + k/3
+
+    k = f(@. x+τ½*k)
+    dx = @. dx + k/3
+
+    k = f(@. x+τ*k)
+    dx = @. dx + k/6
+
+    return @. x+τ*dx
+end
+
+function rk4_flow_map(v, x; step_size=0.01, steps=20)
+    for i = 1:steps
+        x = rk4(v, x, step_size)
+    end
+    return x
 end

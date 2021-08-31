@@ -16,7 +16,7 @@ struct TransferOperator{L<:BoxList,W}
 end
 
 # TODO: this code is generally incorrect. only valid for RegularPartition and special choices of points
-function TransferOperator(g::PointDiscretizedMap, boxset::BoxSet)
+function TransferOperator(g::SampledBoxMap, boxset::BoxSet)
     boxlist = BoxList(boxset)
     K = keytype(typeof(boxset.partition))
     edges = Dict{Tuple{K,K},Int}()
@@ -38,7 +38,8 @@ function TransferOperator(g::PointDiscretizedMap, boxset::BoxSet)
     edges_normed = Dict{Tuple{Int,Int},Float64}()
     sizehint!(edges_normed, length(edges))
 
-    n = length(g.points)
+    Q = g.domain    
+    n = length(g.domain_points(Q.center, Q.radius))
 
     for (edge, weight) in edges
         edges_normed[(key_to_int[edge[1]], key_to_int[edge[2]])] = weight / n
