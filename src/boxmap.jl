@@ -141,14 +141,15 @@ function Base.eltype(t::Type{<:ParallelBoxIterator})
     return Union{Tuple{sourcekeytype(t),targetkeytype(t)},Tuple{sourcekeytype(t),Nothing}}
 end
 
-function map_boxes_new(g::BoxMap, source::BoxSet)
+function map_boxes(g::BoxMap, source::BoxSet)
     P, keys = source.partition, collect(source.set)
     image = [ Set{eltype(keys)}() for k = 1:nthreads() ]
     @threads for key in keys
         box = key_to_box(P, key)
         c, r = box.center, box.radius
-        for p in g.points
-            fp = g.f(c.+r.*p)
+        points = g.domain_points(c, r)
+        for p in points
+            fp = g.map(c.+r.*p)
             hit = point_to_key(P, fp)
             if hit !== nothing
                 push!(image[threadid()], hit)
@@ -158,7 +159,7 @@ function map_boxes_new(g::BoxMap, source::BoxSet)
     BoxSet(P, union(image...))
 end 
 
-function map_boxes(g::BoxMap, source::BoxSet)
+function map_boxes_old(g::BoxMap, source::BoxSet)
     result = boxset_empty(source.partition)
 
     for (_, hit) in ParallelBoxIterator(g, source)
@@ -170,27 +171,7 @@ function map_boxes(g::BoxMap, source::BoxSet)
     return result
 end
 
-function map_boxes_with_target(g::BoxMap, source::BoxSet, target::BoxSet)
-    result = boxset_empty(target.partition)
-
-    for (_, hit) in ParallelBoxIterator(g, source, target.partition)
-        if hit !== nothing # check that point was inside domain
-            if hit in target.set
-                push!(result.set, hit)
-            end
-        end
-    end
-
-    return result
-end
-
-function (g::BoxMap)(source::BoxSet; target = nothing)
-    if isnothing(target)
-        return map_boxes(g, source)
-    else
-        return map_boxes_with_target(g, source, target)
-    end
-end
+(g::BoxMap)(source::BoxSet) = map_boxes(g, source)
 
 function invert_vector(x::AbstractVector{T}) where T
     dict = Dict{T,Int}()

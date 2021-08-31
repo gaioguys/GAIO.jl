@@ -1,33 +1,28 @@
-function relative_attractor(g::BoxMap, boxset::BoxSet, depth::Int)
+function relative_attractor(F::BoxMap, B::BoxSet, depth::Int)
     for k = 1:depth
-        boxset = subdivide(boxset)
-        boxset = g(boxset; target=boxset)
+        B = subdivide(B)
+        B = B ∩ F(B)
     end
-
-    return boxset
+    return B
 end
 
-function unstable_set!(g::BoxMap, boxset::BoxSet)
-    boxset_new = boxset
-
-    while !isempty(boxset_new)
-        boxset_new = g(boxset_new)
-
-        setdiff!(boxset_new, boxset)
-        union!(boxset, boxset_new)
+function unstable_set!(F::BoxMap, B::BoxSet)
+    B_new = B
+    while !isempty(B_new)
+        B_new = F(B_new)
+        setdiff!(B_new, B)
+        union!(B, B_new)
     end
-
-    return boxset
+    return B
 end
 
-function chain_recurrent_set(g::BoxMap, boxset::BoxSet, depth::Int)
+function chain_recurrent_set(F::BoxMap, B::BoxSet, depth::Int)
     for k in 1:depth
-        boxset = subdivide(boxset)
-        T = TransferOperator(g, boxset)
-        boxset = strongly_connected_components(T)
+        B = subdivide(B)
+        T = TransferOperator(F, B)
+        B = strongly_connected_components(T)
     end
-
-    return boxset
+    return B
 end
 
 function adaptive_newton_step(g, g_jacobian, x, k)
@@ -53,16 +48,15 @@ function adaptive_newton_step(g, g_jacobian, x, k)
     return x
 end
 
-function cover_roots(g, Dg, boxset::BoxSet, depth::Int)
-    domain = boxset.partition.domain
+function cover_roots(g, Dg, B::BoxSet, depth::Int)
+    domain = B.partition.domain
     for k in 1:depth
-        boxset = subdivide(boxset)
+        B = subdivide(B)
         f = x -> adaptive_newton_step(g, Dg, x, k)
         F_k = BoxMap(f, domain, no_of_points = 40)
-        boxset = F_k(boxset)
+        B = F_k(B)
     end
-
-    return boxset
+    return B
 end
 
 """

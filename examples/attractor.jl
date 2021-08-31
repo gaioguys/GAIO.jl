@@ -9,7 +9,7 @@ F = BoxMap(f, Q)
 
 P = RegularPartition(Q)
 steps = 20
-A = relative_attractor(F, P[:], steps)
+@time A = relative_attractor(F, P[:], steps)
 
 plot(A)
 
