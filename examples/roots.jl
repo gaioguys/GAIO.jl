@@ -1,4 +1,5 @@
 using GAIO
+using ForwardDiff
 using StaticArrays
 
 # example functions

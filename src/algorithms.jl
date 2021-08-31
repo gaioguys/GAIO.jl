@@ -113,7 +113,7 @@ end
     return @. x+τ*dx
 end
 
-function rk4_flow_map(v, x; step_size=0.01, steps=20)
+@inline function rk4_flow_map(v, x; step_size=0.01, steps=20)
     for i = 1:steps
         x = rk4(v, x, step_size)
     end

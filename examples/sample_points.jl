@@ -57,11 +57,11 @@ function lorenz_f(x)
     return x
 end
 
-grid = LinRange(-1, 1, 200)
+grid = LinRange(-1, 1, 6)
 points = collect(Iterators.product(grid, grid, grid))
 
 domain = Box((0.0, 0.0, 27.0), (30.0, 30.0, 40.0))
-partition = RegularPartition(domain, 15)
+partition = RegularPartition(domain, 27)
 
 rh = 28.0
 b = 0.4
@@ -72,7 +72,7 @@ boxset = partition[x0]
 g_adaptive = AdaptiveBoxMap(lorenz_f, domain)
 g_points = PointDiscretizedMap(lorenz_f, domain, points)
 
-point = ntuple(i->60.0*rand(3).-30.0, 10)
+point = ntuple(i->60.0*rand(3).-30.0, 1000000);
 B = partition[point]; @show length(B)
 
 @time g1B = g_points(B); @show length(g1B)

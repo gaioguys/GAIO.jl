@@ -80,16 +80,16 @@ function interpolate_v(v, a, b, n, tol)
 end
 
 v = interpolate_v(knotted_v, -3.5, 3.5, 30, 1e-12)
+f(x) = rk4_flow_map(v, x, step_size = 0.075)
 
 center, radius = (0.0, 0.0, 0.0), (2.0, 2.0, 2.0)
 Q = Box(center, radius)
 P = RegularPartition(Q)
 
-f(x) = rk4_flow_map(v, x, step_size = 0.075)
 F = BoxMap(f, Q, no_of_points = 200)
 
 depth = 18
-@time C = chain_recurrent_set(F, P[:], depth)
+C = chain_recurrent_set(F, P[:], depth)
 
-plot(C, color =:red)
+plot(C)
 
