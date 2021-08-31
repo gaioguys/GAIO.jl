@@ -8,9 +8,11 @@ using Test
     f(x) = SVector(x[1], x[2] * 0.5)
     test_points = [SVector(-1.0, -1.0), SVector(-1.0, 1.0), SVector(1.0, -1.0),
                    SVector(1.0, 1.0)]
-    g = boxmap(f, test_points)
+    center = SVector(0.0, 0.0)
+    radius = SVector(1.0, 1.0)
+    domain = Box(center, radius)
+    g = PointDiscretizedMap(f, domain, test_points)
     n = 10
-    domain = Box(SVector(0.0, 0.0), SVector(1.0, 1.0))
     partition = RegularPartition(domain)
     partition_at_depth_n = RegularPartition(domain, n)
     rga = relative_attractor(g, partition[:], n)
