@@ -1,21 +1,22 @@
 using GAIO
 using ForwardDiff
 using StaticArrays
+using BenchmarkTools
 
-grid = LinRange(-1, 1, 30)
-points1 = collect(Iterators.product(grid, grid))
+grid = LinRange(-1, 1, 300)
+points = collect(Iterators.product(grid, grid))
 
 f(x) = SA[1/2 - 2*1.4*x[1]^2 + x[2], 0.3*x[1]]
 
 domain = Box((0.0, 0.0), (1.0, 1.0))
-partition = RegularPartition(domain, 12)
-point = ntuple(i->rand(2), 1)
+partition = RegularPartition(domain, 18)
+point = ntuple(i->rand(2), 10000)
 B = partition[point]
 
-g1 = PointDiscretizedMap(f, points)
+g1 = PointDiscretizedMap(f, domain, points)
 g2 = AdaptiveBoxMap(f, domain)
 
-g1B = g1(B)
+@time g1B = g1(B)
 g2B = g2(B)
 
 # and for the Lorenz system
@@ -56,11 +57,11 @@ function lorenz_f(x)
     return x
 end
 
-grid = LinRange(-1, 1, 20)
+grid = LinRange(-1, 1, 6)
 points = collect(Iterators.product(grid, grid, grid))
 
 domain = Box((0.0, 0.0, 27.0), (30.0, 30.0, 40.0))
-partition = RegularPartition(domain, 15)
+partition = RegularPartition(domain, 27)
 
 rh = 28.0
 b = 0.4
@@ -69,12 +70,12 @@ x0 = (sqrt(b*(rh-1)), sqrt(b*(rh-1)), rh-1)
 boxset = partition[x0]
 
 g_adaptive = AdaptiveBoxMap(lorenz_f, domain)
-g_points_1 = PointDiscretizedMap(lorenz_f, points)
+g_points = PointDiscretizedMap(lorenz_f, domain, points)
 
-point = ntuple(i->60.0*rand(3).-30.0, 1)
+point = ntuple(i->60.0*rand(3).-30.0, 1000000);
 B = partition[point]; @show length(B)
 
-g1B = g_points_1(B); @show length(g1B)
+@time g1B = g_points(B); @show length(g1B)
 gaB = g_adaptive(B); @show length(gaB)
 @show g_adaptive.image_points(point, point)
 

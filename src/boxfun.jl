@@ -4,6 +4,8 @@ struct BoxFun{P<:BoxPartition,K,V}
     dict::Dict{K,V}
 end
 
+Base.length(fun::BoxFun) = length(fun.dict)
+
 function Base.sum(f, boxfun::BoxFun{K,V}) where {K,V}
     return sum(let partition = boxfun.partition
         pair -> begin

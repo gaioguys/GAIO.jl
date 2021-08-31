@@ -5,6 +5,7 @@ end
 
 Base.length(list::BoxList) = length(list.keylist)
 Base.getindex(list::BoxList, x::AbstractVector) = BoxList(list.partition, list.keylist[x])
+Base.getindex(list::BoxList, i::Int64) = list.keylist[i]
 
 BoxList(set::BoxSet) = BoxList(set.partition, collect(set.set))
 
@@ -15,37 +16,51 @@ struct TransferOperator{L<:BoxList,W}
     edges::Dict{Tuple{Int,Int},W}
 end
 
+function Base.show(io::IO, T::TransferOperator)
+    n = length(T.vertices)
+    m = length(T.edges)
+    print(io, "TransferOperator on $(n) boxes with $(m) edges")
+end
+
+function invert_vector(x::AbstractVector{T}) where T
+    dict = Dict{T,Int}()
+    sizehint!(dict, length(x))
+
+    for i in 1:length(x)
+        dict[x[i]] = i
+    end
+
+    return dict
+end
+
 # TODO: this code is generally incorrect. only valid for RegularPartition and special choices of points
 function TransferOperator(g::SampledBoxMap, boxset::BoxSet)
+    Q = g.domain    
+    n = length(g.domain_points(Q.center, Q.radius))
+    P = boxset.partition
+    edges = [ Dict{Tuple{Int64,Int64},Float64}() for k = 1:nthreads() ]
     boxlist = BoxList(boxset)
-    K = keytype(typeof(boxset.partition))
-    edges = Dict{Tuple{K,K},Int}()
-    #n = 0
+    key_to_index = invert_vector(boxlist.keylist)
 
-    for (src, hit) in ParallelBoxIterator(g, boxset)
-        if hit !== nothing # check that point was inside domain
-            if hit in boxset.set
-                # TODO: this calculates the hash of (src, hit) twice
-                # improve this once https://github.com/JuliaLang/julia/issues/31199 is resolved
-                edges[(src, hit)] = get(edges, (src, hit), 0) + 1
-                #n += 1
+    @threads for i = 1:length(boxlist)
+        box = key_to_box(P, boxlist[i])
+        c, r = box.center, box.radius
+        points = g.domain_points(c, r)
+        for p in points
+            fp = g.map(c.+r.*p)
+            hit = point_to_key(P, fp)
+            if hit !== nothing
+                if hit in boxset.set
+                    j = key_to_index[hit]
+                    e = (i,j)
+                    edges[threadid()][e] = get(edges[threadid()], e, 0) + 1.0/n
+                end
             end
         end
     end
+    edges = merge(edges...)
 
-    key_to_int = invert_vector(boxlist.keylist)
-
-    edges_normed = Dict{Tuple{Int,Int},Float64}()
-    sizehint!(edges_normed, length(edges))
-
-    Q = g.domain    
-    n = length(g.domain_points(Q.center, Q.radius))
-
-    for (edge, weight) in edges
-        edges_normed[(key_to_int[edge[1]], key_to_int[edge[2]])] = weight / n
-    end
-
-    return TransferOperator(boxlist, edges_normed)
+    return TransferOperator(boxlist, edges)
 end
 
 
