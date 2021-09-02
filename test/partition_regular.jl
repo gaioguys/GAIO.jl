@@ -18,7 +18,7 @@ using Test
         @test dimension(partition) == 4
     end
     @testset "size" begin
-        partition = BoxPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), 3)
+        partition = BoxPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), depth=3)
         @test depth(partition) == 3
         @test size(partition) == (4, 2)
         @test prod(size(partition)) == 2^depth(partition)
@@ -36,7 +36,7 @@ using Test
     end
 end
 @testset "internal functionality" begin
-    partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), 5)
+    partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), depth=5)
     @testset "keys all" begin
         @test size(GAIO.keys_all(partition)) == (2^depth(partition),)
     end

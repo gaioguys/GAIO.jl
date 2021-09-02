@@ -26,7 +26,7 @@ function keys_all(partition::TreePartition)
     return [(0, 1)]
 end
 
-TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)], [AbstractBoxPartition(domain, 0)])
+TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)], [BoxPartition(domain)])
 
 dimension(partition::TreePartition{N,T}) where {N,T} = N
 
@@ -34,7 +34,7 @@ function key_to_box(partition::TreePartition, key::Tuple{Int,Int})
     return key_to_box(partition.regular_partitions[key[1] + 1], key[2])
 end
 
-function unsafe_point_to_ints(partition::AbstractBoxPartition, point)
+function unsafe_point_to_ints(partition::BoxPartition, point)
     x = (point .- partition.left) .* partition.scale
     return map(xi -> Base.unsafe_trunc(Int, xi), x)
 end
@@ -95,7 +95,7 @@ function subdivide!(tree::TreePartition, key::Tuple{Int,Int})
     tree.nodes[node_idx] = new_node
 
     if key[1] == depth(tree)
-        push!(tree.regular_partitions, AbstractBoxPartition(tree.domain, depth(tree)+1))
+        push!(tree.regular_partitions, BoxPartition(tree.domain, depth=depth(tree)+1))
     end
 
     return tree

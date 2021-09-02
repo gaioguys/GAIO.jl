@@ -4,7 +4,7 @@ using Test
 
 @testset "exported functionality" begin
     @testset "regular partition" begin
-        partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), 10)
+        partition = BoxPartition(Box((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)), depth=10)
         @testset "empty" begin
             empty_boxset = boxset_empty(partition)
             @test isempty(empty_boxset)
