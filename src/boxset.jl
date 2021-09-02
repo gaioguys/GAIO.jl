@@ -1,4 +1,4 @@
-struct BoxSet{P <: BoxPartition,S <: AbstractSet}
+struct BoxSet{P <: AbstractBoxPartition,S <: AbstractSet}
     partition::P
     set::S
 end
@@ -9,11 +9,11 @@ function Base.show(io::IO, boxset::BoxSet)
     print(io, "$size-element BoxSet in dimension $dim\n")
 end
 
-function boxset_empty(partition::P) where P <: BoxPartition
+function boxset_empty(partition::P) where P <: AbstractBoxPartition
     return BoxSet(partition, Set{keytype(P)}())
 end
 
-function Base.getindex(partition::BoxPartition, points_or_point)
+function Base.getindex(partition::AbstractBoxPartition, points_or_point)
     # check if points is only a single point
     if eltype(points_or_point) <: Number
         points = (points_or_point,)
@@ -35,7 +35,7 @@ function Base.getindex(partition::BoxPartition, points_or_point)
     return BoxSet(partition, set)
 end
 
-function Base.getindex(partition::BoxPartition, ::Colon)
+function Base.getindex(partition::AbstractBoxPartition, ::Colon)
     return BoxSet(partition, Set(keys_all(partition)))
 end
 
@@ -57,10 +57,10 @@ end
 
 Base.isempty(boxset::BoxSet) = isempty(boxset.set)
 Base.length(boxset::BoxSet) = length(boxset.set)
-Base.eltype(::Type{BoxSet{P,S}}) where {P <: BoxPartition{B},S} where B = B
+Base.eltype(::Type{BoxSet{P,S}}) where {P <: AbstractBoxPartition{B},S} where B = B
 Base.iterate(boxset::BoxSet, state...) = iterate((key_to_box(boxset.partition, key) for key in boxset.set), state...)
 
-function subdivide(boxset::BoxSet{<:RegularPartition,S}) where {S}
+function subdivide(boxset::BoxSet{<:BoxPartition,S}) where {S}
     partition = boxset.partition
     box_indices = CartesianIndices(size(partition))
 

@@ -14,7 +14,7 @@ using Base.Threads
 
 export Box
 
-export BoxPartition, RegularPartition, TreePartition
+export AbstractBoxPartition, BoxPartition, TreePartition
 export dimension, depth
 
 export BoxSet
@@ -39,7 +39,7 @@ export plot
 
 include("box.jl")
 
-abstract type BoxPartition{B <: Box} end
+abstract type AbstractBoxPartition{B <: Box} end
 
 include("partition_regular.jl")
 include("partition_tree.jl")

@@ -1,5 +1,5 @@
-function relative_attractor(F::BoxMap, B::BoxSet, depth::Int)
-    for k = 1:depth
+function relative_attractor(F::BoxMap, B::BoxSet; steps=12)
+    for k = 1:steps
         B = subdivide(B)
         B = B ∩ F(B)
     end
@@ -16,8 +16,8 @@ function unstable_set!(F::BoxMap, B::BoxSet)
     return B
 end
 
-function chain_recurrent_set(F::BoxMap, B::BoxSet, depth::Int)
-    for k in 1:depth
+function chain_recurrent_set(F::BoxMap, B::BoxSet; steps=12)
+    for k in 1:steps
         B = subdivide(B)
         T = TransferOperator(F, B)
         B = strongly_connected_components(T)
@@ -48,9 +48,9 @@ function adaptive_newton_step(g, g_jacobian, x, k)
     return x
 end
 
-function cover_roots(g, Dg, B::BoxSet, depth::Int)
+function cover_roots(g, Dg, B::BoxSet; steps::Int=12)
     domain = B.partition.domain
-    for k in 1:depth
+    for k in 1:steps
         B = subdivide(B)
         f = x -> adaptive_newton_step(g, Dg, x, k)
         F_k = BoxMap(f, domain, no_of_points = 40)

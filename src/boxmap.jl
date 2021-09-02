@@ -19,10 +19,12 @@ function PointDiscretizedMap(map, domain, points::AbstractArray)
     return SampledBoxMap(map, domain, domain_points, image_points)
 end
 
-function BoxMap(map, domain::Box{N,T}; no_of_points=20*N) where {N,T}
+function BoxMap(map, domain::Box{N,T}; no_of_points::Int=20*N) where {N,T}
     points = [ tuple(2.0*rand(N).-1.0 ...) for _ = 1:no_of_points ] 
     return PointDiscretizedMap(map, domain, points) 
 end
+
+BoxMap(map, P::BoxPartition{N,T}; no_of_points::Int=20*N) where {N,T} = BoxMap(map, P.domain, no_of_points=no_of_points) 
 
 function sample_adaptive(Df, center::SVector{N,T}) where {N,T}
     D = Df(center)

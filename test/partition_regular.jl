@@ -3,7 +3,7 @@ using StaticArrays
 using Test
 
 @testset "exported functionality" begin
-    partition = RegularPartition(Box(SVector(0.0, 0.0, 0.0, 0.0),
+    partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0, 0.0),
                                      SVector(1.0, 1.0, 1.0, 1.0)))
     @testset "basics" begin
         @test depth(partition) == 0
@@ -18,7 +18,7 @@ using Test
         @test dimension(partition) == 4
     end
     @testset "size" begin
-        partition = RegularPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), 3)
+        partition = BoxPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), depth=3)
         @test depth(partition) == 3
         @test size(partition) == (4, 2)
         @test prod(size(partition)) == 2^depth(partition)
@@ -27,16 +27,16 @@ using Test
         center = SVector(0.0, 0.0)
         radius = SVector(1.0, 0.0)
         box = Box(center, radius)
-        @test_throws ErrorException RegularPartition(box)
+        @test_throws ErrorException BoxPartition(box)
     end
     @testset "integer domain" begin
         int_box = Box(SVector(0, 0), SVector(1, 1))
         # this should either throw a clearer error message or convert int to float
-        @test_throws MethodError RegularPartition(int_box)
+        @test_throws MethodError BoxPartition(int_box)
     end
 end
 @testset "internal functionality" begin
-    partition = RegularPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), 5)
+    partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), depth=5)
     @testset "keys all" begin
         @test size(GAIO.keys_all(partition)) == (2^depth(partition),)
     end

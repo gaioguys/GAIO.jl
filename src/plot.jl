@@ -2,7 +2,7 @@ include("plot/shader.jl")
 include("plot/camera.jl")
 include("plot/plot.jl")
 
-function plot(boxset::BoxSet{<:BoxPartition{<:Box{N}}}; kwargs...) where N
+function plot(boxset::BoxSet{<:AbstractBoxPartition{<:Box{N}}}; kwargs...) where N
     m = HyperRectangle(Vec3f0(0), Vec3f0(1))
     c = [box.center for box in boxset]
     r = [box.radius for box in boxset]
@@ -10,7 +10,7 @@ function plot(boxset::BoxSet{<:BoxPartition{<:Box{N}}}; kwargs...) where N
                             color =:red; kwargs...)
 end
 
-function plot(boxfun::BoxFun{<:BoxPartition{<:Box{1}}}; kwargs...)
+function plot(boxfun::BoxFun{<:AbstractBoxPartition{<:Box{1}}}; kwargs...)
     c, r, v = Float32[], Float32[], Float32[]
 
     for (key, value) in boxfun.dict
@@ -22,7 +22,7 @@ function plot(boxfun::BoxFun{<:BoxPartition{<:Box{1}}}; kwargs...)
     fig, ax, bp = barplot(c, v, width = 1.9*r; kwargs ...)
 end
 
-function plot(boxfun::BoxFun{<:BoxPartition{<:Box{3}}}; kwargs...)
+function plot(boxfun::BoxFun{<:AbstractBoxPartition{<:Box{3}}}; kwargs...) where N
     center, radius, color = Vec{3, Float32}[], Vec{3, Float32}[], Float32[]
 
     for (key, value) in boxfun.dict

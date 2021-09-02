@@ -61,7 +61,7 @@ grid = LinRange(-1, 1, 6)
 points = collect(Iterators.product(grid, grid, grid))
 
 domain = Box((0.0, 0.0, 27.0), (30.0, 30.0, 40.0))
-partition = RegularPartition(domain, 27)
+partition = BoxPartition(domain, 27)
 
 rh = 28.0
 b = 0.4

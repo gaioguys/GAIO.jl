@@ -46,10 +46,8 @@ g = example_g4
 Dg = x -> ForwardDiff.jacobian(g, x)
 
 center, radius = [0.0 for _ in 1:dim], [40.0 for _ in 1:dim]
-Q = Box(center, radius)
-P = RegularPartition(Q)
+P = BoxPartition(Box(center, radius))
 
-depth = dim*8
-R = cover_roots(g, Dg, P[:], depth)
+R = cover_roots(g, Dg, P[:], depth=dim*8)
 
 plot(R)
