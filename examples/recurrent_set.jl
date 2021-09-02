@@ -82,14 +82,11 @@ end
 v = interpolate_v(knotted_v, -3.5, 3.5, 30, 1e-12)
 f(x) = rk4_flow_map(v, x, step_size = 0.075)
 
-center, radius = (0.0, 0.0, 0.0), (2.0, 2.0, 2.0)
-Q = Box(center, radius)
-P = BoxPartition(Q)
+center, radius = (0.0,0.0,0.0), (2.0,2.0,2.0)
+P = BoxPartition(Box(center, radius))
+F = BoxMap(f, P, no_of_points = 200)
 
-F = BoxMap(f, Q, no_of_points = 200)
-
-depth = 18
-C = chain_recurrent_set(F, P[:], depth)
+C = chain_recurrent_set(F, P[:], steps = 18)
 
 plot(C)
 

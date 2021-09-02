@@ -1,7 +1,8 @@
 using GAIO
 
 # logistic map
-f(x) = 4.0.*x.*(1.0.-x)
+μ = 4.0
+f(x) = μ.*x.*(1.0.-x)
 
 center, radius = 0.5, 0.5
 P = BoxPartition(Box(center, radius), depth = 8)
