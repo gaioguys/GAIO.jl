@@ -1,5 +1,5 @@
 # TODO: cleanup type params. key type of partition must equal K
-struct BoxFun{P<:BoxPartition,K,V}
+struct BoxFun{P<:AbstractBoxPartition,K,V}
     partition::P
     dict::Dict{K,V}
 end

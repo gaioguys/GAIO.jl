@@ -47,7 +47,7 @@ Dg = x -> ForwardDiff.jacobian(g, x)
 
 center, radius = [0.0 for _ in 1:dim], [40.0 for _ in 1:dim]
 Q = Box(center, radius)
-P = RegularPartition(Q)
+P = BoxPartition(Q)
 
 depth = dim*8
 R = cover_roots(g, Dg, P[:], depth)

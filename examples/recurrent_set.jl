@@ -84,7 +84,7 @@ f(x) = rk4_flow_map(v, x, step_size = 0.075)
 
 center, radius = (0.0, 0.0, 0.0), (2.0, 2.0, 2.0)
 Q = Box(center, radius)
-P = RegularPartition(Q)
+P = BoxPartition(Q)
 
 F = BoxMap(f, Q, no_of_points = 200)
 

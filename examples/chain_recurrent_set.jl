@@ -45,7 +45,7 @@ function knotted_v(x, tol)
         dγt = d(x, γt)
         σγ = σ(γdt ./ nγdt)
         val = nγdt .* dγt .* σγ
-        return (val[1], val[2], nγdt * dγt)
+        return SVector(val[1], val[2], nγdt * dγt)
     end, 0, T, rtol=tol)
 
     nom = (int[1], int[2])
@@ -59,8 +59,8 @@ function knotted_v(x, tol)
 end
 # interpolate the function v on the mesh [a,b]^3 with n equidistant nodes
 # using linear B-Splines
-function interpolate_v(v, a, b, n, tol)
-    val = Array{Vector{3,Float64},3}(undef, n, n, n)
+function interpolate_v(a, b, n, tol)
+    val = Array{SVector{3,Float64},3}(undef, n, n, n)
     x = range(a, b, length = n)
     y = range(a, b, length = n)
     z = range(a, b, length = n)
@@ -68,7 +68,7 @@ function interpolate_v(v, a, b, n, tol)
     @Threads.threads for i in 1:n
         for j in 1:n
             for k in 1:n
-                val[i,j,k] = v((x[i], y[j], z[k]), tol)
+                val[i,j,k] = SVector(knotted_v((x[i], y[j], z[k]), tol))
             end
         end
     end
@@ -79,17 +79,14 @@ function interpolate_v(v, a, b, n, tol)
     return t -> sitp(t[1], t[2], t[3])
 end
 
-v = interpolate_v(knotted_v, -3.5, 3.5, 30, 1e-12)
+v = interpolate_v(-3.5, 3.5, 30, 1e-12)
+f(x) = rk4_flow_map(v, x, step_size = 0.075)
 
 center, radius = (0.0, 0.0, 0.0), (2.0, 2.0, 2.0)
-Q = Box(center, radius)
-P = RegularPartition(Q)
+P = BoxPartition(Box(center, radius))
+F = BoxMap(f, P, no_of_points = 200)
 
-f(x) = rk4_flow_map(v, x, step_size = 0.075)
-F = BoxMap(f, Q, no_of_points = 200)
+C = chain_recurrent_set(F, P[:], 18)
 
-depth = 18
-@time C = chain_recurrent_set(F, P[:], depth)
-
-plot(C, color =:red)
+plot(C)
 

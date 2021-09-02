@@ -13,8 +13,8 @@ using Test
     domain = Box(center, radius)
     g = PointDiscretizedMap(f, domain, test_points)
     n = 10
-    partition = RegularPartition(domain)
-    partition_at_depth_n = RegularPartition(domain, n)
+    partition = BoxPartition(domain)
+    partition_at_depth_n = BoxPartition(domain, n)
     rga = relative_attractor(g, partition[:], n)
     unstable = unstable_set!(g, partition_at_depth_n[:])
     # ground truths attractor and unstable set

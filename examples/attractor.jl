@@ -1,17 +1,12 @@
 using GAIO
 
 # the Henon map
-f(x) = (1 - 1.4*x[1]^2 + x[2], 0.3*x[1])
+a, b = 1.4, 0.3
+f((x,y)) = (1 - a*x^2 + y, b*x)
 
 center, radius = (0.0, 0.0), (3.0, 3.0)
-Q = Box(center, radius)
-P = RegularPartition(Q)
-
-F = BoxMap(f, Q)
-
-steps = 20
-@time A = relative_attractor(F, P[:], steps)
+P = BoxPartition(Box(center, radius))
+F = BoxMap(f, P)
+A = relative_attractor(F, P[:], steps = 16)
 
 plot(A)
-
-

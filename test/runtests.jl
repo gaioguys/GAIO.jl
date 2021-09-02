@@ -12,7 +12,7 @@ using SafeTestsets
     @safetestset "BoxSet" begin
         include("boxset.jl")
     end
-    @safetestset "RegularPartition" begin
+    @safetestset "BoxPartition" begin
         include("partition_regular.jl")
     end
     @safetestset "TreePartition" begin

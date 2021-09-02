@@ -1,5 +1,5 @@
-function relative_attractor(F::BoxMap, B::BoxSet, depth::Int)
-    for k = 1:depth
+function relative_attractor(F::BoxMap, B::BoxSet; steps=12)
+    for k = 1:steps
         B = subdivide(B)
         B = B ∩ F(B)
     end
@@ -16,8 +16,8 @@ function unstable_set!(F::BoxMap, B::BoxSet)
     return B
 end
 
-function chain_recurrent_set(F::BoxMap, B::BoxSet, depth::Int)
-    for k in 1:depth
+function chain_recurrent_set(F::BoxMap, B::BoxSet, steps)
+    for k in 1:steps
         B = subdivide(B)
         T = TransferOperator(F, B)
         B = strongly_connected_components(T)

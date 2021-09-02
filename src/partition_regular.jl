@@ -1,4 +1,4 @@
-struct RegularPartition{N,T} <: BoxPartition{Box{N,T}}
+struct BoxPartition{N,T} <: AbstractBoxPartition{Box{N,T}}
     domain::Box{N,T}
     depth::Int
     left::SVector{N,T}
@@ -7,7 +7,7 @@ struct RegularPartition{N,T} <: BoxPartition{Box{N,T}}
     dimsprod::SVector{N,Int}
 end
 
-function RegularPartition(domain::Box{N,T}, depth::Int) where {N,T}
+function BoxPartition(domain::Box{N,T}; depth::Int=0) where {N,T}
     if any(x -> x <= 0, domain.radius)
         error("domain radius must be positive in every component")
     end
@@ -25,29 +25,29 @@ function RegularPartition(domain::Box{N,T}, depth::Int) where {N,T}
     dimsprod_ = [SVector(1); cumprod(dims)]
     dimsprod = dimsprod_[SOneTo(N)]
 
-    return RegularPartition(domain, depth, left, scale, dims, dimsprod)
+    return BoxPartition(domain, depth, left, scale, dims, dimsprod)
 end
 
-RegularPartition(domain) = RegularPartition(domain, 0)
+# BoxPartition(domain) = BoxPartition(domain, depth = 0)
 
-dimension(partition::RegularPartition{N,T}) where {N,T} = N
-depth(partition::RegularPartition) = partition.depth
-subdivide(partition::RegularPartition) = RegularPartition(partition.domain, partition.depth + 1)
+dimension(partition::BoxPartition{N,T}) where {N,T} = N
+depth(partition::BoxPartition) = partition.depth
+subdivide(partition::BoxPartition) = BoxPartition(partition.domain, depth=partition.depth + 1)
 
-keytype(::Type{<:RegularPartition}) = Int
-keys_all(partition::RegularPartition) = 1:2^depth(partition)
+keytype(::Type{<:BoxPartition}) = Int
+keys_all(partition::BoxPartition) = 1:2^depth(partition)
 
-Base.size(partition::RegularPartition) = partition.dims.data
+Base.size(partition::BoxPartition) = partition.dims.data
 
-function Base.show(io::IO, partition::RegularPartition) 
+function Base.show(io::IO, partition::BoxPartition) 
     print(io, "$(partition.dims[1])")
     for k = 2:length(partition.left)
         print(io, " x $(partition.dims[k])")
     end 
-    print(io, " RegularPartition")
+    print(io, " BoxPartition")
 end
 
-function key_to_box(partition::RegularPartition{N,T}, key::Int) where {N,T}
+function key_to_box(partition::BoxPartition{N,T}, key::Int) where {N,T}
     dims = size(partition)
 
     radius = partition.domain.radius ./ dims
@@ -59,7 +59,7 @@ function key_to_box(partition::RegularPartition{N,T}, key::Int) where {N,T}
     return Box(center, radius)
 end
 
-function point_to_key(partition::RegularPartition, point)
+function point_to_key(partition::BoxPartition, point)
     x = (point .- partition.left) .* partition.scale
 
     if any(x .< zero(eltype(x)))

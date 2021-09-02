@@ -1,4 +1,4 @@
-struct BoxList{P<:BoxPartition,L<:AbstractVector}
+struct BoxList{P<:AbstractBoxPartition,L<:AbstractVector}
     partition::P
     keylist::L
 end
@@ -33,7 +33,7 @@ function invert_vector(x::AbstractVector{T}) where T
     return dict
 end
 
-# TODO: this code is generally incorrect. only valid for RegularPartition and special choices of points
+# TODO: this code is generally incorrect. only valid for BoxPartition and special choices of points
 function TransferOperator(g::SampledBoxMap, boxset::BoxSet)
     Q = g.domain    
     n = length(g.domain_points(Q.center, Q.radius))
