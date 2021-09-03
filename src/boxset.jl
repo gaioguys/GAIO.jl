@@ -60,23 +60,21 @@ Base.length(boxset::BoxSet) = length(boxset.set)
 Base.eltype(::Type{BoxSet{P,S}}) where {P <: AbstractBoxPartition{B},S} where B = B
 Base.iterate(boxset::BoxSet, state...) = iterate((key_to_box(boxset.partition, key) for key in boxset.set), state...)
 
-function subdivide(boxset::BoxSet{<:BoxPartition,S}) where {S}
+function subdivide(boxset::BoxSet{<:BoxPartition,S}, dim::Int) where {S}
     partition = boxset.partition
     box_indices = CartesianIndices(size(partition))
 
-    sd = (depth(partition) % dimension(partition)) + 1
-
-    partition_subdivided = subdivide(boxset.partition)
+    partition_subdivided = subdivide(boxset.partition, dim)
     linear_indices = LinearIndices(CartesianIndices(size(partition_subdivided)))
 
     set = S()
-    sizehint!(set, 2 * length(boxset.set))
+    sizehint!(set, 2*length(boxset.set))
 
     for key in boxset.set
         box_index = box_indices[key].I
 
-        child1 = Base.setindex(box_index, 2 * box_index[sd] - 1, sd)
-        child2 = Base.setindex(box_index, 2 * box_index[sd], sd)
+        child1 = Base.setindex(box_index, 2*box_index[dim]-1, dim)
+        child2 = Base.setindex(box_index, 2*box_index[dim], dim)
 
         push!(set, linear_indices[CartesianIndex(child1)])
         push!(set, linear_indices[CartesianIndex(child2)])

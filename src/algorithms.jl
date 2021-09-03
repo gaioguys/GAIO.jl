@@ -1,6 +1,6 @@
-function relative_attractor(F::BoxMap, B::BoxSet; steps=12)
+function relative_attractor(F::BoxMap, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
     for k = 1:steps
-        B = subdivide(B)
+        B = subdivide(B, (k%N)+1)
         B = B ∩ F(B)
     end
     return B
@@ -16,11 +16,11 @@ function unstable_set!(F::BoxMap, B::BoxSet)
     return B
 end
 
-function chain_recurrent_set(F::BoxMap, B::BoxSet; steps=12)
+function chain_recurrent_set(F::BoxMap, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
     for k in 1:steps
-        B = subdivide(B)
-        T = TransferOperator(F, B)
-        B = strongly_connected_components(T)
+        B = subdivide(B, (k%N)+1)
+        P = TransferOperator(F, B)
+        B = strongly_connected_components(P)
     end
     return B
 end
@@ -48,10 +48,10 @@ function adaptive_newton_step(g, g_jacobian, x, k)
     return x
 end
 
-function cover_roots(g, Dg, B::BoxSet; steps::Int=12)
+function cover_roots(g, Dg, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps::Int=12) where {N,T}
     domain = B.partition.domain
     for k in 1:steps
-        B = subdivide(B)
+        B = subdivide(B, (k%N)+1)
         f = x -> adaptive_newton_step(g, Dg, x, k)
         F_k = BoxMap(f, domain, no_of_points = 40)
         B = F_k(B)
