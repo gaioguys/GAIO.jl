@@ -5,7 +5,7 @@ using GAIO
 f(x) = μ.*x.*(1.0.-x)
 
 center, radius = 0.5, 0.5
-P = BoxPartition(Box(center, radius), depth = 8)
+P = BoxPartition(Box(center, radius), 256)
 F = BoxMap(f, P; no_of_points=400)
 
 T = TransferOperator(F, P[:])

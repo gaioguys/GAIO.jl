@@ -1,12 +1,54 @@
 # GAIO.jl
 
-Documentation:
+## About 
+
+GAIO.jl is a Julia package for set oriented computations.  Sets are represented by box collections. A _box_ (or _cube_) is a higher dimensional interval, i.e. a set of the form
+```math
+[a₁,b₁] × ... × [aₙ,bₙ],    aₖ,bₖ ∈ ℝ
+```
+GAIO.jl provides algorithms for  
+* dynamical systems
+  * invariant sets (maximal invariant set, chain recurrent set, (relative) attractor, (un-)stable manifold)
+  * almost invariant and coherent sets
+  * finite time Lyapunov exponents
+  * entropy and box dimension
+* root finding problems
+* multi-objective optimization problems
+* computing implicitely defined manifolds
+
+## Documentation
+
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://gaioguys.github.io/GAIO.jl/dev/)
 
-This will be the next generation of [GAIO](https://github.com/gaioguy/GAIO) - currently under development.
+## Installation
 
-The package provides a framework for set oriented computations, in particular for dynamical systems.
-It allows to compute, e.g.,
-   * invariant sets (e.g. periodic points, attractors, chain recurrent sets) of arbitrary dimension or topology,
-   * invariant manifolds (stable/unstable manifolds of an arbitrary invariant set),
-   * invariant measures, almost invariant sets, coherent sets.
+In Julia's package manager, type
+```julia
+pkg> add https://github.com/gaioguys/GAIO.jl.git
+```
+
+## Getting started
+
+The following script computes the chain recurrent set of the Hénon map within the box [-3,3]²: 
+
+```julia
+using GAIO
+
+center, radius = (0,0), (3,3)
+Q = Box(center, radius)                       # domain for the computation
+P = BoxPartition(Q)                           # 1 x 1 partition of Q, i.e. P = {Q}
+
+f((x,y)) = (1 - 1.4*x^2 + y, 0.3*x)           # the Hénon map
+F = BoxMap(f, P)                              # ... turned into a map on boxes
+R = chain_recurrent_set(F, P[:], steps = 15)  # subdivison algorithm computing
+                                              # the chain recurrent set R in Q
+plot(R)                                       # plot R
+```
+![GitHub Logo](henon.svg)
+
+For more examples, see the `examples\` folder.
+
+## License
+
+See `LICENSE` for GAIO.jl's licensing information.
+

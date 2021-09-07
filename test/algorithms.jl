@@ -6,15 +6,15 @@ using Test
     # a toy example with an easy attractor to test how well all the components
     # fit together
     f(x) = (x[1], x[2] * 0.5)
-    test_points = [(-1.0, -1.0), (-1.0, 1.0), (1.0, -1.0),
-                   (1.0, 1.0)]
+    test_points = [(-1.0, -1.0), (-1.0, 1.0), (1.0, -1.0), (1.0, 1.0)]
     center = (0.0, 0.0)
     radius = (1.0, 1.0)
     domain = Box(center, radius)
     g = PointDiscretizedMap(f, domain, test_points)
-    n = 10
     partition = BoxPartition(domain)
-    partition_at_depth_n = BoxPartition(domain, depth = n)
+    n = 10
+    dims = (32, 32)
+    partition_at_depth_n = BoxPartition(domain, dims)
     rga = relative_attractor(g, partition[:], steps = n)
     unstable = unstable_set!(g, partition_at_depth_n[:])
     # ground truths attractor and unstable set

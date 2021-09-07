@@ -4,7 +4,7 @@ include("plot/plot.jl")
 
 function plot(boxset::BoxSet{<:AbstractBoxPartition{<:Box{N}}}; kwargs...) where N
     m = HyperRectangle(Vec3f0(0), Vec3f0(1))
-    c = [box.center for box in boxset]
+    c = [box.center.-box.radius for box in boxset]
     r = [box.radius for box in boxset]
     fig, ax, ms = meshscatter(Vec{N, Float32}.(c), marker = m, markersize = 1.9*r,
                             color =:red; kwargs...)

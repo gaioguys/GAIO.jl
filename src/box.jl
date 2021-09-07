@@ -1,4 +1,4 @@
-struct Box{N,T}
+struct Box{N,T <: AbstractFloat}
     center::SVector{N,T}
     radius::SVector{N,T}
 
@@ -9,11 +9,14 @@ struct Box{N,T}
             error("center and radius must have the same length")
         end
 
-        if any(x -> x < 0, radius)
-            error("radius must be nonnegative in every component")
+        if any(x -> x <= 0, radius)
+            error("radius must be positive in every component")
         end
 
         T = promote_type(eltype(center), eltype(radius))
+        if !(T <: AbstractFloat)
+            T = Float64
+        end
 
         return new{N,T}(SVector{N,T}(center), SVector{N,T}(radius))
     end

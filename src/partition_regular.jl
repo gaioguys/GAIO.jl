@@ -1,41 +1,37 @@
 struct BoxPartition{N,T} <: AbstractBoxPartition{Box{N,T}}
     domain::Box{N,T}
-    depth::Int
     left::SVector{N,T}
     scale::SVector{N,T}
     dims::SVector{N,Int}
     dimsprod::SVector{N,Int}
 end
 
-function BoxPartition(domain::Box{N,T}; depth::Int=0) where {N,T}
-    if any(x -> x <= 0, domain.radius)
-        error("domain radius must be positive in every component")
-    end
-
+function BoxPartition(domain::Box{N,T}, dims::NTuple{N,Int}) where {N,T}
+    dims = SVector{N,Int}(dims)
     left = domain.center .- domain.radius
-
-    sd = map(let de = depth, dim = N
-        i -> div(de - i, dim, RoundDown) + 1
-    end, StaticArrays.SUnitRange(1, N))
-
-    dims = 1 .<< sd
-
-    scale = dims ./ (2 .* domain.radius)
-
+    scale = dims ./ (2*domain.radius)
     dimsprod_ = [SVector(1); cumprod(dims)]
     dimsprod = dimsprod_[SOneTo(N)]
 
-    return BoxPartition(domain, depth, left, scale, dims, dimsprod)
+    return BoxPartition(domain, left, scale, dims, dimsprod)
 end
 
-# BoxPartition(domain) = BoxPartition(domain, depth = 0)
+function BoxPartition(domain::Box{N,T}) where {N,T}
+    dims = tuple(ones(Int64,N)...)
+    BoxPartition(domain, dims)
+end
+
+BoxPartition(domain::Box{1,T}, dims::Int) where {T} = BoxPartition(domain, (dims,))
 
 dimension(partition::BoxPartition{N,T}) where {N,T} = N
-depth(partition::BoxPartition) = partition.depth
-subdivide(partition::BoxPartition) = BoxPartition(partition.domain, depth=partition.depth + 1)
+
+function subdivide(P::BoxPartition{N,T}, dim::Int) where {N,T}
+    new_dims = ntuple(i -> P.dims[i]*(i==dim ? 2 : 1), N)
+    BoxPartition(P.domain, new_dims)
+end
 
 keytype(::Type{<:BoxPartition}) = Int
-keys_all(partition::BoxPartition) = 1:2^depth(partition)
+keys_all(partition::BoxPartition) = 1:prod(partition.dims)
 
 Base.size(partition::BoxPartition) = partition.dims.data
 
@@ -49,11 +45,8 @@ end
 
 function key_to_box(partition::BoxPartition{N,T}, key::Int) where {N,T}
     dims = size(partition)
-
     radius = partition.domain.radius ./ dims
-
     left = partition.domain.center .- partition.domain.radius
-
     center = left .+ radius .+ (2 .* radius) .* (CartesianIndices(dims)[key].I .- 1)
 
     return Box(center, radius)
