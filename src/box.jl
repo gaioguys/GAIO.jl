@@ -9,8 +9,8 @@ struct Box{N,T <: AbstractFloat}
             error("center and radius must have the same length")
         end
 
-        if any(x -> x < 0, radius)
-            error("radius must be nonnegative in every component")
+        if any(x -> x <= 0, radius)
+            error("radius must be positive in every component")
         end
 
         T = promote_type(eltype(center), eltype(radius))

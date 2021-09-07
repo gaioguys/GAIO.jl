@@ -6,39 +6,29 @@ using Test
     partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0, 0.0),
                                      SVector(1.0, 1.0, 1.0, 1.0)))
     @testset "basics" begin
-        @test depth(partition) == 0
         @test dimension(partition) == 4
     end
     @testset "subdivision" begin
         n = 10
-        for _ in 1:n
-            partition = subdivide(partition)
+        for k in 1:n
+            partition = subdivide(partition, (k%3)+1 )
         end
-        @test depth(partition) == n
         @test dimension(partition) == 4
     end
     @testset "size" begin
-        partition = BoxPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), depth=3)
-        @test depth(partition) == 3
+        partition = BoxPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), (4,2))
         @test size(partition) == (4, 2)
-        @test prod(size(partition)) == 2^depth(partition)
     end
     @testset "domain with zero radius" begin
         center = SVector(0.0, 0.0)
         radius = SVector(1.0, 0.0)
-        box = Box(center, radius)
-        @test_throws ErrorException BoxPartition(box)
-    end
-    @testset "integer domain" begin
-        int_box = Box(SVector(0, 0), SVector(1, 1))
-        # this should either throw a clearer error message or convert int to float
-        @test_throws MethodError BoxPartition(int_box)
+        @test_throws ErrorException Box(center, radius)
     end
 end
 @testset "internal functionality" begin
-    partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), depth=5)
+    partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), (4,2,2))
     @testset "keys all" begin
-        @test size(GAIO.keys_all(partition)) == (2^depth(partition),)
+        @test size(GAIO.keys_all(partition)) == (4*2*2,)
     end
     inside = SVector(0.5, 0.5, 0.5)
     left = SVector(-1.0, -1.0, -1.0)
