@@ -1,7 +1,7 @@
 struct BoxPartition{N,T} <: AbstractBoxPartition{Box{N,T}}
     domain::Box{N,T}
     left::SVector{N,T}
-    scale::SVector{N,Float64}
+    scale::SVector{N,T}
     dims::SVector{N,Int}
     dimsprod::SVector{N,Int}
 end

@@ -1,4 +1,4 @@
-struct Box{N,T}
+struct Box{N,T <: AbstractFloat}
     center::SVector{N,T}
     radius::SVector{N,T}
 
@@ -14,6 +14,9 @@ struct Box{N,T}
         end
 
         T = promote_type(eltype(center), eltype(radius))
+        if !(T <: AbstractFloat)
+            T = Float64
+        end
 
         return new{N,T}(SVector{N,T}(center), SVector{N,T}(radius))
     end
