@@ -3,6 +3,18 @@ struct BoxSet{P <: AbstractBoxPartition,S <: AbstractSet}
     set::S
 end
 
+function BoxSet(domain::Box{N,T}, dims::NTuple{N,Int}) where {N,T}
+    P = BoxPartition(domain, dims)
+    return BoxSet(P, Set{keytype(typeof(P))}())
+end
+
+function BoxSet(domain::Box{N,T}) where {N,T}
+    dims = tuple(ones(Int64,N)...)
+    BoxSet(domain, dims)
+end
+
+BoxSet(domain::Box{1,T}, dims::Int) where {T} = BoxPartition(domain, (dims,))
+
 function Base.show(io::IO, boxset::BoxSet) 
     size = length(boxset.set)
     dim = length(boxset.partition.domain.center)
@@ -34,6 +46,11 @@ function Base.getindex(partition::AbstractBoxPartition, points_or_point)
 
     return BoxSet(partition, set)
 end
+
+function Base.getindex(boxset::BoxSet, points_or_point)
+    getindex(boxset.partition, points_or_point)
+end
+
 
 function Base.getindex(partition::AbstractBoxPartition, ::Colon)
     return BoxSet(partition, Set(keys_all(partition)))

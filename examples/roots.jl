@@ -7,7 +7,7 @@ Dg = x -> ForwardDiff.jacobian(g, x)
 
 dim = 3
 center, radius = zeros(dim), 40*ones(dim)
-P = BoxPartition(Box(center, radius))
+P = BoxSet(Box(center, radius))
 
 R = cover_roots(g, Dg, P[:], steps=dim*8)
 
