@@ -1,15 +1,19 @@
-# GAIO - Global Analysis of Invariant Objects
-GAIO is a framework establishing the global numerical analysis of Dynamical Systems based on set oriented techniques.
+# GAIO.jl
 
-Its core ability is to discretize sets as well as maps, such that when inputting a discretized set into a discretized map, the output will again be a discretized set. 
-To that extent, GAIO enables the application of direct operations meant for sets (like `union` and `setdiff`) to the images of such discretized maps. 
-Also integrated in the package is the ability to plot discretized sets.
+GAIO (_Global Analysis of Invariant Objects_) is a Julia package for set oriented computations.  Sets are represented by box collections. A _box_ (or _cube_) is a higher dimensional interval, i.e. a set of the form
+```math
+[a₁,b₁] × ... × [aₙ,bₙ],    aₖ,bₖ ∈ ℝ
+```
+GAIO.jl provides algorithms for  
+* dynamical systems
+  * invariant sets (maximal invariant set, chain recurrent set, (relative) attractor, (un-)stable manifold)
+  * almost invariant and coherent sets
+  * finite time Lyapunov exponents
+  * entropy and box dimension
+* root finding problems
+* multi-objective optimization problems
+* computing implicitely defined manifolds
 
-Thus, it allows the set oriented computation and/or visualization of 
-- invariant sets (e.g. periodic points, global attractor, chain recurrent set) of arbitrary dimension or topology
-- invariant manifolds (stable/unstable manifolds of an arbitrary invariant set)
-- invariant measures, almost invariant sets, coherent sets
+### Project origin
 
-
-## Project origin
-This framework originated as a university seminar for master students, with the aim to enhance and convert the already existing Matlab GAIO framework to julia.
+The package originated as a university seminar for master students in the summer 2020, with the aim to enhance and convert the already existing Matlab GAIO package to Julia.
