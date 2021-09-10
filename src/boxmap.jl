@@ -26,6 +26,10 @@ end
 
 BoxMap(map, P::BoxPartition{N,T}; no_of_points::Int=20*N) where {N,T} = BoxMap(map, P.domain, no_of_points=no_of_points) 
 
+function BoxMap(map, B::BoxSet{BoxPartition{N,T},S}; no_of_points::Int=20*N) where {N,T,S}
+    BoxMap(map, B.partition, no_of_points=no_of_points)
+end
+
 function sample_adaptive(Df, center::SVector{N,T}) where {N,T}
     D = Df(center)
     _, σ, Vt = svd(D)
