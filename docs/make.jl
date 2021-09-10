@@ -9,6 +9,7 @@ makedocs(
         "Getting started" => getting_started.md
         "General usage" => "general.md",
         "Algorithms" => "algorithms.md",
+        "Plotting" => "plotting.md"
         "Examples" => "examples.md",
     ],
 )
