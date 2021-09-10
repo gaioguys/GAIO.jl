@@ -39,11 +39,9 @@ We can now compute a covering of the attractor
 A = relative_attractor(F, B[:], steps = 15)  
 plot(A)
 ```
-using the subdivison algorithm described in [4]. The command `B[:]` returns the box set containing all boxes from the underyling 4 x 4 partition.  Note that we could as well have started the computation with `B = BoxSet(Ω)` which is a shortcut for `B = BoxSet(Ω, (1,1))`, i.e. the ''trivial'' partition consisting of a single box (i.e. Ω) only. 
+using the subdivison algorithm described in [4]. The command `B[:]` returns the box set containing all boxes from the underyling 4 x 4 partition.  In addition to covering the attractor, this box collection also covers an unstable fixed point near (-1,-0.3) and its unstabe manifold (cf. [4]).
 
-In addition to covering the attractor, this box collection also covers an unstable fixed point near (-1,-0.3) and its unstabe manifold (cf. [4]).
-
-<p><img src="../henon-attractor.svg" alt="box covering of the Hénon attractor" width=60%/></p>
+<p><img src="images/henon-attractor.svg" alt="box covering of the Hénon attractor" width=60%/></p>
 
 ## References
 
