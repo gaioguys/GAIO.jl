@@ -1,5 +1,7 @@
 # GAIO.jl
 
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://gaioguys.github.io/GAIO.jl/dev/)
+
 ## About 
 
 GAIO.jl is a Julia package for set oriented computations.  Sets are represented by box collections. A _box_ (or _cube_) is a higher dimensional interval, i.e. a set of the form
@@ -16,16 +18,23 @@ GAIO.jl provides algorithms for
 * multi-objective optimization problems
 * computing implicitely defined manifolds
 
+
+## Installation
+
+The package requires Julia 1.7 or later. In Julia's package manager, type
+```julia
+pkg> add https://github.com/gaioguys/GAIO.jl.git
+```
+followed by
+```julia
+julia> using GAIO
+```
+at the Julia prompt in order to load the package.
+
 ## Documentation
 
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://gaioguys.github.io/GAIO.jl/dev/)
 
-## Installation
-
-In Julia's package manager, type
-```julia
-pkg> add https://github.com/gaioguys/GAIO.jl.git
-```
 
 ## Getting started
 

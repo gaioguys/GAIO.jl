@@ -4,8 +4,8 @@ Consider the famous [Hénon map](https://en.wikipedia.org/wiki/H%C3%A9non_map) [
 ```math
 f(x,y) = (1-ax^2+y, bx), \quad a,b \in \mathbb{R}
 ```
-Iterating some random intial point exhibits a, well, ''strange'' attractor (a=1.4 and b=0.3)
-![GitHub Logo](../henon-simulation.svg)
+Iterating some random intial point exhibits a strange attractor (a=1.4 and b=0.3)
+<p><img src="../henon-simulation.svg" alt="Hénon attractor" width=60%/></p>
 
 Since this map is _chaotic_ [2,3], it has sensitive dependence on initial conditions.  That is, small perturbations (as unavoidable on a computer) during the computation grow exponentially during the iteration.  Thus, apart from a few iterates at the beginning, the computed trajectory does not (necessarily) follow a true trajectory. One might therefore question how reliable this figure is.
 
@@ -22,7 +22,7 @@ center, radius = (0,0), (3,3)
 ```
 This box serves as the domain for our computation.
 
-From some box Ω, a `BoxSet` can be constructed. A `BoxSet` is a subset of a partition of Ω into smaller boxes:
+From some box Ω, a `BoxSet` can be constructed. A `BoxSet` is a subset of a partition of Ω into smaller boxes. The command
 ```julia
 B = BoxSet(Ω, (4,4)) 
 ```
@@ -43,9 +43,7 @@ using the subdivison algorithm described in [4]. The command `B[:]` returns the 
 
 In addition to covering the attractor, this box collection also covers an unstable fixed point near (-1,-0.3) and its unstabe manifold (cf. [4]).
 
-![GitHub Logo](../henon-attractor.svg)
-
-
+<p><img src="../henon-attractor.svg" alt="box covering of the Hénon attractor" width=60%/></p>
 
 ## References
 

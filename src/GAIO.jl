@@ -3,16 +3,17 @@ module GAIO
 using LinearAlgebra
 using SparseArrays
 using StaticArrays
-using GLFW
-using ModernGL
-using GeometryBasics
-using GLMakie
 using LightGraphs
 using ForwardDiff
 using Arpack
 using Base.Threads
 
-export Box
+using GLFW
+using ModernGL
+using GeometryBasics
+using GLMakie
+
+export Box, volume
 
 export AbstractBoxPartition, BoxPartition, TreePartition
 export dimension, depth

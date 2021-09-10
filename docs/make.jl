@@ -7,6 +7,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Getting started" => "getting_started.md",
+        "Data structures" => "data_structures.md",
         "General usage" => "general.md",
         "Algorithms" => "algorithms.md",
         "Plotting" => "plotting.md",

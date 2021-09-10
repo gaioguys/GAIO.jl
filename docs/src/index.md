@@ -1,5 +1,7 @@
 # GAIO.jl
 
+## About
+
 GAIO (_Global Analysis of Invariant Objects_) is a Julia package for set oriented computations.  Sets are represented by box collections. A _box_ (or _cube_) is a higher dimensional interval, i.e. a set of the form
 ```math
 [a₁,b₁] × ... × [aₙ,bₙ],    aₖ,bₖ ∈ ℝ
@@ -13,6 +15,13 @@ GAIO.jl provides algorithms for
 * root finding problems
 * multi-objective optimization problems
 * computing implicitely defined manifolds
+
+## Installation
+
+The package requires Julia 1.7 or later. In Julia's package manager, type
+```julia
+pkg> add https://github.com/gaioguys/GAIO.jl.git
+```
 
 ### Project origin
 

@@ -6,8 +6,13 @@ function plot(boxset::BoxSet{<:AbstractBoxPartition{<:Box{N}}}; kwargs...) where
     m = HyperRectangle(Vec3f0(0), Vec3f0(1))
     c = [box.center.-box.radius for box in boxset]
     r = [box.radius for box in boxset]
-    fig, ax, ms = meshscatter(Vec{N, Float32}.(c), marker = m, markersize = 1.9*r,
-                            color =:red; kwargs...)
+    fig, ax, ms = meshscatter(Vec{N, Float32}.(c), marker = m, markersize = 1.9*r;
+                             kwargs...)
+end
+
+function plot(box::Box{N,T}; kwargs...) where {N,T}
+    B = BoxPartition(box)
+    fig, ax, p = plot(B[:]; kwargs=kwargs)
 end
 
 function plot(boxfun::BoxFun{<:AbstractBoxPartition{<:Box{1}}}; kwargs...)
