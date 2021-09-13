@@ -19,7 +19,7 @@ export AbstractBoxPartition, BoxPartition, TreePartition
 export dimension, depth
 
 export BoxSet
-export boxset_empty, subdivide, subdivide!
+export empty, subdivide, subdivide!
 
 export BoxFun
 

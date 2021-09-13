@@ -21,7 +21,7 @@ function Base.show(io::IO, boxset::BoxSet)
     print(io, "$size-element BoxSet in dimension $dim")
 end
 
-function boxset_empty(partition::P) where P <: AbstractBoxPartition
+function Base.empty(partition::P) where P <: AbstractBoxPartition
     return BoxSet(partition, Set{keytype(P)}())
 end
 
@@ -47,8 +47,9 @@ function Base.getindex(partition::AbstractBoxPartition, points_or_point)
     return BoxSet(partition, set)
 end
 
-function Base.getindex(boxset::BoxSet, points_or_point)
-    getindex(boxset.partition, points_or_point)
+function Base.getindex(B::BoxSet, points)
+    A = getindex(B.partition, points)
+    return B ∩ A
 end
 
 
