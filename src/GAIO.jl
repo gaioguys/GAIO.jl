@@ -3,10 +3,10 @@ module GAIO
 using LinearAlgebra
 using SparseArrays
 using StaticArrays
-using GLFW
-using ModernGL
+# using GLFW
+# using ModernGL
 using GeometryBasics
-using GLMakie
+using WGLMakie
 using LightGraphs
 using ForwardDiff
 using Arpack

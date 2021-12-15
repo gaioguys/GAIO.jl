@@ -1,6 +1,6 @@
-include("plot/shader.jl")
-include("plot/camera.jl")
-include("plot/plot.jl")
+# include("plot/shader.jl")
+# include("plot/camera.jl")
+# include("plot/plot.jl")
 
 function plot(boxset::BoxSet{<:AbstractBoxPartition{<:Box{N}}}; kwargs...) where N
     m = HyperRectangle(Vec3f0(0), Vec3f0(1))
