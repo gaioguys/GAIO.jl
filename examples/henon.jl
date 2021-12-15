@@ -14,5 +14,9 @@ boxset = partition[:]
 steps = 18
 A = relative_attractor(boxmap, boxset, steps)
 
+F = PointDiscretizedMap(f, 2*rand(1000) .- 1)
+T = TransferOperator(F, A)
+(λ, ev) = eigs(T)
+
 plot(A)
 

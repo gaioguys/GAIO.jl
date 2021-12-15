@@ -4,6 +4,12 @@ struct BoxFun{P<:BoxPartition,K,V}
     dict::Dict{K,V}
 end
 
+function Base.show(io::IO, boxfun::BoxFun) 
+    size = length(boxfun.dict)
+    dim = length(boxfun.partition.domain.center)
+    print(io, "BoxFun on $size elements in dimension $dim")
+end
+
 function Base.sum(f, boxfun::BoxFun{K,V}) where {K,V}
     return sum(let partition = boxfun.partition
         pair -> begin

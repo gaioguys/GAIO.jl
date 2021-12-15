@@ -25,3 +25,4 @@ function plot(boxfun::BoxFun{<:BoxPartition{<:Box{1}}}; kwargs...)
     barplot(c, v, width = 1.9*r; kwargs ...)
 end
 
+
