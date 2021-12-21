@@ -10,7 +10,7 @@ struct TreePartition{N,T} <: AbstractBoxPartition{Box{N,T}}
 end
 
 Base.copy(partition::TreePartition) = TreePartition(partition.domain, copy(partition.nodes), copy(partition.regular_partitions))
-
+                                                    # no need for copy because it is a SVector?
 depth(partition::TreePartition) = length(partition.regular_partitions) - 1
 keytype(::Type{<:TreePartition}) = Tuple{Int,Int}
 
@@ -19,8 +19,8 @@ function Base.show(io::IO, partition::TreePartition)
 end
 
 function keys_all(partition::TreePartition)
-    if depth(partition) != 0
-        error("not implemented")
+    if depth(partition) != 0        # needed:  nr. of keys in each layer, 
+        error("not implemented")    # multiplied according to tree structure
     end
 
     return [(0, 1)]
@@ -34,10 +34,12 @@ function key_to_box(partition::TreePartition, key::Tuple{Int,Int})
     return key_to_box(partition.regular_partitions[key[1] + 1], key[2])
 end
 
-function unsafe_point_to_ints(partition::BoxPartition, point)
-    x = (point .- partition.left) .* partition.scale
+#=
+function unsafe_point_to_ints(partition::BoxPartition, point) # should maybe be put into partition_regular.jl
+    x = (point .- partition.left) .* partition.scale    # counts how many boxes x is away from left (componentwise)
     return map(xi -> Base.unsafe_trunc(Int, xi), x)
 end
+=#
 
 function tree_search(tree::TreePartition{N,T}, point) where {N,T}
     regular_partitions = tree.regular_partitions
@@ -48,11 +50,11 @@ function tree_search(tree::TreePartition{N,T}, point) where {N,T}
     current_depth = 0
     ints = zeros(SVector{N,Int})
 
-    while current_depth+1 <= tree_depth
+    while current_depth < tree_depth    # current_depth+1 <= tree_depth
         ints_next = unsafe_point_to_ints(regular_partitions[current_depth+2], point)
-
+        # tree_depth is one less than length of partitions and current_depth stops *before* it reaches tree_depth
         point_is_left = iseven(ints_next[(current_depth % N) + 1])
-
+                                        # cycles through dimensions during subdivision steps
         node = tree.nodes[node_idx]
         node_idx_next = ifelse(point_is_left, node.left, node.right)
 

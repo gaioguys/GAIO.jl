@@ -3,14 +3,15 @@ module GAIO
 using LinearAlgebra
 using SparseArrays
 using StaticArrays
-using GLFW
-using ModernGL
 using GeometryBasics
-using GLMakie
 using LightGraphs
 using ForwardDiff
 using Arpack
 using Base.Threads
+
+using GLFW
+using ModernGL
+using GLMakie
 
 export Box
 
@@ -36,6 +37,8 @@ export rk4, rk4_flow_map
 export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots, finite_time_lyapunov_exponents
 
 export plot
+
+# ENV["JULIA_DEBUG"] = all
 
 include("box.jl")
 

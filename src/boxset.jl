@@ -1,3 +1,10 @@
+"""
+Internal data structure to hold sets
+
+`partition`:  the partition that the set is defined over
+`set`:        set of partition-keys corresponding to the boxes in the set
+
+"""
 struct BoxSet{P <: AbstractBoxPartition,S <: AbstractSet}
     partition::P
     set::S
@@ -6,9 +13,10 @@ end
 function Base.show(io::IO, boxset::BoxSet) 
     size = length(boxset.set)
     dim = length(boxset.partition.domain.center)
-    print(io, "$size-element BoxSet in dimension $dim")
+    print(io, "$size-element BoxSet in $dim dimensions")
 end
 
+# TODO: replace with BoxSet(partition)
 function boxset_empty(partition::P) where P <: AbstractBoxPartition
     return BoxSet(partition, Set{keytype(P)}())
 end
