@@ -3,14 +3,15 @@ module GAIO
 using LinearAlgebra
 using SparseArrays
 using StaticArrays
+# using GLFW
+# using ModernGL
 using GeometryBasics
+using WGLMakie
 using LightGraphs
 using ForwardDiff
 using Arpack
 using Base.Threads
 
-using GLFW
-using ModernGL
 using GLMakie
 
 export Box
