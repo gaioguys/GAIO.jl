@@ -14,13 +14,13 @@ struct Box{N,T <: AbstractFloat}
         N = length(center)
 
         if length(radius) != N
-            DimensionMismatch("Center vector and radius vector must have same length ($N)")
+            throw(DimensionMismatch("Center vector and radius vector must have same length ($N)"))
         end
 
         if any(x -> x <= 0, radius)
-            DomainError(radius, "radius must be positive in every component")
+            throw(DomainError(radius, "radius must be positive in every component"))
         end
-
+        
         T = promote_type(eltype(center), eltype(radius))
         if !(T <: AbstractFloat)
             T = Float64
@@ -30,7 +30,7 @@ struct Box{N,T <: AbstractFloat}
     end
 end
 
-Base.in(point, box::Box) = all(box.center - box.radius  .<=  point  .<=  box.center + box.radius)
+Base.in(point, box::Box) = all(box.center - box.radius  .<=  point  .<  box.center + box.radius)
 
 volume(box::Box) = prod(2 * box.radius)
 

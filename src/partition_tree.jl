@@ -10,7 +10,7 @@ struct TreePartition{N,T} <: AbstractBoxPartition{Box{N,T}}
 end
 
 Base.copy(partition::TreePartition) = TreePartition(partition.domain, copy(partition.nodes), copy(partition.regular_partitions))
-                                                    # no need for copy because it is a SVector?
+
 depth(partition::TreePartition) = length(partition.regular_partitions) - 1
 keytype(::Type{<:TreePartition}) = Tuple{Int,Int}
 
@@ -19,8 +19,8 @@ function Base.show(io::IO, partition::TreePartition)
 end
 
 function keys_all(partition::TreePartition)
-    if depth(partition) != 0        # needed:  nr. of keys in each layer, 
-        error("not implemented")    # multiplied according to tree structure
+    if depth(partition) != 0
+        error("not implemented")
     end
 
     return [(0, 1)]
@@ -50,11 +50,11 @@ function tree_search(tree::TreePartition{N,T}, point) where {N,T}
     current_depth = 0
     ints = zeros(SVector{N,Int})
 
-    while current_depth < tree_depth    # current_depth+1 <= tree_depth
+    while current_depth+1 <= tree_depth
         ints_next = unsafe_point_to_ints(regular_partitions[current_depth+2], point)
-        # tree_depth is one less than length of partitions and current_depth stops *before* it reaches tree_depth
+
         point_is_left = iseven(ints_next[(current_depth % N) + 1])
-                                        # cycles through dimensions during subdivision steps
+
         node = tree.nodes[node_idx]
         node_idx_next = ifelse(point_is_left, node.left, node.right)
 
@@ -81,7 +81,7 @@ function point_to_key(partition::TreePartition, point)
     return tree_search(partition, point)[1]
 end
 
-function subdivide!(tree::TreePartition, key::Tuple{Int,Int})
+function subdivide!(tree::TreePartition{N, T}, key::Tuple{Int,Int}) where {N, T}
     search_key, node_idx = tree_search(tree, key_to_box(tree, key).center)
 
     @assert key == search_key
@@ -97,7 +97,7 @@ function subdivide!(tree::TreePartition, key::Tuple{Int,Int})
     tree.nodes[node_idx] = new_node
 
     if key[1] == depth(tree)
-        push!(tree.regular_partitions, BoxPartition(tree.domain, depth=depth(tree)+1))
+        push!(tree.regular_partitions, BoxPartition(tree.domain, depth=depth(tree)+1 #=ntuple(i -> depth(tree)+1, N)=#))
     end
 
     return tree

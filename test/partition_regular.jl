@@ -22,7 +22,7 @@ using Test
     @testset "domain with zero radius" begin
         center = SVector(0.0, 0.0)
         radius = SVector(1.0, 0.0)
-        @test_throws ErrorException Box(center, radius)
+        @test_throws DomainError Box(center, radius)
     end
 end
 @testset "internal functionality" begin

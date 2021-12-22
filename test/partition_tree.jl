@@ -19,7 +19,6 @@ using Test
     @testset "domain with zero radius" begin
         center = SVector(0.0, 0.0)
         radius = SVector(1.0, 0.0)
-        box = Box(center, radius)
-        @test_throws ErrorException TreePartition(box)
+        @test_throws DomainError Box(center, radius)
     end
 end

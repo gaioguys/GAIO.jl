@@ -84,12 +84,10 @@ end
 function point_to_key(partition::BoxPartition, point)
     x_ints = unsafe_point_to_ints(partition, point)
 
-    if any(x_ints .< zero(eltype(x_ints))) || any(x_ints .> partition.dims)
+    if any(x_ints .< zero(eltype(x_ints))) || any(x_ints .>= partition.dims)
         @debug "point does not lie in the domain" point partition.domain
         return nothing
     end
     
     return sum(x_ints .* partition.dimsprod) + 1
 end
-
-

@@ -17,7 +17,7 @@ using GLMakie
 export Box
 
 export AbstractBoxPartition, BoxPartition, TreePartition
-export dimension, depth
+export dimension, depth, key_to_box, point_to_key, tree_search
 
 export BoxSet
 export boxset_empty, subdivide, subdivide!
