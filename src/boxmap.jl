@@ -1,5 +1,16 @@
 abstract type BoxMap end
+"""
+Transforms a `map` defined on ℝᴺ to a `BoxMap` defined on BoxSets
 
+`map`:              map that defines the dynamical system
+
+`domain_points`:    the spread of test points to be mapped forward in intersection algorithms.
+                    (scaled to fit a box with unit radii)
+
+`image_points`:     the spread of test points for comparison in intersection algorithms.
+                    (scaled to fit a box with unit radii)
+
+""" # TODO: see if domain is redundant in struct
 struct SampledBoxMap{F,N,T,P,I} <: BoxMap
     map::F
     domain::Box{N,T}
@@ -24,9 +35,11 @@ function BoxMap(map, domain::Box{N,T}; no_of_points::Int=20*N) where {N,T}
     return PointDiscretizedMap(map, domain, points) 
 end
 
-BoxMap(map, P::BoxPartition{N,T}; no_of_points::Int=20*N) where {N,T} = BoxMap(map, P.domain, no_of_points=no_of_points) 
+function BoxMap(map, P::BoxPartition{N,T}; adaptive=false, no_of_points::Int=20*N) where {N,T}
+    adaptive  ?  AdaptiveBoxMap(map, P.domain) : BoxMap(map, P.domain, no_of_points=no_of_points)
+end
 
-function sample_adaptive(Df, center::SVector{N,T}) where {N,T}
+function sample_adaptive(Df, center::SVector{N,T}) where {N,T}  # how does this work?
     D = Df(center)
     _, σ, Vt = svd(D)
     n = ceil.(Int, σ) 
@@ -36,7 +49,7 @@ function sample_adaptive(Df, center::SVector{N,T}) where {N,T}
         points[i] = ntuple(k -> n[k]==1 ? 0.0 : (i[k]-1)*h[k]-1.0, N)
         points[i] = Vt'*points[i]
     end   
-    @show points
+    @debug points
     return points 
 end
 
@@ -47,7 +60,8 @@ function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     vertices = Array{SVector{N,T}}(undef, ntuple(k->2, N))
     for i in CartesianIndices(vertices)
         vertices[i] = ntuple(k -> (-1.0)^i[k], N)
-    end   
+    end
+    # calculates the vertices of each box
     image_points = (center, radius) -> vertices
     return SampledBoxMap(f, domain, domain_points, image_points)
 end

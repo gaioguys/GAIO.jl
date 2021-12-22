@@ -34,10 +34,12 @@ function key_to_box(partition::TreePartition, key::Tuple{Int,Int})
     return key_to_box(partition.regular_partitions[key[1] + 1], key[2])
 end
 
-function unsafe_point_to_ints(partition::BoxPartition, point)
-    x = (point .- partition.left) .* partition.scale
+#=
+function unsafe_point_to_ints(partition::BoxPartition, point) # should maybe be put into partition_regular.jl
+    x = (point .- partition.left) .* partition.scale    # counts how many boxes x is away from left (componentwise)
     return map(xi -> Base.unsafe_trunc(Int, xi), x)
 end
+=#
 
 function tree_search(tree::TreePartition{N,T}, point) where {N,T}
     regular_partitions = tree.regular_partitions
@@ -79,7 +81,7 @@ function point_to_key(partition::TreePartition, point)
     return tree_search(partition, point)[1]
 end
 
-function subdivide!(tree::TreePartition, key::Tuple{Int,Int})
+function subdivide!(tree::TreePartition{N, T}, key::Tuple{Int,Int}) where {N, T}
     search_key, node_idx = tree_search(tree, key_to_box(tree, key).center)
 
     @assert key == search_key
@@ -95,7 +97,7 @@ function subdivide!(tree::TreePartition, key::Tuple{Int,Int})
     tree.nodes[node_idx] = new_node
 
     if key[1] == depth(tree)
-        push!(tree.regular_partitions, BoxPartition(tree.domain, depth=depth(tree)+1))
+        push!(tree.regular_partitions, BoxPartition(tree.domain, depth=depth(tree)+1 #=ntuple(i -> depth(tree)+1, N)=#))
     end
 
     return tree

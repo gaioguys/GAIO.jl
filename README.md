@@ -4,7 +4,7 @@
 
 GAIO.jl is a Julia package for set oriented computations.  Sets are represented by box collections. A _box_ (or _cube_) is a higher dimensional interval, i.e. a set of the form
 ```math
-[a₁,b₁] × ... × [aₙ,bₙ],    aₖ,bₖ ∈ ℝ
+[a₁,b₁) × ... × [aₙ,bₙ),    aₖ,bₖ ∈ ℝ
 ```
 GAIO.jl provides algorithms for  
 * dynamical systems

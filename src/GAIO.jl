@@ -12,10 +12,12 @@ using ForwardDiff
 using Arpack
 using Base.Threads
 
+using GLMakie
+
 export Box
 
 export AbstractBoxPartition, BoxPartition, TreePartition
-export dimension, depth
+export dimension, depth, key_to_box, point_to_key, tree_search
 
 export BoxSet
 export boxset_empty, subdivide, subdivide!
@@ -36,6 +38,8 @@ export rk4, rk4_flow_map
 export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots, finite_time_lyapunov_exponents
 
 export plot
+
+# ENV["JULIA_DEBUG"] = all
 
 include("box.jl")
 

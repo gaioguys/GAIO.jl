@@ -1,3 +1,23 @@
+"""
+Internal data structure to partition a box
+
+`domain`:       box defining the entire domain
+
+`left`:         leftmost / bottom edge of the domain
+
+`scale`:        1 / diameter of each box in the new partition (componentwise)
+
+`dimsprod`:     for indexing the partition:
+                key is counted up in first dimension first, then second dimension, etc... ie
+
+                 1st dim →
+                  * — * — * — *
+            2nd   | 1 | 2 | 3 |
+            dim   * — * — * — *
+            ↓     | 4 | 5 | 6 |
+                  * — * — * — *
+.
+"""
 struct BoxPartition{N,T} <: AbstractBoxPartition{Box{N,T}}
     domain::Box{N,T}
     left::SVector{N,T}
@@ -10,6 +30,7 @@ function BoxPartition(domain::Box{N,T}, dims::NTuple{N,Int}) where {N,T}
     dims = SVector{N,Int}(dims)
     left = domain.center .- domain.radius
     scale = dims ./ (2*domain.radius)
+    # nr. of boxes / diameter of the domain == 1 / diameter of each box
     dimsprod_ = [SVector(1); cumprod(dims)]
     dimsprod = dimsprod_[SOneTo(N)]
 
@@ -27,13 +48,14 @@ dimension(partition::BoxPartition{N,T}) where {N,T} = N
 
 function subdivide(P::BoxPartition{N,T}, dim::Int) where {N,T}
     new_dims = ntuple(i -> P.dims[i]*(i==dim ? 2 : 1), N)
-    BoxPartition(P.domain, new_dims)
+    return BoxPartition(P.domain, new_dims)
 end
 
 keytype(::Type{<:BoxPartition}) = Int
 keys_all(partition::BoxPartition) = 1:prod(partition.dims)
+# == 1 : partition.dimsprod[end] * partition.dims[end]
 
-Base.size(partition::BoxPartition) = partition.dims.data
+Base.size(partition::BoxPartition) = partition.dims.data # .data returns as tuple
 
 function Base.show(io::IO, partition::BoxPartition) 
     print(io, "$(partition.dims[1])")
@@ -43,27 +65,29 @@ function Base.show(io::IO, partition::BoxPartition)
     print(io, " BoxPartition")
 end
 
-function key_to_box(partition::BoxPartition{N,T}, key::Int) where {N,T}
+# TODO: replace with overloaded getindex
+function key_to_box(partition::BoxPartition{N,T}, key::M) where M <: Union{Int, NTuple{N, Int}} where {N,T}
     dims = size(partition)
     radius = partition.domain.radius ./ dims
     left = partition.domain.center .- partition.domain.radius
     center = left .+ radius .+ (2 .* radius) .* (CartesianIndices(dims)[key].I .- 1)
-
+    # start at leftmost box in the partition and move $key boxes right
     return Box(center, radius)
+end 
+
+function unsafe_point_to_ints(partition::BoxPartition, point)
+    x = (point .- partition.left) .* partition.scale    
+    # counts how many boxes x is away from left (componentwise)
+    return map(xi -> Base.unsafe_trunc(Int, xi), x)
 end
 
 function point_to_key(partition::BoxPartition, point)
-    x = (point .- partition.left) .* partition.scale
+    x_ints = unsafe_point_to_ints(partition, point)
 
-    if any(x .< zero(eltype(x)))
+    if any(x_ints .< zero(eltype(x_ints))) || any(x_ints .>= partition.dims)
+        @debug "point does not lie in the domain" point partition.domain
         return nothing
     end
-
-    x_ints = map(xi -> Base.unsafe_trunc(Int, xi), x)
-
-    if any(x_ints .>= partition.dims)
-        return nothing
-    end
-
+    
     return sum(x_ints .* partition.dimsprod) + 1
 end
