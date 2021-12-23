@@ -7,13 +7,14 @@ end
 Base.length(fun::BoxFun) = length(fun.dict)
 
 function Base.sum(f, boxfun::BoxFun{K,V}) where {K,V}
-    return sum(let partition = boxfun.partition
-        pair -> begin
-            key, value = pair
-            box = key_to_box(partition, key)
-            return volume(box) * f(value)
-        end
-    end, boxfun.dict)
+    return sum(
+        let partition = boxfun.partition
+            pair -> begin
+                key, value = pair
+                box = key_to_box(partition, key)
+                return volume(box) * f(value)
+            end
+        end, boxfun.dict)
 end
 
 LinearAlgebra.norm(boxfun::BoxFun) = sqrt(sum(abs2, boxfun))
