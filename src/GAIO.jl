@@ -11,6 +11,9 @@ using LightGraphs
 using ForwardDiff
 using Arpack
 using Base.Threads
+using MuladdMacro
+using SIMD
+using LoopVectorization
 
 using GLMakie
 

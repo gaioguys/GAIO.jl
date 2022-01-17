@@ -15,7 +15,7 @@ struct SampledBoxMap{F,N,T,P,I} <: BoxMap
     map::F
     domain::Box{N,T}
     domain_points::P
-    image_points::I    
+    image_points::I
 end
 
 function Base.show(io::IO, g::SampledBoxMap)
@@ -25,17 +25,19 @@ function Base.show(io::IO, g::SampledBoxMap)
 end
 
 function PointDiscretizedMap(map, domain, points::AbstractArray) 
-    domain_points = (center, radius) -> points
-    image_points = (center, radius) -> center
+    function domain_points(center, radius); points end
+    function domain_points(::Box); points end
+    function image_points(center, radius); center end
+    function image_points(b::Box); b.center end
     return SampledBoxMap(map, domain, domain_points, image_points)
 end
 
-function BoxMap(map, domain::Box{N,T}; no_of_points::Int=20*N) where {N,T}
-    points = [ tuple(2.0*rand(N).-1.0 ...) for _ = 1:no_of_points ] 
+function BoxMap(map, domain::Box{N,T}; no_of_points::Int=16*N) where {N,T}
+    points = [ SVector{N, T}(2.0*rand(N).-1.0 ...) for _ = 1:no_of_points ] 
     return PointDiscretizedMap(map, domain, points) 
 end
 
-function BoxMap(map, P::BoxPartition{N,T}; adaptive=false, no_of_points::Int=20*N) where {N,T}
+function BoxMap(map, P::BoxPartition{N,T}; adaptive=false, no_of_points::Int=16*N) where {N,T}
     adaptive  ?  AdaptiveBoxMap(map, P.domain) : BoxMap(map, P.domain, no_of_points=no_of_points)
 end
 
@@ -45,6 +47,7 @@ function sample_adaptive(Df, center::SVector{N,T}) where {N,T}  # how does this 
     n = ceil.(Int, σ) 
     h = 2.0./(n.-1)
     points = Array{SVector{N,T}}(undef, ntuple(i->n[i], N))
+    # length(points) == prod(n[i] for i=1:N)
     for i in CartesianIndices(points)
         points[i] = ntuple(k -> n[k]==1 ? 0.0 : (i[k]-1)*h[k]-1.0, N)
         points[i] = Vt'*points[i]
@@ -55,15 +58,26 @@ end
 
 function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     Df = x -> ForwardDiff.jacobian(f, x)
-    domain_points = (center, radius) -> sample_adaptive(Df, center)
+    function domain_points(center, radius); sample_adaptive(Df, center) end
+    function domain_points(b::Box); sample_adaptive(Df, b.center) end
 
     vertices = Array{SVector{N,T}}(undef, ntuple(k->2, N))
     for i in CartesianIndices(vertices)
         vertices[i] = ntuple(k -> (-1.0)^i[k], N)
     end
     # calculates the vertices of each box
-    image_points = (center, radius) -> vertices
+    function image_points(center, radius); vertices end
+    function image_points(::Box); vertices end
     return SampledBoxMap(f, domain, domain_points, image_points)
+end
+
+function scaled_domain_points(g::SampledBoxMap{F,N,T,P,I}, b::Box{N,T}) where {F,N,T,P,I}
+    points = reinterpret(T, g.domain_points(b.center, b.radius))
+    n = floor(Int, length(points) / N)
+    @inbounds @muladd for i in 0:n-1, j in 1:N
+        points[N*i + j] = b.center[j] + b.radius[j] * points[N*i + j]
+    end
+    return reinterpret(SVector{N, T}, points)
 end
 
 
@@ -86,6 +100,3 @@ function map_boxes(g::BoxMap, source::BoxSet)
 end 
 
 (g::BoxMap)(source::BoxSet) = map_boxes(g, source)
-
-
-
