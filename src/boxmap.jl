@@ -11,11 +11,12 @@ Transforms a `map` defined on ℝᴺ to a `BoxMap` defined on BoxSets
                     (scaled to fit a box with unit radii)
 
 """ # TODO: see if domain is redundant in struct
-struct SampledBoxMap{F,N,T,P,I} <: BoxMap
+struct SampledBoxMap{F,N,T,P,I,B} <: BoxMap
     map::F
     domain::Box{N,T}
     domain_points::P
     image_points::I
+    accepts_unroll::Val{B}
 end
 
 function Base.show(io::IO, g::SampledBoxMap)
@@ -29,7 +30,7 @@ function PointDiscretizedMap(map, domain, points::AbstractArray)
     function domain_points(::Box); points end
     function image_points(center, radius); center end
     function image_points(b::Box); b.center end
-    return SampledBoxMap(map, domain, domain_points, image_points)
+    return SampledBoxMap(map, domain, domain_points, image_points, Val(false))
 end
 
 function BoxMap(map, domain::Box{N,T}; no_of_points::Int=16*N) where {N,T}
@@ -68,10 +69,10 @@ function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     # calculates the vertices of each box
     function image_points(center, radius); vertices end
     function image_points(::Box); vertices end
-    return SampledBoxMap(f, domain, domain_points, image_points)
+    return SampledBoxMap(f, domain, domain_points, image_points, Val(false))
 end
 
-function scaled_domain_points(g::SampledBoxMap{F,N,T,P,I}, b::Box{N,T}) where {F,N,T,P,I}
+function scaled_domain_points(g::SampledBoxMap{F,N,T,P,I,B}, b::Box{N,T}) where {F,N,T,P,I,B}
     points = reinterpret(T, g.domain_points(b.center, b.radius))
     n = floor(Int, length(points) / N)
     @inbounds @muladd for i in 0:n-1, j in 1:N

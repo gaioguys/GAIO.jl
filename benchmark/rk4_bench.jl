@@ -6,12 +6,12 @@ using Random, Plots, DelimitedFiles
 const sixth, third = 1/6, 1/3
 const σ, ρ, β = 10.0, 28.0, 0.4
 
-#= function v(du, u)
+function v(du, u)
     du[1] =     σ * u[2]    -     σ * u[1]
     du[2] =     ρ * u[1]    -  u[1] * u[3] - u[2]
     du[3] =  u[1] * u[2]    -     β * u[3]
     return nothing
-end =#
+end
 function v(u)
     let x=u[1], y=u[2], z=u[3]
         return (σ*(y-x), ρ*x-y-x*z, x*y-β*z)
@@ -59,7 +59,7 @@ function unrolled_v_noturbo(u)
 end
 
 benchmarks = Dict()
-timeseries(bench) = map(b -> 2 * 1e6 / minimum(b).time, bench)
+timeseries(bench) = map(b -> minimum(b).time, bench)
 allocsseries(bench) = map(b -> minimum(b).memory, bench)
 
 u_init(n) = copy(reinterpret(SVector{3,Float64}, 10. .* rand(3*n) .+ fill(10., 3*n)))
@@ -105,10 +105,10 @@ benchmarks["serial"] = [@benchmark $(rk4_flow_map).($v, u) setup=(u=$(u_init)($n
 println("serial finished")
 p = plot(
     8:8:128,
-    timeseries(benchmarks["serial"]) .* collect(8:8:128),
+    timeseries(benchmarks["serial"]),
     lab="serial",
     xlabel="number of points",
-    title="Peak FLOP/s of various RK4 Implementations",
+    title="Eval Time (ns) of various RK4 Implementations",
     size=(1200,900),
     leg=:outerbottom
 );
@@ -154,7 +154,7 @@ println("serial, inplace finished")
 p = plot!(
     p,
     8:8:128,
-    timeseries(benchmarks["serial"]) .* collect(8:8:128),
+    timeseries(benchmarks["serial"]),
     lab="serial, inplace"
 );
 
@@ -216,7 +216,7 @@ println("ILP with @turbo finished")
 p = plot!(
     p,
     8:8:128,
-    timeseries(benchmarks["ILP with @turbo"]) .* collect(8:8:128),
+    timeseries(benchmarks["ILP with @turbo"]),
     linestyle=:dash,
     lab="ILP with @turbo"
 );
@@ -281,7 +281,7 @@ println("ILP with @turbo, inplace finished")
 p = plot!(
     p,
     8:8:128,
-    timeseries(benchmarks["ILP with @turbo, inplace"]) .* collect(8:8:128),
+    timeseries(benchmarks["ILP with @turbo, inplace"]),
     linestyle=:dashdot,
     lab="ILP with @turbo, inplace"
 );
@@ -336,7 +336,7 @@ println("ILP with @turbo, unrolled function finished")
 p = plot!(
     p,
     8:8:128,
-    timeseries(benchmarks["ILP with @turbo, unrolled function"]) .* collect(8:8:128),
+    timeseries(benchmarks["ILP with @turbo, unrolled function"]),
     linestyle=:dashdotdot,
     lab="ILP with @turbo, unrolled function"
 );
@@ -394,7 +394,7 @@ println("ILP with @turbo, unrolled function, inplace finished")
 p = plot!(
     p,
     8:8:128,
-    timeseries(benchmarks["ILP with @turbo, unrolled function, inplace"]) .* collect(8:8:128),
+    timeseries(benchmarks["ILP with @turbo, unrolled function, inplace"]),
     linestyle=:dot,
     lab="ILP with @turbo, unrolled function, inplace"
 );
@@ -453,7 +453,7 @@ println("manually vectorized finished")
 p = plot!(
     p,
     8:8:128,
-    timeseries(benchmarks["manually vectorized"]) .* collect(8:8:128),
+    timeseries(benchmarks["manually vectorized"]),
     marker=:circle,
     lab="manually vectorized"
 );
@@ -515,7 +515,7 @@ println("manually vectorized, inplace finished")
 p = plot!(
     p,
     8:8:128,
-    timeseries(benchmarks["manually vectorized, inplace"]) .* collect(8:8:128),
+    timeseries(benchmarks["manually vectorized, inplace"]),
     marker=:+,
     lab="manually vectorized, inplace"
 );
@@ -594,7 +594,7 @@ println("manually vectorized, ILP finished")
 p = plot!(
     p,
     8:8:128,
-    timeseries(benchmarks["manually vectorized, ILP"]) .* collect(8:8:128),
+    timeseries(benchmarks["manually vectorized, ILP"]),
     marker=:diamond,
     lab="manually vectorized, ILP"
 );
@@ -675,7 +675,7 @@ println("manually vectorized, ILP, inplace finished")
 p = plot!(
     p,
     8:8:128,
-    timeseries(benchmarks["manually vectorized, ILP, inplace"]) .* collect(8:8:128),
+    timeseries(benchmarks["manually vectorized, ILP, inplace"]),
     marker=:dtriangle,
     lab="manually vectorized, ILP, inplace"
 );
@@ -740,7 +740,7 @@ println("manually vectorized, ILP, inplace, unrolled function finished")
 p = plot!(
     p,
     8:8:128,
-    timeseries(benchmarks["manually vectorized, ILP, inplace, unrolled function"]) .* collect(8:8:128),
+    timeseries(benchmarks["manually vectorized, ILP, inplace, unrolled function"]),
     marker=:star5,
     lab="manually vectorized, ILP, inplace, unrolled function"
 );
@@ -748,16 +748,16 @@ p = plot!(
 #= -------------------------------------------- =#
 # manually vectorized, ILP, inplace, auto-unrolled function (no @turbo)
 
-#= macro generate_unrolled(f, u, N)
+macro generate_unrolled(f, u, N)
     quote
         #println($u)
-        global function Main.$(f)($u; unroll::Val{true})
-            @assert (n = length($u)) % $N == 0
+        global function $(esc(f))($u; unroll::Val{true})
+            @assert (n = length($u)) % $(esc(N)) == 0
             du = similar($u)
-            MuladdMacro.@muladd Base.@inbounds for i in 0 : $N : n - $N
-                f(
-                    @view(du[i+1:i+$N]), 
-                    $(u)[i+1:i+$N]
+            MuladdMacro.@muladd Base.@inbounds for i in 0 : $(esc(N)) : n - $(esc(N))
+                $(esc(f))(
+                    @view( du[i+1:i+$(esc(N))] ), 
+                    $(u)[i+1:i+$(esc(N))]
                 )
             end
             return du
@@ -825,7 +825,7 @@ p = plot!(
     timeseries(benchmarks["manually vectorized, ILP, inplace, auto-unrolled function"]),
     marker=:hline,
     lab="manually vectorized, ILP, inplace, auto-unrolled function"
-); =#
+);
 
 #= -------------------------------------------- =#
 
@@ -835,7 +835,7 @@ key = collect(keys(benchmarks))
     vcat(
         permutedims(key), 
         hcat(
-            [timeseries(benchmarks[k]) .* collect(8:8:128) for k in key]...
+            [timeseries(benchmarks[k]) for k in key]...
         )
     )
 )
@@ -849,5 +849,5 @@ writedlm(
     )
 ) =#
 
-savefig(p, "./RK4_benchmarks.svg")
+savefig(p, "./RK4_benchmarks_time.svg")
 display(p)
