@@ -95,7 +95,7 @@ function finite_time_lyapunov_exponents(boxset::BoxSet, g; T, num_points=20, ϵ=
 end
 
 # Runge-Kutta scheme of 4th order
-@inline function rk4(f, x, τ)
+@muladd @inline function rk4(f, x, τ)
     τ½ = τ/2
 
     k = f(x)
@@ -113,9 +113,46 @@ end
     return @. x+τ*dx
 end
 
-@inline function rk4_flow_map(v, x; step_size=0.01, steps=20)
-    for i = 1:steps
-        x = rk4(v, x, step_size)
+@muladd @inline function rk4!(f, x, dx, k, τ, τp2)
+
+       k .= f(x)
+    @. dx = k * sixth
+    @. k  = x + τp2 * k
+
+       k .= f(k)
+    @. dx = dx + k * third
+    @. k  = x + τp2 * k
+
+       k .= f(k)
+    @. dx = dx + k * third
+    @. k  = x + τ * k
+
+       k .= f(k)
+    @. dx = dx + k * sixth
+    @. x  = x + τ * dx
+
+    return nothing
+end
+
+@inline function rk4_flow_map(f, u::SVector{N,T}; τ=0.01, steps=20) where {N,T}
+    for _ in 1:steps
+        u = rk4(f, u, τ)
     end
-    return x
+    return u
+end
+
+@inline function rk4_flow_map(f, u; τ=0.01, steps=20)
+    du, k = similar(u), similar(u)
+    τp2 = τ / 2
+    for _ in 1:steps
+        rk4!(f, u, du, k, τ, τp2)
+    end
+    return u
+end
+
+function rk4_flow_map(f, N::Int; τ=0.01, steps=20)
+    unrolled_f = @generate_unrolled f N
+    rk4_f(u) = rk4_flow_map(unrolled_f, u; τ=τ, steps=steps)
+    simd_f = @generate_simd rk4_f N
+    return simd_f
 end
