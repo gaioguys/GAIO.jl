@@ -7,6 +7,8 @@ Internal data structure to partition a box
 
 `scale`:        1 / diameter of each box in the new partition (componentwise)
 
+`dims`:         number of boxes in each dimension
+
 `dimsprod`:     for indexing the partition:
                 key is counted up in first dimension first, then second dimension, etc... ie
 

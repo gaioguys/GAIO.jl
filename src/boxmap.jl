@@ -34,10 +34,7 @@ end
 function Base.show(io::IO, g::BoxMap)
     center, radius = g.domain.center, g.domain.radius
     n = length(g.domain_points(center, radius))
-    print(
-        io, 
-        "BoxMap with $(n) sample points. \nDomain: $(g.domain)"
-    )
+    print(io, "BoxMap with $(n) sample points")
 end
 
 function PointDiscretizedMap(map, domain, points::AbstractArray, accel::B=nothing) where B<:Union{Nothing, Symbol, Val{:cpu}, Val{:gpu}}
@@ -82,26 +79,35 @@ function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     return SampledBoxMap(f, domain, domain_points, image_points)
 end
 
-function _map_boxes(points, g::SampledBoxMap{N,T,Nothing}) where {N,T}
-    map!(g.map, points, points)
-    #for i in 1:length(points)
-    #    points[i] = g.map(points[i])
-    #end
-end
-function _map_boxes(points, g::SampledBoxMap{N,T,Val{:cpu}}) where {N,T}
-    points .= g.map(points)
-end
-
 function map_boxes(g::BoxMap, source::BoxSet)
     P, keys = source.partition, collect(source.set)
-    #image = [ Set{eltype(keys)}() for _ in 1:nthreads() ]
     image = fill( Set{eltype(keys)}(), nthreads() )
     @threads for key in keys
         box = key_to_box(P, key)
         c, r = box.center, box.radius
         points = g.domain_points(c, r)
-        map!(p -> muladd.(p, r, c), points, points)
-        _map_boxes(points, g)
+        for p in points
+            fp = muladd.(p, r, c)
+            fp = g.map(fp)
+            hit = point_to_key(P, fp)
+            if hit !== nothing
+                push!(image[threadid()], hit)
+            end
+        end
+    end
+    BoxSet(P, union(image...))
+end 
+
+function map_boxes(g::SampledBoxMap{N,T,Val{:cpu}}, source::BoxSet) where {N,T}
+    P, keys = source.partition, collect(source.set)
+    image = fill( Set{eltype(keys)}(), nthreads() )
+    @threads for key in keys
+        box = key_to_box(P, key)
+        c, r = box.center, box.radius
+        points = deepcopy(g.domain_points(c, r))
+        points_vec = reinterpret(T, points)
+        @turbo points_vec .= muladd.(points_vec, r, c)
+        points .= g.map(points_vec)
         for p in points
             hit = point_to_key(P, p)
             if hit !== nothing
@@ -113,6 +119,3 @@ function map_boxes(g::BoxMap, source::BoxSet)
 end 
 
 (g::BoxMap)(source::BoxSet) = map_boxes(g, source)
-
-
-

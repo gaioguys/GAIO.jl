@@ -125,7 +125,7 @@ end
     return x
 end
 
-@inline function rk4_turbo(f, x, τ, τp2, dx, k)
+@inline function rk4_turbo!(f, x, τ, τp2, dx, k)
 
               k .= f(x)
     @turbo @. dx = k * sixth
@@ -141,19 +141,23 @@ end
 
               k .= f(k)
     @turbo @. dx = dx + k * sixth
-    @turbo @. k  = x + τ * dx
+    @turbo @. x  = x + τ * dx
 
-    return k
+    return nothing
 end
 
-@inline function rk4_flow_map(f, x::Vector{SVector{N,T}}; step_size=0.01, steps=20) where {N,T}
-    x_out = reinterpret(T, x)
+@inline function rk4_flow_map(
+        f, 
+        x::Base.ReinterpretArray{T,1,SVector{N,T},Vector{SVector{N,T}},false}; 
+        step_size=0.01, 
+        steps=20
+    ) where {N,T}
+
     τp2 = step_size / 2
-    dx, k = similar(x_out), similar(x_out)
+    dx, k = similar(x), similar(x)
     for _ in 1:steps
-        x_out = rk4_turbo(f, x_out, step_size, τp2, dx, k)
+        rk4_turbo!(f, x, step_size, τp2, dx, k)
     end
-    x = reinterpret(SVector{N,T}, x_out)
-    return x
+    return reinterpret(SVector{N,T}, x)
 end
 

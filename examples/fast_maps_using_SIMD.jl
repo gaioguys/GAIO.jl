@@ -1,4 +1,5 @@
 using GAIO
+using StaticArrays
 using LoopVectorization
 
 # This example demonstrates how to get a ~3x speedup
@@ -51,7 +52,7 @@ end
 N = 3
 function f(x)
     dx = similar(x)
-    for i in 0 : N : length(x) - N
+    @turbo for i in 0 : N : length(x) - N
         dx[i+1] =      σ * x[i+2] -      σ * x[i+1]
         dx[i+2] =      ρ * x[i+1] - x[i+1] * x[i+3] - x[i+2]
         dx[i+3] = x[i+1] * x[i+2] -      β * x[i+3]
@@ -69,7 +70,7 @@ center, radius = (0,0,25), (30,30,30)
 P = BoxPartition(Box(center, radius), (128,128,128))
 G = BoxMap(F, P, :cpu)
 
-x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
+x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
 W = unstable_set!(G, P[x])
 
 plot(W)
