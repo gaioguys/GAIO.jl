@@ -95,27 +95,69 @@ function finite_time_lyapunov_exponents(boxset::BoxSet, g; T, num_points=20, ϵ=
 end
 
 # Runge-Kutta scheme of 4th order
-@inline function rk4(f, x, τ)
-    τ½ = τ/2
+const sixth, third = 1/6, 1/3
+@muladd @inline function rk4(f, x, τ)
+    τp2 = τ/2
 
-    k = f(x)
-    dx = @. k/6
+    k  = f(x)
+    dx = @. k * sixth
+    k  = @. x + τp2 * k
 
-    k = f(@. x+τ½*k)
-    dx = @. dx + k/3
+    k  = f(k)
+    dx = @. dx + k * third
+    k  = @. x + τp2 * k
 
-    k = f(@. x+τ½*k)
-    dx = @. dx + k/3
+    k  = f(k)
+    dx = @. dx + k * third
+    k  = @. x + τ * k
 
-    k = f(@. x+τ*k)
-    dx = @. dx + k/6
+    k  = f(k)
+    dx = @. dx + k * sixth
+    k  = @. x + τ * dx
 
-    return @. x+τ*dx
+    return k
 end
 
-@inline function rk4_flow_map(v, x; step_size=0.01, steps=20)
-    for i = 1:steps
-        x = rk4(v, x, step_size)
+@inline function rk4_flow_map(f, x; step_size=0.01, steps=20)
+    for _ in 1:steps
+        x = rk4(f, x, step_size)
     end
     return x
 end
+
+@inline function rk4_turbo!(f, x, τ, τp2, dx, k)
+
+              k .= f(x)
+    @turbo @. dx = k * sixth
+    @turbo @. k  = x + τp2 * k
+
+              k .= f(k)
+    @turbo @. dx = dx + k * third
+    @turbo @. k  = x + τp2 * k
+
+              k .= f(k)
+    @turbo @. dx = dx + k * third
+    @turbo @. k  = x + τ * k
+
+              k .= f(k)
+    @turbo @. dx = dx + k * sixth
+    @turbo @. x  = x + τ * dx
+
+    return nothing
+end
+
+@inline function rk4_flow_map(
+        f, 
+        x::Base.ReinterpretArray{T,1,SVector{N,T},Vector{SVector{N,T}},false}; 
+        step_size=0.01, 
+        steps=20
+    ) where {N,T}
+
+    τp2 = step_size / 2
+    dx, k = similar(x), similar(x)
+    for _ in 1:steps
+        rk4_turbo!(f, x, step_size, τp2, dx, k)
+    end
+    return reinterpret(SVector{N,T}, x)
+end
+
