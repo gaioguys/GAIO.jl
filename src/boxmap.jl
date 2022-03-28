@@ -37,18 +37,18 @@ function Base.show(io::IO, g::BoxMap)
     print(io, "BoxMap with $(n) sample points")
 end
 
-function PointDiscretizedMap(map, domain, points::AbstractArray, accel::B=nothing) where B<:Union{Nothing, Symbol, Val{:cpu}, Val{:gpu}}
+function PointDiscretizedMap(map, domain, points::AbstractArray, accel=nothing)
     domain_points(center, radius) =  points
     image_points(center, radius) = center
     return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
 
-function BoxMap(map, domain::Box{N,T}, accel::B=nothing; no_of_points::Int=16*N) where {N,T} where B<:Union{Nothing, Symbol, Val{:cpu}, Val{:gpu}}
+function BoxMap(map, domain::Box{N,T}, accel=nothing; no_of_points::Int=16*N) where {N,T}
     points = [ SVector{N,T}(2.0*rand(T,N).-1.0) for _ = 1:no_of_points ] 
     return PointDiscretizedMap(map, domain, points, accel) 
 end
 
-function BoxMap(map, P::BoxPartition{N,T}, accel::B=nothing; no_of_points::Int=16*N) where {N,T} where B<:Union{Nothing, Symbol, Val{:cpu}, Val{:gpu}}
+function BoxMap(map, P::BoxPartition{N,T}, accel=nothing; no_of_points::Int=16*N) where {N,T}
     BoxMap(map, P.domain, accel; no_of_points=no_of_points)
 end
 
@@ -87,7 +87,7 @@ function map_boxes(g::BoxMap, source::BoxSet)
         c, r = box.center, box.radius
         points = g.domain_points(c, r)
         for p in points
-            fp = muladd.(p, r, c)
+            fp = @muladd p .* r .+ c
             fp = g.map(fp)
             hit = point_to_key(P, fp)
             if hit !== nothing
@@ -106,8 +106,9 @@ function map_boxes(g::SampledBoxMap{N,T,Val{:cpu}}, source::BoxSet) where {N,T}
         c, r = box.center, box.radius
         points = deepcopy(g.domain_points(c, r))
         points_vec = reinterpret(T, points)
-        @turbo points_vec .= muladd.(points_vec, r, c)
-        points .= g.map(points_vec)
+        @turbo @. points_vec = points_vec * r + c
+        points_vec .= g.map(points_vec)
+        points = reinterpret(SVector{N,T}, points_vec)
         for p in points
             hit = point_to_key(P, p)
             if hit !== nothing
