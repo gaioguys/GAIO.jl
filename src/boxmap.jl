@@ -106,8 +106,9 @@ function map_boxes(g::SampledBoxMap{N,T,Val{:cpu}}, source::BoxSet) where {N,T}
         c, r = box.center, box.radius
         points = deepcopy(g.domain_points(c, r))
         points_vec = reinterpret(T, points)
-        @turbo points_vec .= points_vec .* r .+ c
-        points .= g.map(points_vec)
+        @turbo @. points_vec = points_vec * r + c
+        points_vec .= g.map(points_vec)
+        points = reinterpret(SVector{N,T}, points_vec)
         for p in points
             hit = point_to_key(P, p)
             if hit !== nothing

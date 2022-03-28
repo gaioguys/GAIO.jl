@@ -46,8 +46,10 @@ function f_template(x)
     return dx
 end
 
-# All we have done is replace all calls to 
+# All we have done is copy & paste the in-situ 
+# function's body, then replace all calls to 
 # getindex(vector, j) with getindex(vector, i+j).
+
 # In our Lorenz equation example, this looks like 
 N = 3
 function f(x)

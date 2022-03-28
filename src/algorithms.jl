@@ -158,6 +158,6 @@ end
     for _ in 1:steps
         rk4_turbo!(f, x, step_size, τp2, dx, k)
     end
-    return reinterpret(SVector{N,T}, x)
+    return x
 end
 
