@@ -87,7 +87,7 @@ function map_boxes(g::BoxMap, source::BoxSet)
         c, r = box.center, box.radius
         points = g.domain_points(c, r)
         for p in points
-            fp = muladd.(p, r, c)
+            fp = @muladd p .* r .+ c
             fp = g.map(fp)
             hit = point_to_key(P, fp)
             if hit !== nothing
@@ -106,7 +106,7 @@ function map_boxes(g::SampledBoxMap{N,T,Val{:cpu}}, source::BoxSet) where {N,T}
         c, r = box.center, box.radius
         points = deepcopy(g.domain_points(c, r))
         points_vec = reinterpret(T, points)
-        @turbo points_vec .= muladd.(points_vec, r, c)
+        @turbo points_vec .= points_vec .* r .+ c
         points .= g.map(points_vec)
         for p in points
             hit = point_to_key(P, p)
