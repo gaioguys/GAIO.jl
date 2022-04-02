@@ -4,33 +4,43 @@ using GAIO
 using Test
 using LoopVectorization, MuladdMacro, Base.Threads, StaticArrays
 
-a, b = 1.4, 0.3
-function f(x)
-    return (1 - a*(x[1])^2 + x[2], b*(x[1]))
+
+N, T = 3, Float64
+const σ, ρ, β = 10.0, 28.0, 0.4
+
+function v(x)
+    dx = [
+           σ * x[2] -    σ * x[1],
+           ρ * x[1] - x[1] * x[3] - x[2],
+        x[1] * x[2] -    β * x[3]
+    ]
+    return dx
 end
-function f2(x)
+function v2(x)
     dx = similar(x)
-    @turbo for i in 0 : 2 : length(x) - 2
-        dx[i+1] = 1 - a*(x[i+1])^2 + x[i+2]
-        dx[i+2] = b*(x[i+1])
+    @turbo for i in 0 : N : length(x) - N
+        dx[i+1] =      σ * x[i+2] -      σ * x[i+1]
+        dx[i+2] =      ρ * x[i+1] - x[i+1] * x[i+3] - x[i+2]
+        dx[i+3] = x[i+1] * x[i+2] -      β * x[i+3]
     end
     return dx
 end
 
 
-center, radius, no_of_boxes = (0, 0), (3, 3), (256, 256)
+center, radius, no_of_boxes = (0,0,25), (30,30,30), (128, 128, 128)
 P = BoxPartition(Box(center, radius), no_of_boxes)
 
-N, T = 2, Float64
 no_of_points = 64
 points = [ SVector{N,T}(2.0*rand(T,N).-1.0) for _ = 1:no_of_points ];
 points_cache = deepcopy(points);
 
 # simple boxmap
+f(x) = rk4_flow_map(v, x)
 F = PointDiscretizedMap(f, P.domain, points)
 #F = BoxMap(f, P, no_of_points=60)
 
 # boxmap with the same test points
+f2(x) = rk4_flow_map(v2, x)
 F2 = PointDiscretizedMap(f2, P.domain, points, Val(:cpu))
 #F2 = SampledBoxMap(f2, F.domain, F.domain_points, F.image_points, Val(:cpu))
 
@@ -41,6 +51,31 @@ x = SVector{N,T}((rand(T,N) .- 0.5) .* radius .+ center)
 box = key_to_box(P, point_to_key(P, x))
 c, r = box.center, box.radius
 @test all( F.domain_points(c, r) .== F2.domain_points(c, r) )
+
+
+import GAIO.rk4_flow_map
+@inline function GAIO.rk4_flow_map(f, x; step_size=0.01, steps=20)
+    @debug "using standard rk4"
+    for _ in 1:steps
+        x = rk4(f, x, step_size)
+    end
+    return x
+end
+@inline function GAIO.rk4_flow_map(
+        f, 
+        x::Base.ReinterpretArray{T,1,SVector{N,T},Vector{SVector{N,T}},false}; 
+        step_size=0.01, 
+        steps=20
+    ) where {N,T}
+
+    @debug "using @turbo rk4"
+    τp2 = step_size / 2
+    dx, k = similar(x), similar(x)
+    for _ in 1:steps
+        rk4_turbo!(f, x, step_size, τp2, dx, k)
+    end
+    return x
+end
 
 import GAIO.map_boxes
 function GAIO.map_boxes(g::SampledBoxMap{N,T,Nothing}, source::BoxSet) where {N,T}
