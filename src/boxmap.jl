@@ -106,6 +106,7 @@ function map_boxes(g::SampledBoxMap{N,T,Val{:cpu}}, source::BoxSet) where {N,T}
         c, r = box.center, box.radius
         points = deepcopy(g.domain_points(c, r))
         points_vec = reinterpret(T, points)
+        # We need an explicit loop since broadcasting does not work in j1.7.2
         @turbo for i in 0:N:length(points_vec)-N, j in 1:N
             points_vec[i+j] = @muladd points_vec[i+j] * r[j] + c[j]
         end
