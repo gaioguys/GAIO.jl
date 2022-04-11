@@ -35,7 +35,7 @@ function Base.getindex(partition::AbstractBoxPartition, points_or_point)
     for point in points
         key = point_to_key(partition, point)
 
-        if key !== nothing
+        if !isnothing(key)
             push!(set, key)
         end
     end

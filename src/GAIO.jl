@@ -6,13 +6,16 @@ using StaticArrays
 # using GLFW
 # using ModernGL
 using GeometryBasics
-using WGLMakie
 using LightGraphs
 using ForwardDiff
 using Arpack
 using Base.Threads
+using MuladdMacro
+using HostCPUFeatures
+using SIMD
 
 using GLMakie
+using WGLMakie
 
 export Box
 
@@ -35,7 +38,8 @@ export map_boxes, map_boxes_new
 
 export rk4, rk4_flow_map
 
-export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots, finite_time_lyapunov_exponents
+export relative_attractor, unstable_set!, chain_recurrent_set
+export cover_roots, finite_time_lyapunov_exponents
 
 export plot
 
@@ -48,6 +52,7 @@ abstract type AbstractBoxPartition{B <: Box} end
 include("partition_regular.jl")
 include("partition_tree.jl")
 include("boxset.jl")
+include("simd_helper.jl")
 include("boxmap.jl")
 include("boxfun.jl")  
 include("transfer_operator.jl")
