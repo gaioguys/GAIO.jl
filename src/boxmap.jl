@@ -17,11 +17,11 @@ Transforms a `map: B → C, B ⊂ ℝᴺ` to a `SampledBoxMap` defined on `BoxSe
                     `Val(:gpu)` currently does nothing.
 
 """
-struct SampledBoxMap{N,T,B} <: BoxMap
-    map
+struct SampledBoxMap{F,N,T,D,I,B} <: BoxMap
+    map::F
     domain::Box{N,T}
-    domain_points
-    image_points
+    domain_points::D
+    image_points::I
     acceleration::B
 end
 
@@ -44,7 +44,7 @@ function PointDiscretizedMap(map, domain, points, accel::Val{:cpu})
         throw(DimensionMismatch("Number of test points $n is not divisible by $T SIMD capability $simd"))
     end
     gathered_points = tuple_vgather(points, simd)
-    domain_points = (center, radius) -> points
+    domain_points = (center, radius) -> gathered_points
     image_points = (center, radius) -> center
     return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
@@ -108,18 +108,27 @@ function map_boxes(g::BoxMap, source::BoxSet)
     BoxSet(P, union(image...))
 end 
 
-function map_boxes(g::SampledBoxMap{N,T,Val{:cpu}}, source::BoxSet) where {N,T}
+function map_boxes(g::SampledBoxMap{F,N,T,D,I,Val{:cpu}}, source::BoxSet) where {F,N,T,D,I}
     P, keys = source.partition, collect(source.set)
     image = [ Set{eltype(keys)}() for _ in  1:nthreads() ]
     points = g.domain_points(P.domain.center, P.domain.radius)
+    simd = get_vector_width(points)
+    image_points = Vector{T}(undef, N*simd*nthreads())
+    ip = reinterpret(SVector{N,T}, image_points)
+    idx = SIMD.Vec{simd,Int}(ntuple(i -> N*(i-1), Val(simd)))
     @threads for key in keys
+        tid = (threadid() - 1) * simd
+        Ntid = N * tid
         box = key_to_box(P, key)
         c, r = box.center, box.radius
         for p in points
-            fp = g.map(p .* r .+ c)
-            hits = point_to_key(P, fp)
-            if !isempty(hits)
-                push!(image[threadid()], hits...)
+            fp = g.map(@muladd p .* r .+ c)
+            tuple_vscatter!(image_points, fp; start_ind=Ntid, idx=idx)
+            for i in tid+1:tid+simd
+                hit = point_to_key(P, ip[i])
+                if !isnothing(hit)
+                    push!(image[threadid()], hit)
+                end
             end
         end
     end
