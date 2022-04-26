@@ -27,16 +27,16 @@ end
 end
 
 @propagate_inbounds function tuple_vscatter!(
-        vo::VO, vi::VI; start_ind=1, idx=SIMD.Vec{simd,Int}(ntuple(i -> N*(i-1), Val(simd)))
+        vo::VO, vi::VI; start_ind_minus_one=1, idx=SIMD.Vec{simd,Int}(ntuple(i -> N*(i-1), Val(simd)))
     ) where {VO<:AbstractVector{T}, VI<:Union{NTuple{N,SIMD.Vec{simd,T}}, <:StaticVector{N,SIMD.Vec{simd,T}}}} where {N,T,simd}
     
     if @generated
         return quote
-            @nexprs( $N, i -> vo[idx + start_ind + i] = vi[i] )
+            @nexprs( $N, i -> vo[idx + start_ind_minus_one + i] = vi[i] )
         end
     else
         for i in 1:N
-            vo[idx + start_ind + i] = vi[i]
+            vo[idx + start_ind_minus_one + i] = vi[i]
         end
     end
 end

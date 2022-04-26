@@ -108,22 +108,24 @@ function map_boxes(g::BoxMap, source::BoxSet)
     BoxSet(P, union(image...))
 end 
 
+# Julia doesn't compile the SIMD accelerated version as efficiently
+# as the normal version, so we must manually preallocate memory
 function map_boxes(g::SampledBoxMap{F,N,T,D,I,Val{:cpu}}, source::BoxSet) where {F,N,T,D,I}
     P, keys = source.partition, collect(source.set)
     image = [ Set{eltype(keys)}() for _ in  1:nthreads() ]
-    points = g.domain_points(P.domain.center, P.domain.radius)
     simd = get_vector_width(points)
-    image_points = Vector{T}(undef, N*simd*nthreads())
+    idx = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
+    domain_points = g.domain_points(P.domain.center, P.domain.radius)
+    image_points  = Vector{T}(undef, N*simd*nthreads())
     ip = reinterpret(SVector{N,T}, image_points)
-    idx = SIMD.Vec{simd,Int}(ntuple(i -> N*(i-1), Val(simd)))
     @threads for key in keys
-        tid = (threadid() - 1) * simd
+        tid  = (threadid() - 1) * simd
         Ntid = N * tid
-        box = key_to_box(P, key)
+        box  = key_to_box(P, key)
         c, r = box.center, box.radius
-        for p in points
+        for p in domain_points
             fp = g.map(@muladd p .* r .+ c)
-            tuple_vscatter!(image_points, fp; start_ind=Ntid, idx=idx)
+            tuple_vscatter!(image_points, fp; start_ind_minus_1=Ntid, idx=idx)
             for i in tid+1:tid+simd
                 hit = point_to_key(P, ip[i])
                 if !isnothing(hit)
