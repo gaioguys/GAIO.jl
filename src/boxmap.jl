@@ -25,8 +25,8 @@ function Base.show(io::IO, g::SampledBoxMap)
 end
 
 function PointDiscretizedMap(map, domain, points::AbstractArray) 
-    domain_points = (center, radius) -> points
-    image_points = (center, radius) -> center
+    domain_points(center, radius) = points
+    image_points(center, radius) = center
     return SampledBoxMap(map, domain, domain_points, image_points)
 end
 
@@ -35,8 +35,8 @@ function BoxMap(map, domain::Box{N,T}; no_of_points::Int=20*N) where {N,T}
     return PointDiscretizedMap(map, domain, points) 
 end
 
-function BoxMap(map, P::BoxPartition{N,T}; adaptive=false, no_of_points::Int=20*N) where {N,T}
-    adaptive  ?  AdaptiveBoxMap(map, P.domain) : BoxMap(map, P.domain, no_of_points=no_of_points)
+function BoxMap(map, P::BoxPartition{N,T}; no_of_points::Int=20*N) where {N,T}
+    BoxMap(map, P.domain, no_of_points=no_of_points)
 end
 
 function sample_adaptive(Df, center::SVector{N,T}) where {N,T}  # how does this work?
@@ -55,21 +55,21 @@ end
 
 function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     Df = x -> ForwardDiff.jacobian(f, x)
-    domain_points = (center, radius) -> sample_adaptive(Df, center)
+    domain_points(center, radius) = sample_adaptive(Df, center)
 
     vertices = Array{SVector{N,T}}(undef, ntuple(k->2, N))
     for i in CartesianIndices(vertices)
         vertices[i] = ntuple(k -> (-1.0)^i[k], N)
     end
     # calculates the vertices of each box
-    image_points = (center, radius) -> vertices
+    image_points(center, radius) = vertices
     return SampledBoxMap(f, domain, domain_points, image_points)
 end
 
 
 function map_boxes(g::BoxMap, source::BoxSet)
     P, keys = source.partition, collect(source.set)
-    image = [ Set{eltype(keys)}() for k = 1:nthreads() ]
+    image = [ Set{eltype(keys)}() for _ in 1:nthreads() ]
     @threads for key in keys
         box = key_to_box(P, key)
         c, r = box.center, box.radius
@@ -77,7 +77,7 @@ function map_boxes(g::BoxMap, source::BoxSet)
         for p in points
             fp = g.map(c.+r.*p)
             hit = point_to_key(P, fp)
-            if hit !== nothing
+            if !isnothing(hit)
                 push!(image[threadid()], hit)
             end
         end
@@ -86,6 +86,3 @@ function map_boxes(g::BoxMap, source::BoxSet)
 end 
 
 (g::BoxMap)(source::BoxSet) = map_boxes(g, source)
-
-
-

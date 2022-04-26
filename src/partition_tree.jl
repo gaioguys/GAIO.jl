@@ -28,7 +28,7 @@ end
 
 TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)], [BoxPartition(domain)])
 
-dimension(partition::TreePartition{N,T}) where {N,T} = N
+dimension(::TreePartition{N,T}) where {N,T} = N
 
 function key_to_box(partition::TreePartition, key::Tuple{Int,Int})
     return key_to_box(partition.regular_partitions[key[1] + 1], key[2])
@@ -74,7 +74,7 @@ function tree_search(tree::TreePartition{N,T}, point) where {N,T}
 end
 
 function point_to_key(partition::TreePartition, point)
-    if point_to_key(partition.regular_partitions[1], point) === nothing
+    if isnothing(point_to_key(partition.regular_partitions[1], point))
         return nothing
     end
 

@@ -30,9 +30,9 @@ struct Box{N,T <: AbstractFloat}
     end
 end
 
-Base.in(point, box::Box) = all(box.center - box.radius  .<=  point  .<  box.center + box.radius)
+Base.in(point, box::Box) = all(box.center .- box.radius  .<=  point  .<  box.center .+ box.radius)
 
-volume(box::Box) = prod(2 * box.radius)
+volume(box::Box) = prod(2 .* box.radius)
 
 function Base.show(io::IO, box::Box) 
     print(io, "Box: center = $(box.center), radii = $(box.radius)")
