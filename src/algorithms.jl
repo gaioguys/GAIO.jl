@@ -113,7 +113,7 @@ const half, sixth, third = 1/2, 1/6, 1/3
     return @. x + τ * dx
 end
 
-@inline function rk4_flow_map(v, x; step_size=0.01, steps=20)
+@propagate_inbounds function rk4_flow_map(v, x; step_size=0.01, steps=20)
     for _ in 1:steps
         x = rk4(v, x, step_size)
     end
