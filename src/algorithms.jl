@@ -94,9 +94,9 @@ function finite_time_lyapunov_exponents(boxset::BoxSet, g; T, num_points=20, ϵ=
 end
 
 # Runge-Kutta scheme of 4th order
-const sixth, third = 1/6, 1/3
+const half, sixth, third = 1/2, 1/6, 1/3
 @propagate_inbounds function rk4(f, x, τ)
-    τ½ = τ/2
+    τ½ = τ * half
 
     k = f(x)
     dx = @. k * sixth
