@@ -25,17 +25,17 @@ end
 end
 
 @propagate_inbounds function tuple_vscatter!(
-        vo::VO, vi::VI, start_ind; idx=SIMD.Vec{simd,Int}(ntuple(i -> N*(i-1), Val(simd)))
-    ) where {N,T,simd,VO<:AV{T},VI<:SVNT{N,SIMD.Vec{simd,T}}}
+        vo::VO, vi::VI, idx::SIMD.Vec{simd,I}
+    ) where {N,T,simd,VO<:AV{T},VI<:SVNT{N,SIMD.Vec{simd,T}},I<:Integer}
     
     if @generated
         return quote
-            @nexprs( $N, i -> vo[idx + start_ind - 1 + i] = vi[i] )
+            @nexprs( $N, i -> vo[idx + i] = vi[i] )
             return 
         end
     else
         for i in 1:N
-            vo[idx + start_ind - 1 + i] = vi[i]
+            vo[idx + i] = vi[i]
         end
     end
 end
@@ -43,8 +43,10 @@ end
 @propagate_inbounds function tuple_vscatter!(
         vo::VO, vi::VI
     ) where {N,T,simd,VO<:AV{T},VI<:SVNT{N,SIMD.Vec{simd,T}}}
-    for start_ind in 1 : N * simd : length(vo) - N * simd + 1
-        tuple_vscatter!(vo, vi, start_ind)
+
+    idx = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
+    for j in 1:length(vi)
+        tuple_vscatter!( vo, vi[j], idx + (j-1)*N*simd )
     end
 end
 
@@ -80,5 +82,32 @@ end
     end
     v = reinterpret(NTuple{N,Bool}, vr)
     return v
+end
+
+function unsafe_point_to_ints(
+        partition::BoxPartition, point::SV
+    ) where SV<:Union{NTuple{N,SIMD.Vec{simd,T}}, <:StaticVector{N,SIMD.Vec{simd,T}}} where {N,T,simd}
+
+    x = (point .- partition.left) .* partition.scale
+    x_ints = map(x) do xi
+        convert(SIMD.Vec{simd, Int}, xi)
+    end
+    return x_ints
+end
+
+function point_to_key(
+        partition::BoxPartition, point::V
+    ) where V <: Union{NTuple{N,SIMD.Vec{simd,T}}, <:StaticVector{N,SIMD.Vec{simd,T}}} where {N,T,simd}
+
+    x_ints = unsafe_point_to_ints(partition, point)
+    in_bounds = SVector{simd,Bool}(
+        all(
+            zero(T) <= getindex(x_ints[j], i) < (partition.dims)[j]
+            for j in 1:N
+        )
+        for i in 1:simd
+    )
+    keys = NTuple{simd,Int}(sum(x_ints .* partition.dimsprod) + 1)
+    return keys[in_bounds]
 end
  =#

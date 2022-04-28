@@ -81,17 +81,6 @@ function unsafe_point_to_ints(partition::BoxPartition, point)
     return map(xi -> Base.unsafe_trunc(Int, xi), x)
 end
 
-function unsafe_point_to_ints(
-        partition::BoxPartition, point::SV
-    ) where SV<:Union{NTuple{N,SIMD.Vec{simd,T}}, <:StaticVector{N,SIMD.Vec{simd,T}}} where {N,T,simd}
-
-    x = (point .- partition.left) .* partition.scale
-    x_ints = map(x) do xi
-        convert(SIMD.Vec{simd, Int}, xi)
-    end
-    return x_ints
-end
-
 function point_to_key(partition::BoxPartition, point)
     x_ints = unsafe_point_to_ints(partition, point)
 
@@ -101,20 +90,4 @@ function point_to_key(partition::BoxPartition, point)
     end
     
     return sum(x_ints .* partition.dimsprod) + 1
-end
-
-function point_to_key(
-        partition::BoxPartition, point::V
-    ) where V <: Union{NTuple{N,SIMD.Vec{simd,T}}, <:StaticVector{N,SIMD.Vec{simd,T}}} where {N,T,simd}
-
-    x_ints = unsafe_point_to_ints(partition, point)
-    in_bounds = SVector{simd,Bool}(
-        all(
-            zero(T) <= getindex(x_ints[j], i) < (partition.dims)[j]
-            for j in 1:N
-        )
-        for i in 1:simd
-    )
-    keys = NTuple{simd,Int}(sum(x_ints .* partition.dimsprod) + 1)
-    return keys[in_bounds]
 end

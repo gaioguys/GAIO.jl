@@ -37,7 +37,7 @@ function PointDiscretizedMap(map, domain, points, accel=nothing)
     return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
 
-function PointDiscretizedMap(map, domain, points::V, accel::Val{:cpu}) where {T,V<:AbstractArray{T}}
+function PointDiscretizedMap(map, domain::Box{N,T}, points, accel::Val{:cpu}) where {N,T}
     n, simd = length(points), Int(pick_vector_width(T))
     if n % simd != 0
         throw(DimensionMismatch("Number of test points $n is not divisible by $T SIMD capability $simd"))
@@ -114,21 +114,20 @@ function map_boxes(g::SampledBoxMap{F,N,T,D,I,Val{:cpu}}, source::BoxSet) where 
     image = [ Set{eltype(keys)}() for _ in  1:nthreads() ]
     domain_points = g.domain_points(P.domain.center, P.domain.radius)
     simd = get_vector_width(domain_points)
-    image_points = Vector{T}(undef, N*simd*nthreads())
-    ip  = tuple_vgather_lazy(image_points, simd)
-    ipo = reinterpret(SVector{N,T}, image_points)
+    idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
+    ip = Vector{T}(undef, N*simd*nthreads())
+    image_points = reinterpret(NTuple{simd,SVector{N,T}}, ip)
     @threads for key in keys
-        tid  = threadid()
-        stid = (tid - 1) * simd + 1 : (tid - 1) * simd + N
+        idx  = idx_base + (threadid() - 1) * N * simd
         box  = key_to_box(P, key)
         c, r = box.center, box.radius
         for p in domain_points
-            ip[tid] = @muladd p .* r .+ c
-            ip[tid] = g.map(ip[tid])
-            for i in stid
-                hit = point_to_key(P, ipo[i])
+            fp = g.map(@muladd p .* r .+ c)
+            tuple_vscatter!(ip, fp, idx)
+            for q in image_points[threadid()]
+                hit = point_to_key(P, q)
                 if !isnothing(hit)
-                    push!(image[tid], hit)
+                    push!(image[threadid()], hit)
                 end
             end
         end
