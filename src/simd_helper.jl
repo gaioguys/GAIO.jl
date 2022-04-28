@@ -1,49 +1,54 @@
-#function tuple_vgather(v::V, simd, create_only_one_point) where V<:AbstractVector{SVector{N,T}} where {N,T}
-@propagate_inbounds function tuple_vgather(
-        v::V, simd, create_only_one_point
-    ) where V<:AbstractVector{SV} where SV<:Union{NTuple{N,T}, <:StaticVector{N,T}} where {N,T}
+const SVNT{N,T} = Union{NTuple{N,T}, <:StaticVector{N,T}}
+const AV{T} = AbstractArray{T}
 
+#function tuple_vgather(v::V, simd, create_only_one_point) where V<:AbstractVector{SVector{N,T}} where {N,T}
+@propagate_inbounds function tuple_vgather(v::V, simd) where {N,T,V<:AV{<:SVNT{N,T}}}
     vr = reinterpret(T, v)
     idx = SIMD.Vec(ntuple(x -> N*(x-1), simd))
-    vo = ntuple(i -> vr[idx + i], N)
+    vo = ntuple(i -> vr[idx + i], Val(N))
     return vo
 end
 
-#function tuple_vgather(v::V, simd) where V<:AbstractVector{SVector{N,T}} where {N,T}
-@propagate_inbounds function tuple_vgather(
-        v::V, simd
-    ) where V<:AbstractVector{SV} where SV<:Union{NTuple{N,T}, <:StaticVector{N,T}} where {N,T}
-
-    vo = Vector(
-        map(0:simd:length(v)-simd) do i
-            tuple_vgather(
-                view(v, i+1:i+simd),
-                simd,
-                true
-            )
-        end
-    )
-    return vo
+@propagate_inbounds function tuple_vgather_lazy(v::V, simd) where {N,T,V<:AV{<:SVNT{N,T}}}
+    n = length(v)
+    m = n ÷ simd
+    @boundscheck if n - m * simd != 0
+        throw(DimensionMismatch("length of input ($n) % simd ($simd) != 0"))
+    end
+    vr = v |>
+        x -> reinterpret(T, v) |> 
+        x -> reshape(x, (N,simd,m)) |> 
+        x -> PermutedDimsArray(x, (2,1,3)) |> 
+        x -> reshape(x, (N*n,)) |>
+        x -> reinterpret(SVector{N,SIMD.Vec{simd,T}}, x)
+    return vr
 end
 
 @propagate_inbounds function tuple_vscatter!(
-        vo::VO, vi::VI; start_ind_minus_one=1, idx=SIMD.Vec{simd,Int}(ntuple(i -> N*(i-1), Val(simd)))
-    ) where {VO<:AbstractVector{T}, VI<:Union{NTuple{N,SIMD.Vec{simd,T}}, <:StaticVector{N,SIMD.Vec{simd,T}}}} where {N,T,simd}
+        vo::VO, vi::VI, start_ind; idx=SIMD.Vec{simd,Int}(ntuple(i -> N*(i-1), Val(simd)))
+    ) where {N,T,simd,VO<:AV{T},VI<:SVNT{N,SIMD.Vec{simd,T}}}
     
     if @generated
         return quote
-            @nexprs( $N, i -> vo[idx + start_ind_minus_one + i] = vi[i] )
+            @nexprs( $N, i -> vo[idx + start_ind - 1 + i] = vi[i] )
+            return 
         end
     else
         for i in 1:N
-            vo[idx + start_ind_minus_one + i] = vi[i]
+            vo[idx + start_ind - 1 + i] = vi[i]
         end
     end
 end
 
-function get_vector_width(
-        ::V
-    ) where V<:AbstractVector{SV} where SV<:Union{NTuple{N,SIMD.Vec{simd,T}}, <:SVector{N,SIMD.Vec{simd,T}}} where {N,T,simd}
+@propagate_inbounds function tuple_vscatter!(
+        vo::VO, vi::VI
+    ) where {N,T,simd,VO<:AV{T},VI<:SVNT{N,SIMD.Vec{simd,T}}}
+    for start_ind in 1 : N * simd : length(vo) - N * simd + 1
+        tuple_vscatter!(vo, vi, start_ind)
+    end
+end
+
+function get_vector_width(::V) where {N,T,simd,V<:AV{<:SVNT{N,SIMD.Vec{simd,T}}}}
     simd
 end
 

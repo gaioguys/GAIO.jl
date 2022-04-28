@@ -37,13 +37,12 @@ function PointDiscretizedMap(map, domain, points, accel=nothing)
     return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
 
-function PointDiscretizedMap(map, domain, points, accel::Val{:cpu})
-    n, T = length(points), eltype(points[1])
-    simd = pick_vector_width(T)
+function PointDiscretizedMap(map, domain, points::V, accel::Val{:cpu}) where {T,V<:AbstractArray{T}}
+    n, simd = length(points), Int(pick_vector_width(T))
     if n % simd != 0
         throw(DimensionMismatch("Number of test points $n is not divisible by $T SIMD capability $simd"))
     end
-    gathered_points = tuple_vgather(points, simd)
+    gathered_points = copy(tuple_vgather_lazy(points, simd))
     domain_points = (center, radius) -> gathered_points
     image_points = (center, radius) -> center
     return SampledBoxMap(map, domain, domain_points, image_points, accel)
@@ -113,23 +112,23 @@ end
 function map_boxes(g::SampledBoxMap{F,N,T,D,I,Val{:cpu}}, source::BoxSet) where {F,N,T,D,I}
     P, keys = source.partition, collect(source.set)
     image = [ Set{eltype(keys)}() for _ in  1:nthreads() ]
-    simd = get_vector_width(points)
-    idx = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
     domain_points = g.domain_points(P.domain.center, P.domain.radius)
-    image_points  = Vector{T}(undef, N*simd*nthreads())
-    ip = reinterpret(SVector{N,T}, image_points)
+    simd = get_vector_width(domain_points)
+    image_points = Vector{T}(undef, N*simd*nthreads())
+    ip  = tuple_vgather_lazy(image_points, simd)
+    ipo = reinterpret(SVector{N,T}, image_points)
     @threads for key in keys
-        tid  = (threadid() - 1) * simd
-        Ntid = N * tid
+        tid  = threadid()
+        stid = (tid - 1) * simd + 1 : (tid - 1) * simd + N
         box  = key_to_box(P, key)
         c, r = box.center, box.radius
         for p in domain_points
-            fp = g.map(@muladd p .* r .+ c)
-            tuple_vscatter!(image_points, fp; start_ind_minus_1=Ntid, idx=idx)
-            for i in tid+1:tid+simd
-                hit = point_to_key(P, ip[i])
+            ip[tid] = @muladd p .* r .+ c
+            ip[tid] = g.map(ip[tid])
+            for i in stid
+                hit = point_to_key(P, ipo[i])
                 if !isnothing(hit)
-                    push!(image[threadid()], hit)
+                    push!(image[tid], hit)
                 end
             end
         end
