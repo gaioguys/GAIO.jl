@@ -1,6 +1,6 @@
 using GAIO
 
-# This example demonstrates how to get a ~5x speedup
+# This example demonstrates how to get a ~2x speedup
 # in your code using your CPU's SIMD capabilities.
 
 N = 3

@@ -17,11 +17,11 @@ Transforms a `map: B → C, B ⊂ ℝᴺ` to a `SampledBoxMap` defined on `BoxSe
                     `Val(:gpu)` currently does nothing.
 
 """
-struct SampledBoxMap{N,T,B} <: BoxMap
-    map
+struct SampledBoxMap{F,N,T,D,I,B} <: BoxMap
+    map::F
     domain::Box{N,T}
-    domain_points
-    image_points
+    domain_points::D
+    image_points::I
     acceleration::B
 end
 
@@ -32,19 +32,18 @@ function Base.show(io::IO, g::BoxMap)
 end
 
 function PointDiscretizedMap(map, domain, points, accel=nothing)
-    domain_points(center, radius) =  points
+    domain_points(center, radius) = points
     image_points(center, radius) = center
     return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
 
-function PointDiscretizedMap(map, domain, points, accel::Val{:cpu})
-    n, T = length(points), eltype(points[1])
-    simd = pick_vector_width(T)
+function PointDiscretizedMap(map, domain::Box{N,T}, points, accel::Val{:cpu}) where {N,T}
+    n, simd = length(points), Int(pick_vector_width(T))
     if n % simd != 0
         throw(DimensionMismatch("Number of test points $n is not divisible by $T SIMD capability $simd"))
     end
-    gathered_points = tuple_vgather(points, simd)
-    domain_points(center, radius) =  gathered_points
+    gathered_points = copy(tuple_vgather_lazy(points, simd))
+    domain_points(center, radius) = gathered_points
     image_points(center, radius) = center
     return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
@@ -86,12 +85,12 @@ function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     end
     # calculates the vertices of each box
     image_points(center, radius) = vertices
-    return SampledBoxMap(f, domain, domain_points, image_points, nothing)
+    return SampledBoxMap(f, domain, domain_points, image_points)
 end
 
 @inbounds function map_boxes(g::BoxMap, source::BoxSet)
     P, keys = source.partition, collect(source.set)
-    image = [ Set{eltype(keys)}() for _ in  1:nthreads() ]
+    image = [ Set{eltype(keys)}() for _ in 1:nthreads() ]
     @threads for key in keys
         box = key_to_box(P, key)
         c, r = box.center, box.radius
@@ -105,19 +104,31 @@ end
         end
     end
     return BoxSet(P, union(image...))
-end
+end 
 
-@inbounds function map_boxes(g::SampledBoxMap{N,T,Val{:cpu}}, source::BoxSet) where {N,T}
+# Julia doesn't compile the SIMD accelerated version as efficiently
+# as the normal version, so we must manually preallocate memory
+@inbounds function map_boxes(g::SampledBoxMap{F,N,T,D,I,Val{:cpu}}, source::BoxSet) where {F,N,T,D,I}
     P, keys = source.partition, collect(source.set)
     image = [ Set{eltype(keys)}() for _ in  1:nthreads() ]
-    points = g.domain_points(P.domain.center, P.domain.radius)
+    domain_points = g.domain_points(P.domain.center, P.domain.radius)
+    simd = get_vector_width(domain_points)
+    idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
+    ip = Vector{T}(undef, N*simd*nthreads())
+    image_points = reinterpret(NTuple{simd,SVector{N,T}}, ip)
     @threads for key in keys
-        box = key_to_box(P, key)
+        idx  = idx_base + (threadid() - 1) * N * simd
+        box  = key_to_box(P, key)
         c, r = box.center, box.radius
-        for p in points
+        for p in domain_points
             fp = g.map(@muladd p .* r .+ c)
-            hits = point_to_key(P, fp)
-            push!(image[threadid()], hits...)
+            tuple_vscatter!(ip, fp, idx)
+            for q in image_points[threadid()]
+                hit = point_to_key(P, q)
+                if !isnothing(hit)
+                    push!(image[threadid()], hit)
+                end
+            end
         end
     end
     return BoxSet(P, union(image...))
