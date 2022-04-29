@@ -32,8 +32,8 @@ function Base.show(io::IO, g::SampledBoxMap)
 end
 
 function PointDiscretizedMap(map, domain, points, accel=nothing)
-    domain_points = (center, radius) -> points
-    image_points = (center, radius) -> center
+    domain_points(center, radius) = points
+    image_points(center, radius) = center
     return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
 
@@ -43,8 +43,8 @@ function PointDiscretizedMap(map, domain::Box{N,T}, points, accel::Val{:cpu}) wh
         throw(DimensionMismatch("Number of test points $n is not divisible by $T SIMD capability $simd"))
     end
     gathered_points = copy(tuple_vgather_lazy(points, simd))
-    domain_points = (center, radius) -> gathered_points
-    image_points = (center, radius) -> center
+    domain_points(center, radius) = gathered_points
+    image_points(center, radius) = center
     return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
 
@@ -77,21 +77,21 @@ end
 
 function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     Df = x -> ForwardDiff.jacobian(f, x)
-    domain_points = (center, radius) -> sample_adaptive(Df, center)
+    domain_points(center, radius) = sample_adaptive(Df, center)
 
     vertices = Array{SVector{N,T}}(undef, ntuple(k->2, N))
     for i in CartesianIndices(vertices)
         vertices[i] = ntuple(k -> (-1.0)^i[k], N)
     end
     # calculates the vertices of each box
-    image_points = (center, radius) -> vertices
+    image_points(center, radius) = vertices
     return SampledBoxMap(f, domain, domain_points, image_points)
 end
 
 
 function map_boxes(g::BoxMap, source::BoxSet)
     P, keys = source.partition, collect(source.set)
-    image = [ Set{eltype(keys)}() for k = 1:nthreads() ]
+    image = [ Set{eltype(keys)}() for _ in 1:nthreads() ]
     @threads for key in keys
         box = key_to_box(P, key)
         c, r = box.center, box.radius
@@ -99,7 +99,7 @@ function map_boxes(g::BoxMap, source::BoxSet)
         for p in points
             fp = g.map(p .* r .+ c)
             hit = point_to_key(P, fp)
-            if hit !== nothing
+            if !isnothing(hit)
                 push!(image[threadid()], hit)
             end
         end

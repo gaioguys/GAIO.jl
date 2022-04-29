@@ -7,14 +7,10 @@ f(x) = rk4_flow_map(v, x)
 
 center, radius = (0,0,25), (30,30,30)
 P = BoxPartition(Box(center, radius), (128,128,128))
+F = BoxMap(f, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
+W = unstable_set!(F, P[x])
 
-for accel in (nothing, :cpu), p in (40, 400, 4000)
-    println("accel: $accel  p: $p")
-    F = BoxMap(f, P, accel; no_of_points=p)
-    W = unstable_set!(F, P[x])
-    @time W = unstable_set!(F, P[x])
-end
+plot(W)
 
-#plot(W)

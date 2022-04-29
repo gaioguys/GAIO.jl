@@ -4,7 +4,7 @@
 
 function plot(boxset::BoxSet{<:AbstractBoxPartition{<:Box{N}}}; kwargs...) where N
     m = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1))
-    c = [box.center.-box.radius for box in boxset]
+    c = [box.center .- box.radius for box in boxset]
     r = [1.9 .* box.radius for box in boxset]
     fig, ax, ms = meshscatter(GeometryBasics.Vec{N, Float32}.(c), marker = m, markersize = r,
                             color =:red; kwargs...)
