@@ -2,9 +2,11 @@ const SVNT{N,T} = Union{NTuple{N,T}, <:StaticVector{N,T}}
 const AV{T} = AbstractArray{T}
 
 #function tuple_vgather(v::V, simd, create_only_one_point) where V<:AbstractVector{SVector{N,T}} where {N,T}
-@propagate_inbounds function tuple_vgather(v::V, simd) where {N,T,V<:AV{<:SVNT{N,T}}}
+@propagate_inbounds function tuple_vgather(
+        v::V, simd, idx = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
+    ) where {N,T,V<:AV{<:SVNT{N,T}}}
+
     vr = reinterpret(T, v)
-    idx = SIMD.Vec(ntuple(x -> N*(x-1), simd))
     vo = ntuple(i -> vr[idx + i], Val(N))
     return vo
 end
