@@ -97,14 +97,14 @@ function map_boxes(g::BoxMap, source::BoxSet)
         c, r = box.center, box.radius
         points = g.domain_points(c, r)
         for p in points
-            fp = g.map(p .* r .+ c)
+            fp = g.map(@muladd p .* r .+ c)
             hit = point_to_key(P, fp)
             if !isnothing(hit)
                 push!(image[threadid()], hit)
             end
         end
     end
-    BoxSet(P, union(image...))
+    return BoxSet(P, union(image...))
 end 
 
 # Julia doesn't compile the SIMD accelerated version as efficiently
