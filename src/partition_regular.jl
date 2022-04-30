@@ -18,16 +18,16 @@ Internal data structure to partition a box
                   * — * — * — *
 .
 """
-struct BoxPartition{N,T} <: AbstractBoxPartition{Box{N,T}}
+struct BoxPartition{N,T,I} <: AbstractBoxPartition{Box{N,T}}
     domain::Box{N,T}
     left::SVector{N,T}
     scale::SVector{N,T}
-    dims::SVector{N,Int}
-    dimsprod::SVector{N,Int}
+    dims::SVector{N,I}
+    dimsprod::SVector{N,I}
 end
 
-function BoxPartition(domain::Box{N,T}, dims::NTuple{N,Int}) where {N,T}
-    dims = SVector{N,Int}(dims)
+function BoxPartition(domain::Box{N,T}, dims::NTuple{N,I}) where {N,T,I}
+    dims = SVector{N,I}(dims)
     left = domain.center .- domain.radius
     scale = dims ./ (2 .* domain.radius)
     # nr. of boxes / diameter of the domain == 1 / diameter of each box
@@ -38,20 +38,20 @@ function BoxPartition(domain::Box{N,T}, dims::NTuple{N,Int}) where {N,T}
 end
 
 function BoxPartition(domain::Box{N,T}) where {N,T}
-    dims = tuple(ones(Int64,N)...)
+    dims = tuple(ones(Int32,N)...)
     BoxPartition(domain, dims)
 end
 
-BoxPartition(domain::Box{1,T}, dims::Int) where {T} = BoxPartition(domain, (dims,))
+BoxPartition(domain::Box{1,T}, dims::I) where {T,I} = BoxPartition(domain, (dims,))
 
-dimension(::BoxPartition{N,T}) where {N,T} = N
+dimension(::BoxPartition{N,T,I}) where {N,T,I} = N
 
-function subdivide(P::BoxPartition{N,T}, dim::Int) where {N,T}
+function subdivide(P::BoxPartition{N,T}, dim::I) where {N,T,I}
     new_dims = ntuple(i -> P.dims[i]*(i==dim ? 2 : 1), N)
     return BoxPartition(P.domain, new_dims)
 end
 
-keytype(::Type{<:BoxPartition}) = Int
+keytype(::Type{<:BoxPartition{N,T,I}}) where {N,T,I} = I
 keys_all(partition::BoxPartition) = 1:prod(partition.dims)
 # == 1 : partition.dimsprod[end] * partition.dims[end]
 
@@ -65,15 +65,14 @@ function Base.show(io::IO, partition::BoxPartition)
     print(io, " BoxPartition")
 end
 
-# TODO: replace with overloaded getindex
 @muladd @propagate_inbounds function key_to_box(
-        partition::BoxPartition{N,T}, key::M
-    ) where M <: Union{Int, NTuple{N, Int}} where {N,T}
+        partition::BoxPartition{N,T,I}, key::M
+    ) where M <: Union{<:Integer, NTuple{N, <:Integer}} where {N,T,I}
 
     dims = size(partition)
     radius = partition.domain.radius ./ dims
     left = partition.domain.center .- partition.domain.radius
-    center = left .+ radius .+ (2 .* radius) .* (CartesianIndices(dims)[key].I .- 1)
+    center = @. left + radius + 2 * radius * ($(CartesianIndices(dims)[key].I) - 1)
     # start at leftmost box in the partition and move $key boxes right
     return Box(center, radius)
 end 
@@ -81,7 +80,7 @@ end
 @propagate_inbounds function unsafe_point_to_ints(partition::BoxPartition, point)
     x = (point .- partition.left) .* partition.scale    
     # counts how many boxes x is away from left (componentwise)
-    return map(xi -> Base.unsafe_trunc(Int, xi), x)
+    return map(xi -> unsafe_trunc(Int, xi), x)
 end
 
 @propagate_inbounds function ints_to_key(partition::BoxPartition, x_ints)

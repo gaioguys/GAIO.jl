@@ -11,7 +11,7 @@ using ForwardDiff
 using Arpack
 using Base.Threads
 using Base.Cartesian: @nexprs, @ntuple
-using Base: @propagate_inbounds
+using Base: unsafe_trunc, @propagate_inbounds
 using MuladdMacro
 using HostCPUFeatures
 using SIMD
