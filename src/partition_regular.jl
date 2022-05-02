@@ -66,7 +66,10 @@ function Base.show(io::IO, partition::BoxPartition)
 end
 
 # TODO: replace with overloaded getindex
-function key_to_box(partition::BoxPartition{N,T}, key::M) where M <: Union{Int, NTuple{N, Int}} where {N,T}
+@muladd @propagate_inbounds function key_to_box(
+        partition::BoxPartition{N,T}, key::M
+    ) where M <: Union{Int, NTuple{N, Int}} where {N,T}
+
     dims = size(partition)
     radius = partition.domain.radius ./ dims
     left = partition.domain.center .- partition.domain.radius
@@ -75,19 +78,23 @@ function key_to_box(partition::BoxPartition{N,T}, key::M) where M <: Union{Int, 
     return Box(center, radius)
 end 
 
-function unsafe_point_to_ints(partition::BoxPartition, point)
+@propagate_inbounds function unsafe_point_to_ints(partition::BoxPartition, point)
     x = (point .- partition.left) .* partition.scale    
     # counts how many boxes x is away from left (componentwise)
     return map(xi -> Base.unsafe_trunc(Int, xi), x)
 end
 
-function point_to_key(partition::BoxPartition, point)
-    x_ints = unsafe_point_to_ints(partition, point)
-
+@propagate_inbounds function ints_to_key(partition::BoxPartition, x_ints)
     if any(x_ints .< zero(eltype(x_ints))) || any(x_ints .>= partition.dims)
         #@debug "point does not lie in the domain" point partition.domain
         return nothing
     end
-    
-    return sum(x_ints .* partition.dimsprod) + 1
+    key = sum(x_ints .* partition.dimsprod) + 1
+    return key
+end
+
+@propagate_inbounds function point_to_key(partition::BoxPartition, point)
+    x_ints = unsafe_point_to_ints(partition, point)
+    key = ints_to_key(partition, x_ints)
+    return key
 end

@@ -1,8 +1,10 @@
 abstract type BoxMap end
 """
-Transforms a `map` defined on ℝᴺ to a `BoxMap` defined on BoxSets
+Transforms a `map: B → C, B ⊂ ℝᴺ` to a `SampledBoxMap` defined on `BoxSet`s
 
-`map`:              map that defines the dynamical system
+`map`:              map that defines the dynamical system.
+
+`domain`:           domain of the map, `B`.
 
 `domain_points`:    the spread of test points to be mapped forward in intersection algorithms.
                     (scaled to fit a box with unit radii)
@@ -10,33 +12,53 @@ Transforms a `map` defined on ℝᴺ to a `BoxMap` defined on BoxSets
 `image_points`:     the spread of test points for comparison in intersection algorithms.
                     (scaled to fit a box with unit radii)
 
-""" # TODO: see if domain is redundant in struct
-struct SampledBoxMap{F,N,T,P,I} <: BoxMap
+`acceleration`:     `WARNING UNFINISHED` Whether to use optimized functions in intersection algorithms.
+                    Accepted values: `nothing`, `Val(:cpu)`, `Val(:gpu)`.
+                    `Val(:gpu)` currently does nothing.
+
+"""
+struct SampledBoxMap{F,N,T,D,I,B} <: BoxMap
     map::F
     domain::Box{N,T}
-    domain_points::P
-    image_points::I    
+    domain_points::D
+    image_points::I
+    acceleration::B
 end
 
-function Base.show(io::IO, g::SampledBoxMap)
+function Base.show(io::IO, g::BoxMap)
     center, radius = g.domain.center, g.domain.radius
     n = length(g.domain_points(center, radius))
     print(io, "BoxMap with $(n) sample points")
 end
 
-function PointDiscretizedMap(map, domain, points::AbstractArray) 
+function PointDiscretizedMap(map, domain, points, accel=nothing)
     domain_points(center, radius) = points
     image_points(center, radius) = center
-    return SampledBoxMap(map, domain, domain_points, image_points)
+    return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
 
-function BoxMap(map, domain::Box{N,T}; no_of_points::Int=20*N) where {N,T}
-    points = [ tuple(2.0*rand(N).-1.0 ...) for _ = 1:no_of_points ] 
-    return PointDiscretizedMap(map, domain, points) 
+function PointDiscretizedMap(map, domain::Box{N,T}, points, accel::Val{:cpu}) where {N,T}
+    n, simd = length(points), Int(pick_vector_width(T))
+    if n % simd != 0
+        throw(DimensionMismatch("Number of test points $n is not divisible by $T SIMD capability $simd"))
+    end
+    gathered_points = copy(tuple_vgather_lazy(points, simd))
+    domain_points(center, radius) = gathered_points
+    image_points(center, radius) = center
+    return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
 
-function BoxMap(map, P::BoxPartition{N,T}; no_of_points::Int=20*N) where {N,T}
-    BoxMap(map, P.domain, no_of_points=no_of_points)
+function PointDiscretizedMap(map, domain, points, accel::Symbol)
+    return PointDiscretizedMap(map, domain, points, Val(accel))
+end
+
+function BoxMap(map, domain::Box{N,T}, accel=nothing; no_of_points::Int=4*N*pick_vector_width(T)) where {N,T}
+    points = [ tuple(2.0*rand(T,N).-1.0 ...) for _ = 1:no_of_points ] 
+    return PointDiscretizedMap(map, domain, points, accel) 
+end 
+
+function BoxMap(map, P::BoxPartition{N,T}, accel=nothing; no_of_points::Int=4*N*pick_vector_width(T)) where {N,T}
+    BoxMap(map, P.domain, accel; no_of_points=no_of_points)
 end
 
 function sample_adaptive(Df, center::SVector{N,T}) where {N,T}  # how does this work?
@@ -66,8 +88,7 @@ function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     return SampledBoxMap(f, domain, domain_points, image_points)
 end
 
-
-function map_boxes(g::BoxMap, source::BoxSet)
+@inbounds function map_boxes(g::BoxMap, source::BoxSet)
     P, keys = source.partition, collect(source.set)
     image = [ Set{eltype(keys)}() for _ in 1:nthreads() ]
     @threads for key in keys
@@ -75,14 +96,42 @@ function map_boxes(g::BoxMap, source::BoxSet)
         c, r = box.center, box.radius
         points = g.domain_points(c, r)
         for p in points
-            fp = g.map(c.+r.*p)
+            fp = g.map(@muladd p .* r .+ c)
             hit = point_to_key(P, fp)
             if !isnothing(hit)
                 push!(image[threadid()], hit)
             end
         end
     end
-    BoxSet(P, union(image...))
+    return BoxSet(P, union(image...))
 end 
+
+# Julia doesn't compile the SIMD accelerated version as efficiently
+# as the normal version, so we must manually preallocate memory
+@inbounds function map_boxes(g::SampledBoxMap{F,N,T,D,I,Val{:cpu}}, source::BoxSet) where {F,N,T,D,I}
+    P, keys = source.partition, collect(source.set)
+    image = [ Set{eltype(keys)}() for _ in  1:nthreads() ]
+    domain_points = g.domain_points(P.domain.center, P.domain.radius)
+    simd = get_vector_width(domain_points)
+    idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
+    ip = Vector{T}(undef, N*simd*nthreads())
+    image_points = reinterpret(NTuple{simd,SVector{N,T}}, ip)
+    @threads for key in keys
+        idx  = idx_base + (threadid() - 1) * N * simd
+        box  = key_to_box(P, key)
+        c, r = box.center, box.radius
+        for p in domain_points
+            fp = g.map(@muladd p .* r .+ c)
+            tuple_vscatter!(ip, fp, idx)
+            for q in image_points[threadid()]
+                hit = point_to_key(P, q)
+                if !isnothing(hit)
+                    push!(image[threadid()], hit)
+                end
+            end
+        end
+    end
+    return BoxSet(P, union(image...))
+end
 
 (g::BoxMap)(source::BoxSet) = map_boxes(g, source)

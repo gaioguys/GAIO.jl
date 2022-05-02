@@ -25,7 +25,7 @@ function chain_recurrent_set(F::BoxMap, B::BoxSet{<:AbstractBoxPartition{Box{N,T
     return B
 end
 
-function adaptive_newton_step(g, g_jacobian, x, k)
+@muladd function adaptive_newton_step(g, g_jacobian, x, k)
     function armijo_rule(g, x, α, σ, ρ)
         Dg = g_jacobian(x)
         d = Dg\g(x)
@@ -95,7 +95,7 @@ end
 
 # Runge-Kutta scheme of 4th order
 const half, sixth, third = 1/2, 1/6, 1/3
-@propagate_inbounds function rk4(f, x, τ)
+@muladd @propagate_inbounds function rk4(f, x, τ)
     τ½ = τ * half
 
     k = f(x)

@@ -10,7 +10,11 @@ using LightGraphs
 using ForwardDiff
 using Arpack
 using Base.Threads
+using Base.Cartesian: @nexprs, @ntuple
 using Base: @propagate_inbounds
+using MuladdMacro
+using HostCPUFeatures
+using SIMD
 
 using GLMakie
 using WGLMakie
@@ -50,6 +54,7 @@ abstract type AbstractBoxPartition{B <: Box} end
 include("partition_regular.jl")
 include("partition_tree.jl")
 include("boxset.jl")
+include("simd_helper.jl")
 include("boxmap.jl")
 include("boxfun.jl")  
 include("transfer_operator.jl")
