@@ -5,24 +5,15 @@ Internal data structure to hold sets
 `set`:        set of partition-keys corresponding to the boxes in the set
 
 """
-struct BoxSet{P <: AbstractBoxPartition, S <: AbstractSet, B}
+struct BoxSet{P <: AbstractBoxPartition,S <: AbstractSet}
     partition::P
     set::S
-    cache::B
 end
 
-function BoxSet(partition::P, set::S) where {P,S}
-    BoxSet{P,S,Nothing}(partition, set, nothing)
-end
-
-function BoxSet(partition::P, set::S, cache::B) where {P,S,B}
-    BoxSet{P,S,B}(partition, set, cache)
-end
-
-function Base.show(io::IO, boxset::BoxSet) 
+function Base.show(io::IO, boxset::BoxSet)
     size = length(boxset.set)
     dim = length(boxset.partition.domain.center)
-    print(io, "$size-element BoxSet in $dim dimensions")
+    print(io, "$size-element BoxSet in ", boxset.partition)
 end
 
 # TODO: replace with BoxSet(partition)
@@ -77,7 +68,7 @@ Base.length(boxset::BoxSet) = length(boxset.set)
 Base.eltype(::Type{BoxSet{P,S}}) where {P <: AbstractBoxPartition{B},S} where B = B
 Base.iterate(boxset::BoxSet, state...) = iterate((key_to_box(boxset.partition, key) for key in boxset.set), state...)
 
-function subdivide(boxset::BoxSet{<:BoxPartition,S,B}, dim) where {S,B}
+function subdivide(boxset::BoxSet{<:BoxPartition,S}, dim) where {S}
     partition = boxset.partition
     box_indices = CartesianIndices(size(partition))
 
@@ -97,11 +88,11 @@ function subdivide(boxset::BoxSet{<:BoxPartition,S,B}, dim) where {S,B}
         push!(set, linear_indices[CartesianIndex(child2)])
     end
 
-    return BoxSet(partition_subdivided, set, boxset.cache)
+    return BoxSet(partition_subdivided, set)
 end
 
-function subdivide!(boxset::BoxSet{<:TreePartition}, key::Tuple{Int,Int})
-    @assert key in boxset.set
+function subdivide!(boxset::BoxSet{<:TreePartition}, key::NTuple{2,<:Integer})
+    !( key in boxset.set ) && throw(KeyError(key))
 
     delete!(boxset.set, key)
 

@@ -10,11 +10,12 @@ using LightGraphs
 using ForwardDiff
 using Arpack
 using Base.Threads
-using Base.Cartesian: @nexprs, @ntuple
+using Base.Cartesian: @nexprs, @ntuple, @nextract
 using Base: unsafe_trunc, @propagate_inbounds
 using MuladdMacro
 using HostCPUFeatures
 using SIMD
+using CUDA
 
 using GLMakie
 using WGLMakie
@@ -38,6 +39,9 @@ export boxmap
 
 export map_boxes, map_boxes_new
 
+export i32, ui32
+export BoxMapCPUCache, BoxMapGPUCache
+
 export rk4, rk4_flow_map
 
 export relative_attractor, unstable_set!, chain_recurrent_set
@@ -47,6 +51,12 @@ export plot
 
 # ENV["JULIA_DEBUG"] = all
 
+struct NumLiteral{T} end
+Base.:(*)(x, ::Type{NumLiteral{T}}) where T = T(x)
+const i32, ui32 = NumLiteral{Int32}, NumLiteral{UInt32}
+const SVNT{N,T} = Union{NTuple{N,T}, <:StaticVector{N,T}}
+const AV{T} = AbstractArray{T}
+
 include("box.jl")
 
 abstract type AbstractBoxPartition{B <: Box} end
@@ -54,11 +64,14 @@ abstract type AbstractBoxPartition{B <: Box} end
 include("partition_regular.jl")
 include("partition_tree.jl")
 include("boxset.jl")
-include("simd_helper.jl")
 include("boxmap.jl")
+include("boxmap_simd.jl")
 include("boxfun.jl")  
 include("transfer_operator.jl")
 include("algorithms.jl")
 include("plot.jl")
+if CUDA.functional()
+    include("boxmap_cuda.jl")
+end
 
 end # module
