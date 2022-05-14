@@ -50,7 +50,7 @@ function BoxMap(map, P::BoxPartition{N,T}, accel=nothing; no_of_points=4*N*pick_
     BoxMap(map, P.domain, accel; no_of_points=no_of_points)
 end
 
-function sample_adaptive(Df, center::SVector{N,T}) where {N,T}  # how does this work?
+function sample_adaptive(Df, center::SVector{N,T}, accel=nothing) where {N,T}  # how does this work?
     D = Df(center)
     _, σ, Vt = svd(D)
     n = ceil.(Int, σ) 
@@ -59,12 +59,12 @@ function sample_adaptive(Df, center::SVector{N,T}) where {N,T}  # how does this 
     for i in CartesianIndices(points)
         points[i] = ntuple(k -> n[k]==1 ? 0.0 : (i[k]-1)*h[k]-1.0, N)
         points[i] = Vt'*points[i]
-    end   
+    end
     @debug points
     return points 
 end
 
-function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
+function AdaptiveBoxMap(f, domain::Box{N,T}, accel=nothing) where {N,T}
     Df = x -> ForwardDiff.jacobian(f, x)
     domain_points(center, radius) = sample_adaptive(Df, center)
 
@@ -75,6 +75,10 @@ function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     # calculates the vertices of each box
     image_points(center, radius) = vertices
     return SampledBoxMap(f, domain, domain_points, image_points, nothing)
+end
+
+function AdaptiveBoxMap(f, domain, accel::Symbol)
+    AdaptiveBoxMap(f, domain, Val(accel))
 end
 
 @inbounds function map_boxes(g::BoxMap, source::BoxSet)

@@ -10,8 +10,8 @@ using LightGraphs
 using ForwardDiff
 using Arpack
 using Base.Threads
-using Base.Cartesian: @nexprs, @ntuple, @nextract
-using Base: unsafe_trunc, @propagate_inbounds
+using Base: unsafe_trunc
+using Base.Iterators: Stateful, take
 using MuladdMacro
 using HostCPUFeatures
 using SIMD
@@ -70,6 +70,7 @@ include("boxfun.jl")
 include("transfer_operator.jl")
 include("algorithms.jl")
 include("plot.jl")
+
 if CUDA.functional()
     include("boxmap_cuda.jl")
 end

@@ -1,7 +1,13 @@
-struct BoxMapCPUCache{simd,V}
+struct BoxMapCPUCache{simd,V,W}
     idx_base::SIMD.Vec{simd,Int}
     temp_points::V
+    temp_points_vec::W
 end
+
+Base.iterate(c::BoxMapCPUCache) = (c.idx_base, Val(:temp_points))
+Base.iterate(c::BoxMapCPUCache, ::Val{:temp_points}) = (c.temp_points, Val(:temp_points_vec))
+Base.iterate(c::BoxMapCPUCache, ::Val{:temp_points_vec}) = (c.temp_points_vec, Val(:done))
+Base.iterate(c::BoxMapCPUCache, ::Val{:done}) = nothing
 
 function PointDiscretizedMap(map, domain::Box{N,T}, points, ::Val{:cpu}) where {N,T}
     n, simd = length(points), Int(pick_vector_width(T))
@@ -13,24 +19,70 @@ function PointDiscretizedMap(map, domain::Box{N,T}, points, ::Val{:cpu}) where {
     image_points(center, radius) = center
     idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
     temp_points = Vector{T}(undef, N*simd*nthreads())
-    temp_points_vec = reinterpret(NTuple{simd,SVector{N,T}}, temp_points)
-    tp() = (temp_points, temp_points_vec)
-    return SampledBoxMap(map, domain, domain_points, image_points, BoxMapCPUCache(idx_base, tp))
+    temp_points_vec = reinterpret(SVector{N,T}, temp_points)
+    return SampledBoxMap(map, domain, domain_points, image_points, BoxMapCPUCache(idx_base, temp_points, temp_points_vec))
+end
+
+function sample_adaptive(Df, center::SVector{N,T}, ::Val{simd}) where {N,T,simd} 
+    D = Df(center)
+    _, σ, Vt = svd(D)
+    n = ceil.(Int, σ)
+    d = argmax(n)
+    n[d] = ceil(Int, n[d] / simd)
+    h = 2.0 ./ (n .- 1.0)
+    points = Array{SVector{N,SIMD.Vec{simd,T}}}(undef, n...)
+    d = n[d]
+    n[d] = n[d] * simd
+    inds = CartesianIndices(tuple(n...))
+    n[d] = d
+    for i in 0 : prod(n) - 1
+        points[i+1] = ntuple(Val(N)) do j
+            SIMD.Vec{simd,T}(ntuple(Val(simd)) do k
+                    m = getindex(inds[simd*i+k], j)
+                    T(isone(n[j]) ? 0.0 : (m-1) * h[j] - 1.0)
+                end
+            )
+        end
+        points[i+1] = Vt'*points[i+1]
+    end   
+    @debug points
+    return points 
+end
+
+function AdaptiveBoxMap(f, domain::Box{N,T}, accel::Val{:cpu}) where {N,T}
+    Df = x -> ForwardDiff.jacobian(f, x)
+    simd = Int(pick_vector_width(T))
+    domain_points(center, radius) = sample_adaptive(Df, center, Val(simd))
+
+    vertices = Array{SVector{N,T}}(undef, ntuple(k->2, N))
+    for i in CartesianIndices(vertices)
+        vertices[i] = ntuple(k -> (-1.0)^i[k], N)
+    end
+    # calculates the vertices of each box
+    image_points(center, radius) = vertices
+
+    idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
+    temp_points = Vector{T}(undef, N*simd*nthreads())
+    temp_points_vec = reinterpret(SVector{N,T}, temp_points)
+    
+    return SampledBoxMap(f, domain, domain_points, image_points, BoxMapCPUCache(idx_base, temp_points, temp_points_vec))
 end
 
 @inbounds function map_boxes(g::SampledBoxMap{<:BoxMapCPUCache{simd},N}, source::BoxSet) where {simd,N}
-    P, keys, m = source.partition, collect(source.set), g.acceleration
-    image = [ Set{eltype(keys)}() for _ in  1:nthreads() ]
-    points = g.domain_points(P.domain.center, P.domain.radius)
-    temp_points, temp_points_vec = m.temp_points()
+    P, keys = source.partition, collect(source.set)
+    image = [ Set{eltype(keys)}() for _ in 1:nthreads() ]
+    idx_base, temp_vec, temp_points = g.acceleration
     @threads for key in keys
-        idx  = m.idx_base + (threadid() - 1) * N * simd
+        tid  = (threadid() - 1) * simd
+        idx  = idx_base + tid * N
+        mapped_points = @view temp_points[tid+1:tid+simd]
         box  = key_to_box(P, key)
         c, r = box.center, box.radius
+        points = g.domain_points(c, r)
         for p in points
             fp = g.map(@muladd p .* r .+ c)
-            tuple_vscatter!(temp_points, fp, idx)
-            for q in temp_points_vec[threadid()]
+            tuple_vscatter!(temp_vec, fp, idx)
+            for q in mapped_points
                 hit = point_to_key(P, q)
                 if !isnothing(hit)
                     push!(image[threadid()], hit)
@@ -41,7 +93,7 @@ end
     return BoxSet(P, union(image...))
 end
 
-@propagate_inbounds function tuple_vgather(
+function tuple_vgather(
         v::V, simd, idx = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
     ) where {N,T,V<:AV{<:SVNT{N,T}}}
 
@@ -50,7 +102,7 @@ end
     return vo
 end
 
-@propagate_inbounds function tuple_vgather_lazy(
+@inline function tuple_vgather_lazy(
         v::V, simd
     ) where {N,T,V<:AV{<:SVNT{N,T}}}
     
@@ -68,23 +120,16 @@ end
     return vr
 end
 
-@propagate_inbounds function tuple_vscatter!(
+function tuple_vscatter!(
         vo::VO, vi::VI, idx::SIMD.Vec{simd,I}
     ) where {N,T,simd,VO<:AV{T},VI<:SVNT{N,SIMD.Vec{simd,T}},I<:Integer}
     
-    if @generated
-        return quote
-            @nexprs( $N, i -> vo[idx + i] = vi[i] )
-            return 
-        end
-    else
-        for i in 1:N
-            vo[idx + i] = vi[i]
-        end
+    for i in 1:N
+        vo[idx + i] = vi[i]
     end
 end
 
-@propagate_inbounds function tuple_vscatter!(
+function tuple_vscatter!(
         vo::VO, vi::VI
     ) where {N,T,simd,VO<:AV{T},VI<:SVNT{N,SIMD.Vec{simd,T}}}
 

@@ -95,7 +95,7 @@ end
 
 # Runge-Kutta scheme of 4th order
 const half, sixth, third = Float32.((1/2, 1/6, 1/3))
-@muladd @propagate_inbounds function rk4(f, x, τ)
+@muladd @inline function rk4(f, x, τ)
     τ½ = τ * half
 
     k = f(x)
@@ -113,7 +113,7 @@ const half, sixth, third = Float32.((1/2, 1/6, 1/3))
     return @. x + τ * dx
 end
 
-@propagate_inbounds function rk4_flow_map(v, x; step_size=0.01f0, steps=20i32)
+@inline function rk4_flow_map(v, x, step_size=0.01f0, steps=20i32)
     for _ in 1:steps
         x = rk4(v, x, step_size)
     end

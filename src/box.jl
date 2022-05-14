@@ -31,9 +31,11 @@ struct Box{N,T <: AbstractFloat}
 end
 
 Base.in(point, box::Box) = all(box.center .- box.radius  .<=  point  .<  box.center .+ box.radius)
+Base.:(==)(b1::Box, b2::Box) = false
+Base.:(==)(b1::Box{N}, b2::Box{N}) where N = (all(b1.center .== b2.center) && all(b1.radius .== b2.radius))
 
 volume(box::Box) = prod(2 .* box.radius)
 
 function Base.show(io::IO, box::Box) 
-    print(io, "Box: center = $(box.center), radii = $(box.radius)")
+    print(io, "Box:\n   center = $(box.center),\n   radii = $(box.radius)")
 end

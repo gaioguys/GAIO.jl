@@ -44,8 +44,8 @@ function BoxPartition(domain::Box{N,T}, dims::NTuple{N,I}) where {N,T,I}
     return BoxPartition(domain, left, scale, dims, dimsprod)
 end
 
-function BoxPartition(domain::Box{N,T}, I=Int32) where {N,T}
-    dims = tuple(ones(I,N)...)
+function BoxPartition(domain::Box{N,T}) where {N,T}
+    dims = tuple(ones(Int,N)...)
     BoxPartition(domain, dims)
 end
 
@@ -58,6 +58,8 @@ function subdivide(P::BoxPartition{N,T,I,D}, dim) where {N,T,I,D}
     return BoxPartition(P.domain, new_dims)
 end
 
+Base.:(==)(p1::BoxPartition, p2::BoxPartition) = false
+Base.:(==)(p1::BoxPartition{N,T,I,D}, p2::BoxPartition{N,S,J,B}) where {N,T,I,D,S,J,B} = (p1.domain == p2.domain && all(D .== B))
 Base.size(::BoxPartition{N,T,I,D}) where {N,T,I,D} = D
 Base.length(::BoxPartition{N,T,I,D}) where {N,T,I,D} = prod(D)
 
@@ -69,7 +71,7 @@ function Base.show(io::IO, partition::BoxPartition{N,T,I,D}) where {N,T,I,D}
     print(io, join(D, " x "), " BoxPartition")
 end
 
-@muladd @propagate_inbounds function key_to_cr(
+@muladd @inline function key_to_box(
         partition::BoxPartition{N,T,I,D}, key::M
     ) where M <: Union{<:Integer, NTuple{N, <:Integer}} where {N,T,I,D}
 
@@ -77,23 +79,16 @@ end
     left = partition.domain.center .- partition.domain.radius
     center = @. left + radius + 2 * radius * ($(CartesianIndices(D)[key].I) - 1)
     # start at leftmost box in the partition and move $key boxes right
-    return center, radius
-end 
+    return Box(center, radius)
+end
 
-@propagate_inbounds function key_to_box(
-        partition::BoxPartition{N,T,I,D}, key::M
-    ) where M <: Union{<:Integer, NTuple{N, <:Integer}} where {N,T,I,D}
-
-    return Box(key_to_cr(partition, key)...)
-end 
-
-@propagate_inbounds function unsafe_point_to_ints(partition::BoxPartition{N,T,I}, point) where {N,T,I}
+function unsafe_point_to_ints(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     x = (point .- partition.left) .* partition.scale    
     # counts how many boxes x is away from left (componentwise)
     return unsafe_trunc.(I, x)
 end
 
-@propagate_inbounds function ints_to_key(partition::BoxPartition{N,T,I,D}, x_ints) where {N,T,I,D}
+function ints_to_key(partition::BoxPartition{N,T,I,D}, x_ints) where {N,T,I,D}
     if any(x_ints .< zero(I)) || any(x_ints .>= D)
         #@debug "point does not lie in the domain" point partition.domain
         return nothing
@@ -102,7 +97,7 @@ end
     return key
 end
 
-@propagate_inbounds function point_to_key(partition::BoxPartition, point)
+function point_to_key(partition::BoxPartition, point)
     x_ints = unsafe_point_to_ints(partition, point)
     key = ints_to_key(partition, x_ints)
     return key
