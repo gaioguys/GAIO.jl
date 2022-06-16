@@ -2,25 +2,29 @@ struct BoxMapGPUCache{SZ}
     maxsize::Val{SZ}
 end
 
-for T in (:Float, :Int, :UInt, :ComplexF), len in (:16, :64)
-    ti, to = Symbol(T, len), Symbol(T, :32)
-    @eval convertto32(x::$ti) = $to(x)
-end
-convertto32(x::V) where {N,T,V<:SVNT{N,T}} = map(convertto32, x)
-convertto32(x::Box) = Box(map(convertto32, (x.center, x.radius))...)
-convertto32(x::BoxPartition) = BoxPartition(map(convertto32, (x.domain, x.left, x.scale, x.dims, x.dimsprod))...)
-convertto32(x) = x
-
-for type in (:(BoxPartition{N,Float64,J}), :(BoxPartition{N,J,Int64}), :(BoxPartition{N,J,Int128}))
-    @eval function map_boxes(g::SampledBoxMap{<:BoxMapGPUCache}, source::BoxSet{$type}) where {N,J}
-        return map_boxes(g, BoxSet(convertto32(source.partition), Set{Int32}(source.set)))
+for T in (:Float64, :J), I in (:Int64, :Int128, :J)
+    @eval function Adapt.adapt_structure(a::CUDA.Adaptor, b::BoxPartition{N,$T,$I,D}) where {N,J,D}
+        Adapt.adapt_storage(a,
+            BoxPartition{N,Float32,Int32,D}(
+                Box{N,Float32}(b.domain.center, b.domain.radius),
+                SVector{N,Float32}(b.left), SVector{N,Float32}(b.scale),
+                SVector{N,Int32}(b.dims), SVector{N,Int32}(b.dimsprod)
+            )
+        )
     end
 end
 
-function PointDiscretizedMap(map, domain, points, ::Val{:gpu})
-    points_vec = CuArray(convertto32.(points))
+for T in (:SVector, :NTuple)
+    @eval function Adapt.adapt_structure(a::CUDA.CuArrayAdaptor, x::V) where {N,Float64,V<:AV{$T{N,Float64}}}
+        x = map($T{N,Float32}, x)
+        return Adapt.adapt_storage(a, x)
+    end
+end
+
+function PointDiscretizedMap(map, domain::Box{N,T}, points, ::Val{:gpu}) where {N,T}
+    points_vec = cu(points)
     maxsize = min(prod(CUDA.max_grid_size), CUDA.totalmem(CUDA.device()))
-    maxsize = maxsize ÷ sizeof(Int32) ÷ length(points_vec) ÷ 2 ÷ 5 * 4
+    maxsize ÷= N * sizeof(Int32) * length(points_vec) * 2
     return PointDiscretizedMap(map, domain, points_vec, BoxMapGPUCache(Val(maxsize)))
 end
 
@@ -40,17 +44,13 @@ end
     end
 end
 
-function map_boxes(
-        g::SampledBoxMap{<:BoxMapGPUCache{SZ}}, 
-        source::BoxSet{BoxPartition{N,T,I,D}}
-    ) where {N,T,I,D,SZ}
-
+function map_boxes(g::SampledBoxMap{<:BoxMapGPUCache{SZ}}, source::BoxSet) where SZ
     P, keys = source.partition, Stateful(source.set)
     points = g.domain_points(P.domain.center, P.domain.radius)
-    set = BoxSet(P, Set{Int32}())
+    image = BoxSet(P, Set{Int32}())
     while !isnothing(keys.nextvalstate)
-        in_keys = CuArray{I,1}(collect(take(keys, SZ)))
-        nk, np = I(length(in_keys)), I(length(points))
+        in_keys = CuArray{Int32,1}(collect(take(keys, SZ)))
+        nk, np = Int32(length(in_keys)), Int32(length(points))
         n = nk * np
         out_keys = CuArray{Int32,1}(undef, n)
         args = (g.map, in_keys, points, out_keys, P, nk, np)
@@ -60,11 +60,11 @@ function map_boxes(
         blocks  = cld(n, threads)
         kernel!(args...; threads, blocks)
         CUDA.synchronize()
-        out_cpu = Array(out_keys)
+        out_cpu = Array{Int32,1}(out_keys)
         y = Set(out_cpu)
         delete!(y, 0i32)
-        union!(set, BoxSet(P, y))
+        union!(image, BoxSet(P, y))
         CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
     end
-    return set
+    return image
 end

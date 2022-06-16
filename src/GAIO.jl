@@ -11,11 +11,12 @@ using ForwardDiff
 using Arpack
 using Base.Threads
 using Base: unsafe_trunc
-using Base.Iterators: Stateful, take
 using MuladdMacro
 using HostCPUFeatures
 using SIMD
+using Adapt
 using CUDA
+using Base.Iterators: Stateful, take
 
 using GLMakie
 using WGLMakie
@@ -56,6 +57,7 @@ Base.:(*)(x, ::Type{NumLiteral{T}}) where T = T(x)
 const i32, ui32 = NumLiteral{Int32}, NumLiteral{UInt32}
 const SVNT{N,T} = Union{NTuple{N,T}, <:StaticVector{N,T}}
 const AV{T} = AbstractArray{T}
+const F = (Int == Int64) ? Float64 : Float32
 
 include("box.jl")
 

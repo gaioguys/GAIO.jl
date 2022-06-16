@@ -24,13 +24,13 @@ struct BoxPartition{N,T,I,D} <: AbstractBoxPartition{Box{N,T}}
     scale::SVector{N,T}
     dims::SVector{N,I}
     dimsprod::SVector{N,I}
+end
 
-    function BoxPartition(
-            domain::Box{N,T}, left::SVector{N,T}, scale::SVector{N,T}, dims::SVector{N,I}, dimsprod::SVector{N,I}
-        ) where {N,T,I}
+function BoxPartition(
+        domain::Box{N,T1}, left::SVector{N,T2}, scale::SVector{N,T3}, dims::SVector{N,I1}, dimsprod::SVector{N,I2}
+    ) where {N,T1,T2,T3,I1,I2}
 
-        return new{N,T,I,dims.data}(domain, left, scale, dims, dimsprod)
-    end
+    return BoxPartition{N,promote_type(T1,T2,T3),promote_type(I1,I2),dims.data}(domain, left, scale, dims, dimsprod)
 end
 
 function BoxPartition(domain::Box{N,T}, dims::NTuple{N,I}) where {N,T,I}
@@ -68,10 +68,10 @@ keys_all(partition::BoxPartition) = 1:length(partition)
 # == 1 : partition.dimsprod[end] * partition.dims[end]
 
 function Base.show(io::IO, partition::BoxPartition{N,T,I,D}) where {N,T,I,D}
-    print(io, join(D, " x "), " BoxPartition")
+    print(io, join(D, " x "), "  BoxPartition with eltypes ($T, $I)")
 end
 
-@muladd @inline function key_to_box(
+function key_to_box(
         partition::BoxPartition{N,T,I,D}, key::M
     ) where M <: Union{<:Integer, NTuple{N, <:Integer}} where {N,T,I,D}
 

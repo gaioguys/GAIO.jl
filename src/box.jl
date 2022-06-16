@@ -1,5 +1,4 @@
 # abstract type AbstractBoxPartition{B <: Box} end
-
 """
 A generalized box with
 `center`:   vector where the box's center is located
@@ -10,25 +9,21 @@ struct Box{N,T <: AbstractFloat}
     center::SVector{N,T}
     radius::SVector{N,T}
 
-    function Box(center, radius)
-        N = length(center)
+    function Box{N,T}(center, radius) where {N,T}
 
-        if length(radius) != N
+        if !( N == length(radius) == length(center) )
             throw(DimensionMismatch("Center vector and radius vector must have same length ($N)"))
         end
 
-        if any(x -> x <= 0, radius)
+        if any(≤(0), radius)
             throw(DomainError(radius, "radius must be positive in every component"))
-        end
-        
-        T = promote_type(eltype(center), eltype(radius))
-        if !(T <: AbstractFloat)
-            T = Float64
         end
 
         return new{N,T}(SVector{N,T}(center), SVector{N,T}(radius))
     end
 end
+
+Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype(radius))}(center, radius)
 
 Base.in(point, box::Box) = all(box.center .- box.radius  .<=  point  .<  box.center .+ box.radius)
 Base.:(==)(b1::Box, b2::Box) = false
