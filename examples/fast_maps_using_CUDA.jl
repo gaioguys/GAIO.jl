@@ -4,7 +4,7 @@ using GAIO
 # in your code using nvidia CUDA. The speedup factor
 # increases exponentially with the complexity of the map.
 
-# For best results, ensure that your functions only use 
+# !!! For best results, ensure that your functions only use 
 # 32-bit operations, as GPUs are not efficient with 64-bit.
 
 const σ, ρ, β = 10.0f0, 28.0f0, 0.4f0
@@ -22,10 +22,11 @@ end
 
 F(x) = rk4_flow_map(f, x)
 
-# Preferred are explicit 32-bit literals
-center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
-# But GAIO can convert your BoxPartition to 32-bit automatically.
-# center, radius = (0,0,25), (30,30,30)
+# GAIO can convert your BoxPartition to 32-bit automatically
+# when you use GPU acceleration, but preferred are still 
+# explicit 32-bit literals like
+# center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
+center, radius = (0,0,25), (30,30,30)
 
 P = BoxPartition(Box(center, radius), (128,128,128))
 

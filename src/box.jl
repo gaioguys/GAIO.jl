@@ -1,3 +1,5 @@
+const F = (Int == Int64) ? Float64 : Float32
+
 # abstract type AbstractBoxPartition{B <: Box} end
 """
 A generalized box with

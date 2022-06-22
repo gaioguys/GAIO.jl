@@ -1,9 +1,16 @@
-struct BoxMapGPUCache{SZ}
-    maxsize::Val{SZ}
-end
+export i32, ui32
+
+struct NumLiteral{T} end
+Base.:(*)(x, ::Type{NumLiteral{T}}) where T = T(x)
+const i32, ui32 = NumLiteral{Int32}, NumLiteral{UInt32}
+
+struct BoxMapGPUCache{SZ} end
 
 for T in (:Float64, :J), I in (:Int64, :Int128, :J)
-    @eval function Adapt.adapt_structure(a::CUDA.Adaptor, b::BoxPartition{N,$T,$I,D}) where {N,J,D}
+    @eval function Adapt.adapt_structure(
+            a::CUDA.Adaptor, b::BoxPartition{N,$T,$I,D}
+        ) where {N,J,D}
+
         Adapt.adapt_storage(a,
             BoxPartition{N,Float32,Int32,D}(
                 Box{N,Float32}(b.domain.center, b.domain.radius),
@@ -15,9 +22,12 @@ for T in (:Float64, :J), I in (:Int64, :Int128, :J)
 end
 
 for T in (:SVector, :NTuple)
-    @eval function Adapt.adapt_structure(a::CUDA.CuArrayAdaptor, x::V) where {N,Float64,V<:AV{$T{N,Float64}}}
+    @eval function Adapt.adapt_structure(
+            a::CUDA.CuArrayAdaptor, x::V
+        ) where {N,Float64,V<:AbstractArray{$T{N,Float64}}}
+
         x = map($T{N,Float32}, x)
-        return Adapt.adapt_storage(a, x)
+        Adapt.adapt_storage(a, x)
     end
 end
 
@@ -25,7 +35,7 @@ function PointDiscretizedMap(map, domain::Box{N,T}, points, ::Val{:gpu}) where {
     points_vec = cu(points)
     maxsize = min(prod(CUDA.max_grid_size), CUDA.totalmem(CUDA.device()))
     maxsize ÷= N * sizeof(Int32) * length(points_vec) * 2
-    return PointDiscretizedMap(map, domain, points_vec, BoxMapGPUCache(Val(maxsize)))
+    return PointDiscretizedMap(map, domain, points_vec, BoxMapGPUCache{maxsize}())
 end
 
 @muladd function map_boxes_kernel!(G, keys, points, out_keys, P, np, nk)

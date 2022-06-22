@@ -1,3 +1,5 @@
+const SVNT{N,T} = Union{NTuple{N,T}, <:StaticVector{N,T}}
+
 struct BoxMapCPUCache{simd,V,W}
     idx_base::SIMD.Vec{simd,Int}
     temp_points::V
@@ -95,7 +97,7 @@ end
 
 function tuple_vgather(
         v::V, simd, idx = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
-    ) where {N,T,V<:AV{<:SVNT{N,T}}}
+    ) where {N,T,V<:AbstractArray{<:SVNT{N,T}}}
 
     vr = reinterpret(T, v)
     vo = ntuple(i -> vr[idx + i], Val(N))
@@ -104,7 +106,7 @@ end
 
 @inline function tuple_vgather_lazy(
         v::V, simd
-    ) where {N,T,V<:AV{<:SVNT{N,T}}}
+    ) where {N,T,V<:AbstractArray{<:SVNT{N,T}}}
     
     n = length(v)
     m = n ÷ simd
@@ -122,7 +124,7 @@ end
 
 function tuple_vscatter!(
         vo::VO, vi::VI, idx::SIMD.Vec{simd,I}
-    ) where {N,T,simd,VO<:AV{T},VI<:SVNT{N,SIMD.Vec{simd,T}},I<:Integer}
+    ) where {N,T,simd,VO<:AbstractArray{T},VI<:SVNT{N,SIMD.Vec{simd,T}},I<:Integer}
     
     for i in 1:N
         vo[idx + i] = vi[i]
@@ -131,7 +133,7 @@ end
 
 function tuple_vscatter!(
         vo::VO, vi::VI
-    ) where {N,T,simd,VO<:AV{T},VI<:SVNT{N,SIMD.Vec{simd,T}}}
+    ) where {N,T,simd,VO<:AbstractArray{T},VI<:SVNT{N,SIMD.Vec{simd,T}}}
 
     idx = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
     for j in 1:length(vi)
