@@ -8,7 +8,7 @@ end
 
 function Base.show(io::IO, g::SampledBoxMap{<:BoxMapCPUCache{simd}}) where {simd}
     center, radius = g.domain.center, g.domain.radius
-    n = length(g.domain_points(center, radius)) ÷ simd
+    n = length(g.domain_points(center, radius)) * simd
     print(io, "BoxMap with $(n) sample points")
 end
 
