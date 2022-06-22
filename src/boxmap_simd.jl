@@ -6,6 +6,12 @@ struct BoxMapCPUCache{simd,V,W}
     temp_points_vec::W
 end
 
+function Base.show(io::IO, g::SampledBoxMap{<:BoxMapCPUCache{simd}}) where {simd}
+    center, radius = g.domain.center, g.domain.radius
+    n = length(g.domain_points(center, radius)) ÷ simd
+    print(io, "BoxMap with $(n) sample points")
+end
+
 Base.iterate(c::BoxMapCPUCache) = (c.idx_base, Val(:temp_points))
 Base.iterate(c::BoxMapCPUCache, ::Val{:temp_points}) = (c.temp_points, Val(:temp_points_vec))
 Base.iterate(c::BoxMapCPUCache, ::Val{:temp_points_vec}) = (c.temp_points_vec, Val(:done))

@@ -12,9 +12,9 @@ Transforms a `map: B → C, B ⊂ ℝᴺ` to a `SampledBoxMap` defined on `BoxSe
 `image_points`:     the spread of test points for comparison in intersection algorithms.
                     (scaled to fit a box with unit radii)
 
-`acceleration`:     `WARNING UNFINISHED` Whether to use optimized functions in intersection algorithms.
+`acceleration`:     Whether to use optimized functions in intersection algorithms.
                     Accepted values: `nothing`, `Val(:cpu)`, `Val(:gpu)`.
-                    `Val(:gpu)` currently does nothing.
+                    `Val(:gpu)` does nothing unless you have a CUDA capable gpu.
 
 """
 struct SampledBoxMap{A,N,T,F,D,I} <: BoxMap
