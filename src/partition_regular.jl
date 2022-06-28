@@ -31,7 +31,7 @@ end
 function BoxPartition(domain::Box{N,T}, dims::NTuple{N,I}) where {N,T,I}
     dims = SVector{N,I}(dims)
     left = domain.center .- domain.radius
-    scale = dims ./ (2 .* domain.radius)
+    scale = dims ./ (I(2) .* domain.radius)
     # nr. of boxes / diameter of the domain == 1 / diameter of each box
     dimsprod_ = [SVector{1,I}(1); cumprod(dims)]
     dimsprod = dimsprod_[SOneTo(N)]
@@ -85,7 +85,7 @@ function ints_to_key(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I}
         #@debug "point does not lie in the domain" point partition.domain
         return nothing
     end
-    key = sum(x_ints .* partition.dimsprod) + 1
+    key = sum(x_ints .* partition.dimsprod) + I(1)
     return key
 end
 
