@@ -12,13 +12,18 @@ end
 Base.copy(partition::TreePartition) = TreePartition(partition.domain, copy(partition.nodes), copy(partition.regular_partitions))
 
 depth(partition::TreePartition) = length(partition.regular_partitions) - 1
-keytype(::Type{<:TreePartition}) = Tuple{Int,Int}
+Base.keytype(::Type{<:TreePartition}) = Tuple{Int,Int}
 
 function Base.show(io::IO, partition::TreePartition) 
     print(io, "TreePartition of depth $(depth(partition))")
 end
 
-function keys_all(partition::TreePartition)
+function Base.:(==)(p1::TreePartition, p2::TreePartition)
+    @debug "equality between TreePartitions is not implemented" maxlog=1
+    return true
+end
+
+function Base.keys(partition::TreePartition)
     if depth(partition) != 0
         error("not implemented")
     end
@@ -28,18 +33,11 @@ end
 
 TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)], [BoxPartition(domain)])
 
-dimension(::TreePartition{N,T}) where {N,T} = N
+Base.ndims(::TreePartition{N,T}) where {N,T} = N
 
 function key_to_box(partition::TreePartition, key::Tuple{Int,Int})
     return key_to_box(partition.regular_partitions[key[1] + 1], key[2])
 end
-
-#=
-function unsafe_point_to_ints(partition::BoxPartition, point) # should maybe be put into partition_regular.jl
-    x = (point .- partition.left) .* partition.scale    # counts how many boxes x is away from left (componentwise)
-    return map(xi -> Base.unsafe_trunc(Int, xi), x)
-end
-=#
 
 function tree_search(tree::TreePartition{N,T}, point) where {N,T}
     regular_partitions = tree.regular_partitions
@@ -50,7 +48,7 @@ function tree_search(tree::TreePartition{N,T}, point) where {N,T}
     current_depth = 0
     ints = zeros(SVector{N,Int})
 
-    while current_depth+1 <= tree_depth
+    while current_depth < tree_depth
         ints_next = unsafe_point_to_ints(regular_partitions[current_depth+2], point)
 
         point_is_left = iseven(ints_next[(current_depth % N) + 1])
@@ -84,11 +82,13 @@ end
 function subdivide!(tree::TreePartition{N, T}, key::Tuple{Int,Int}) where {N, T}
     search_key, node_idx = tree_search(tree, key_to_box(tree, key).center)
 
-    @assert key == search_key
+    key != search_key && throw(BoundsError(tree, key))
 
     node = tree.nodes[node_idx]
 
-    @assert node.left == 0 && node.right == 0
+    if node.left != 0 || node.right != 0
+        error("Subdivide along non-leaf nodes is not implemented")
+    end
 
     new_node = Node(length(tree.nodes) + 1, length(tree.nodes) + 2)
     push!(tree.nodes, Node(0, 0))

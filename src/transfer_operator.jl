@@ -64,12 +64,12 @@ function TransferOperator(g::SampledBoxMap, boxset::BoxSet)
 end
 
 
-function strongly_connected_components(gstar::TransferOperator)
+function Graphs.strongly_connected_components(gstar::TransferOperator)
     graph = SimpleDiGraph(
         [Edge(edge[1], edge[2]) for edge in keys(gstar.edges)]
     )
 
-    sccs = LightGraphs.strongly_connected_components(graph)
+    sccs = Graphs.strongly_connected_components(graph)
 
     connected_vertices = Int[]
 

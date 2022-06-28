@@ -6,12 +6,12 @@ using StaticArrays
 # using GLFW
 # using ModernGL
 using GeometryBasics
-using LightGraphs
+using Graphs
 using ForwardDiff
 using Arpack
 using Base.Threads
 using Base.Cartesian: @nexprs, @ntuple
-using Base: @propagate_inbounds
+using Base: @propagate_inbounds, unsafe_trunc
 using MuladdMacro
 using HostCPUFeatures
 using SIMD
@@ -22,7 +22,7 @@ using WGLMakie
 export Box
 
 export AbstractBoxPartition, BoxPartition, TreePartition
-export dimension, depth, key_to_box, point_to_key, tree_search
+export depth, key_to_box, point_to_key, tree_search
 
 export BoxSet
 export boxset_empty, subdivide, subdivide!
