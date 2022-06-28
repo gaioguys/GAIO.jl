@@ -10,11 +10,13 @@ using LightGraphs
 using ForwardDiff
 using Arpack
 using Base.Threads
-using Base.Cartesian: @nexprs, @ntuple
-using Base: @propagate_inbounds
+using Base: unsafe_trunc
 using MuladdMacro
 using HostCPUFeatures
 using SIMD
+using Adapt
+using CUDA
+using Base.Iterators: Stateful, take
 
 using GLMakie
 using WGLMakie
@@ -54,11 +56,15 @@ abstract type AbstractBoxPartition{B <: Box} end
 include("partition_regular.jl")
 include("partition_tree.jl")
 include("boxset.jl")
-include("simd_helper.jl")
 include("boxmap.jl")
+include("boxmap_simd.jl")
 include("boxfun.jl")  
 include("transfer_operator.jl")
 include("algorithms.jl")
 include("plot.jl")
+
+if CUDA.functional()
+    include("boxmap_cuda.jl")
+end
 
 end # module

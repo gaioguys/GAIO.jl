@@ -1,4 +1,5 @@
 using GAIO
+using CUDA
 using Test
 using SafeTestsets
 
@@ -8,6 +9,14 @@ using SafeTestsets
     end
     @safetestset "BoxMap" begin
         include("boxmap.jl")
+    end
+    @safetestset "BoxMap with :cpu" begin
+        include("boxmap_simd.jl")
+    end
+    if CUDA.functional()
+        @safetestset "BoxMap with :gpu" begin
+            include("boxmap_cuda.jl")
+        end
     end
     @safetestset "BoxSet" begin
         include("boxset.jl")

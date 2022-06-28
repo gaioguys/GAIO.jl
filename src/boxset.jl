@@ -10,10 +10,10 @@ struct BoxSet{P <: AbstractBoxPartition,S <: AbstractSet}
     set::S
 end
 
-function Base.show(io::IO, boxset::BoxSet) 
+function Base.show(io::IO, boxset::BoxSet)
     size = length(boxset.set)
     dim = length(boxset.partition.domain.center)
-    print(io, "$size-element BoxSet in $dim dimensions")
+    print(io, "$size-element BoxSet in ", boxset.partition)
 end
 
 # TODO: replace with BoxSet(partition)
@@ -43,32 +43,45 @@ function Base.getindex(partition::AbstractBoxPartition, points_or_point)
     return BoxSet(partition, set)
 end
 
+function Base.getindex(partition::AbstractBoxPartition, key::Integer)
+    BoxSet(partition, Set([key]))
+end
+
 function Base.getindex(partition::AbstractBoxPartition, ::Colon)
     return BoxSet(partition, Set(keys_all(partition)))
 end
 
 for op in (:union, :intersect, :setdiff)
-    op! = Symbol(op, :!)
+    op! = Symbol(op, :!) 
+    boundscheck = quote
+        @boundscheck for i in 1:length(sets)-1
+            if !(sets[i].partition == sets[i+1].partition)
+                throw(DomainError((sets[i].partition, sets[i+1].partition), "Partitions of boxsets in union do not match."))
+            end
+        end
+    end
     @eval begin
-        function Base.$op(a::BoxSet, b::BoxSet)
-            # TODO: verify that a.partition == b.partition
-            return BoxSet(a.partition, $op(a.set, b.set))
+        @inline function Base.$op(sets::BoxSet...)
+            $boundscheck
+            return BoxSet(sets[1].partition, $op((s.set for s in sets)...))
         end
 
-        function Base.$op!(a::BoxSet, b::BoxSet)
-            # TODO: verify that a.partition == b.partition
-            $op!(a.set, b.set)
-            return a
+        @inline function Base.$op!(sets::BoxSet...)
+            $boundscheck
+            $op!((s.set for s in sets)...)
+            return sets[1]
         end
     end
 end
 
 Base.isempty(boxset::BoxSet) = isempty(boxset.set)
 Base.length(boxset::BoxSet) = length(boxset.set)
+Base.push!(boxset::BoxSet, key) = push!(boxset.set, key)
+Base.sizehint!(boxset::BoxSet, size) = sizehint!(boxset.set, size)
 Base.eltype(::Type{BoxSet{P,S}}) where {P <: AbstractBoxPartition{B},S} where B = B
 Base.iterate(boxset::BoxSet, state...) = iterate((key_to_box(boxset.partition, key) for key in boxset.set), state...)
 
-function subdivide(boxset::BoxSet{<:BoxPartition,S}, dim::Int) where {S}
+function subdivide(boxset::BoxSet{<:BoxPartition,S}, dim) where {S}
     partition = boxset.partition
     box_indices = CartesianIndices(size(partition))
 
@@ -91,8 +104,8 @@ function subdivide(boxset::BoxSet{<:BoxPartition,S}, dim::Int) where {S}
     return BoxSet(partition_subdivided, set)
 end
 
-function subdivide!(boxset::BoxSet{<:TreePartition}, key::Tuple{Int,Int})
-    @assert key in boxset.set
+function subdivide!(boxset::BoxSet{<:TreePartition}, key::NTuple{2,<:Integer})
+    !( key in boxset.set ) && throw(KeyError(key))
 
     delete!(boxset.set, key)
 
