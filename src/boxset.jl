@@ -11,7 +11,7 @@ struct BoxSet{P <: AbstractBoxPartition,S <: AbstractSet}
     set::S
 end
 
-function Base.show(io::IO, boxset::BoxSet) 
+function Base.show(io::IO, boxset::BoxSet)
     size = length(boxset.set)
     print(io, "$size-element BoxSet in ", boxset.partition)
 end
@@ -41,6 +41,10 @@ function Base.getindex(partition::AbstractBoxPartition, points_or_point)
     end
 
     return BoxSet(partition, set)
+end
+
+function Base.getindex(partition::AbstractBoxPartition, key::Integer)
+    BoxSet(partition, Set([key]))
 end
 
 function Base.getindex(partition::AbstractBoxPartition, ::Colon)
@@ -77,7 +81,7 @@ Base.sizehint!(boxset::BoxSet, size) = sizehint!(boxset.set, size)
 Base.eltype(::Type{BoxSet{P,S}}) where {P <: AbstractBoxPartition{B},S} where B = B
 Base.iterate(boxset::BoxSet, state...) = iterate((key_to_box(boxset.partition, key) for key in boxset.set), state...)
 
-function subdivide(boxset::BoxSet{<:BoxPartition,S}, dim::Integer) where {S}
+function subdivide(boxset::BoxSet{<:BoxPartition,S}, dim) where {S}
     partition = boxset.partition
     box_indices = CartesianIndices(size(partition))
 

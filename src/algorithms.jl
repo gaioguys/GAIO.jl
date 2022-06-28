@@ -1,6 +1,6 @@
 function relative_attractor(F::BoxMap, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
     for k = 1:steps
-        B = subdivide(B, (k%N)+1)
+        B = subdivide(B, (k % N) + 1)
         B = B ∩ F(B)
     end
     return B
@@ -18,7 +18,7 @@ end
 
 function chain_recurrent_set(F::BoxMap, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
     for k in 1:steps
-        B = subdivide(B, (k%N)+1)
+        B = subdivide(B, (k % N) + 1)
         P = TransferOperator(F, B)
         B = strongly_connected_components(P)
     end
@@ -28,7 +28,7 @@ end
 @muladd function adaptive_newton_step(g, g_jacobian, x, k)
     function armijo_rule(g, x, α, σ, ρ)
         Dg = g_jacobian(x)
-        d = Dg\g(x)
+        d = Dg \ g(x)
         while any(g(x + α * d) .> g(x) + σ * α * Dg' * d) && α > 0.1
             α = ρ * α
         end
@@ -39,7 +39,7 @@ end
     expon(ϵ, σ, h, δ) = Int(ceil(log(ϵ * (1/2)^σ)/log(maximum((1 - h, δ)))))
     n = expon(0.2, k, h, 0.1)
 
-    for _ in 1:n
+    for _ in 1i32:n
         Dg = g_jacobian(x)
         x = x - h * (Dg \ g(x))
     end
@@ -50,7 +50,7 @@ end
 function cover_roots(g, Dg, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
     domain = B.partition.domain
     for k in 1:steps
-        B = subdivide(B, (k%N)+1)
+        B = subdivide(B, (k % N) + 1i32)
         f = x -> adaptive_newton_step(g, Dg, x, k)
         F_k = BoxMap(f, domain, no_of_points = 40)
         B = F_k(B)
@@ -94,7 +94,7 @@ function finite_time_lyapunov_exponents(boxset::BoxSet, g; T, num_points=20, ϵ=
 end
 
 # Runge-Kutta scheme of 4th order
-const half, sixth, third = 1/2, 1/6, 1/3
+const half, sixth, third = Float32.((1/2, 1/6, 1/3))
 @muladd @inline function rk4(f, x, τ)
     τ½ = τ * half
 
@@ -113,7 +113,7 @@ const half, sixth, third = 1/2, 1/6, 1/3
     return @. x + τ * dx
 end
 
-@inline function rk4_flow_map(v, x, step_size=0.01, steps=20)
+@inline function rk4_flow_map(v, x, step_size=0.01f0, steps=20)
     for _ in 1:steps
         x = rk4(v, x, step_size)
     end
