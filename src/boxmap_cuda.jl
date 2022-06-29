@@ -26,15 +26,13 @@ for T in (:SVector, :NTuple)
             a::CUDA.CuArrayAdaptor, x::V
         ) where {N,Float64,V<:AbstractArray{$T{N,Float64}}}
 
-        x = map($T{N,Float32}, x)
-        Adapt.adapt_storage(a, x)
+        CuArray{SVector{N,Float32},1}(x)
     end
 end
 
 function PointDiscretizedMap(map, domain::Box{N,T}, points, ::Val{:gpu}) where {N,T}
     points_vec = cu(points)
-    maxsize = min(prod(CUDA.max_grid_size), CUDA.totalmem(CUDA.device()))
-    maxsize ÷= N * sizeof(Int32) * length(points_vec) * 2
+    maxsize = CUDA.available_memory() ÷ (N * sizeof(Int32) * length(points_vec) * 2)
     return PointDiscretizedMap(map, domain, points_vec, BoxMapGPUCache{maxsize}())
 end
 
@@ -59,7 +57,7 @@ function map_boxes(g::SampledBoxMap{<:BoxMapGPUCache{SZ}}, source::BoxSet) where
     points = g.domain_points(P.domain.center, P.domain.radius)
     image = BoxSet(P, Set{Int32}())
     while !isnothing(keys.nextvalstate)
-        in_keys = CuArray{Int32,1}(collect(take(keys, SZ)))
+        in_keys = CuArray{Int32,1}(collect(take(keys, min(SZ,length(keys)))))
         nk, np = Int32(length(in_keys)), Int32(length(points))
         n = nk * np
         out_keys = CuArray{Int32,1}(undef, n)

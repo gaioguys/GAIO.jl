@@ -14,13 +14,18 @@ end
 Base.copy(partition::TreePartition) = TreePartition(partition.domain, copy(partition.nodes), copy(partition.regular_partitions))
 
 depth(partition::TreePartition) = length(partition.regular_partitions) - 1
-keytype(::Type{<:TreePartition}) = Tuple{Int,Int}
+Base.keytype(::Type{<:TreePartition}) = Tuple{Int,Int}
 
 function Base.show(io::IO, partition::TreePartition) 
     print(io, "TreePartition of depth $(depth(partition))")
 end
 
-function keys_all(partition::TreePartition)
+function Base.:(==)(p1::TreePartition, p2::TreePartition)
+    @debug "equality between TreePartitions is not implemented" maxlog=1
+    return true
+end
+
+function Base.keys(partition::TreePartition)
     if depth(partition) != 0
         error("not implemented")
     end
@@ -30,7 +35,7 @@ end
 
 TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)], [BoxPartition(domain)])
 
-dimension(::TreePartition{N,T}) where {N,T} = N
+Base.ndims(::TreePartition{N,T}) where {N,T} = N
 
 # TreePartition keys are of the form (partition_key, point_key_in_said_partition)
 function key_to_box(partition::TreePartition, key::Tuple{Int,Int})
@@ -83,11 +88,13 @@ end
 function subdivide!(tree::TreePartition{N, T}, key::Tuple{Int,Int}) where {N, T}
     search_key, node_idx = tree_search(tree, key_to_box(tree, key).center)
 
-    @assert key == search_key
+    key != search_key && throw(BoundsError(tree, key))
 
     node = tree.nodes[node_idx]
 
-    @assert node.left == 0 && node.right == 0
+    if node.left != 0 || node.right != 0
+        error("Subdivide along non-leaf nodes is not implemented")
+    end
 
     new_node = Node(length(tree.nodes) + 1, length(tree.nodes) + 2)
     push!(tree.nodes, Node(0, 0))

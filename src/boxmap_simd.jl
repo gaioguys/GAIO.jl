@@ -22,7 +22,7 @@ function PointDiscretizedMap(map, domain::Box{N,T}, points, ::Val{:cpu}) where {
     if n % simd != 0
         throw(DimensionMismatch("Number of test points $n is not divisible by $T SIMD capability $simd"))
     end
-    gathered_points = copy(tuple_vgather_lazy(points, simd))
+    gathered_points = tuple_vgather(points, simd)
     domain_points(center, radius) = gathered_points
     image_points(center, radius) = center
     idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
@@ -102,11 +102,29 @@ end
 end
 
 function tuple_vgather(
-        v::V, simd, idx = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
+        v::V, idx::SIMD.Vec{simd,Int}# = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
+    ) where {N,T,simd,V<:AbstractArray{<:SVNT{N,T}}}
+
+    vr = reinterpret(T,v)
+    vo = ntuple(i -> vr[idx + i], Val(N))
+    return vo
+end
+
+@inline function tuple_vgather(
+        v::V, simd::Integer
     ) where {N,T,V<:AbstractArray{<:SVNT{N,T}}}
 
+    n = length(v)
+    m = n ÷ simd
+    @boundscheck if n != m * simd
+        throw(DimensionMismatch("length of input ($n) % simd ($simd) != 0"))
+    end
     vr = reinterpret(T, v)
-    vo = ntuple(i -> vr[idx + i], Val(N))
+    vo = Vector{SVector{N,SIMD.Vec{simd,T}}}(undef, m)#ntuple(i -> vr[idx + i], Val(N))
+    idx = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
+    for i in 1:m
+        vo[i] = ntuple( j -> vr[idx + (i-1)*N*simd + j], Val(N) )
+    end
     return vo
 end
 

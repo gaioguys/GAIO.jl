@@ -2,6 +2,7 @@
 Internal data structure to hold sets
 
 `partition`:  the partition that the set is defined over
+
 `set`:        set of partition-keys corresponding to the boxes in the set
 
 """
@@ -12,7 +13,6 @@ end
 
 function Base.show(io::IO, boxset::BoxSet)
     size = length(boxset.set)
-    dim = length(boxset.partition.domain.center)
     print(io, "$size-element BoxSet in ", boxset.partition)
 end
 
@@ -48,7 +48,7 @@ function Base.getindex(partition::AbstractBoxPartition, key::Integer)
 end
 
 function Base.getindex(partition::AbstractBoxPartition, ::Colon)
-    return BoxSet(partition, Set(keys_all(partition)))
+    return BoxSet(partition, Set(keys(partition)))
 end
 
 for op in (:union, :intersect, :setdiff)
