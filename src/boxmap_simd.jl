@@ -101,6 +101,37 @@ end
     return BoxSet(P, union(image...))
 end
 
+@inbounds function TransferOperator(g::SampledBoxMap{<:BoxMapCPUCache{simd},N}, source::BoxSet{<:BoxPartition}) where {simd,N}
+    P = source.partition
+    edges = [ Dict{Tuple{Int64,Int64},Float64}() for k = 1:nthreads() ]
+    boxlist = BoxList(source)
+    key_to_index = invert_vector(boxlist.keylist)
+    idx_base, temp_vec, temp_points = g.acceleration
+    @threads for i in 1:length(boxlist)#key in keys
+        tid  = (threadid() - 1) * simd
+        idx  = idx_base + tid * N
+        mapped_points = @view temp_points[tid+1:tid+simd]
+        t_edges = edges[threadid()]
+        box  = key_to_box(P, boxlist[i])
+        c, r = box.center, box.radius
+        points = g.domain_points(c, r)
+        n = length(points) * simd
+        for p in points
+            fp = g.map(@muladd p .* r .+ c)
+            tuple_vscatter!(temp_vec, fp, idx)
+            for q in mapped_points
+                hit = point_to_key(P, q)
+                if !isnothing(hit) && hit in source.set
+                    j = key_to_index[hit]
+                    e = (i,j)
+                    t_edges[e] = get(t_edges, e, 0.0) + 1.0/n
+                end
+            end
+        end
+    end
+    return TransferOperator(boxlist, merge(edges...))
+end
+
 function tuple_vgather(
         v::V, idx::SIMD.Vec{simd,Int}# = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
     ) where {N,T,simd,V<:AbstractArray{<:SVNT{N,T}}}
@@ -128,13 +159,14 @@ end
     return vo
 end
 
+# helper + compatibility functions
 @inline function tuple_vgather_lazy(
         v::V, simd
     ) where {N,T,V<:AbstractArray{<:SVNT{N,T}}}
     
     n = length(v)
     m = n ÷ simd
-    @boundscheck if n - m * simd != 0
+    @boundscheck if n != m * simd
         throw(DimensionMismatch("length of input ($n) % simd ($simd) != 0"))
     end
     vr = v |>
@@ -157,7 +189,7 @@ end
 
 function tuple_vscatter!(
         vo::VO, vi::VI
-    ) where {N,T,simd,VO<:AbstractArray{T},VI<:SVNT{N,SIMD.Vec{simd,T}}}
+    ) where {N,T,simd,VO<:AbstractArray{T},VI<:AbstractArray{<:SVNT{N,SIMD.Vec{simd,T}}}}
 
     idx = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
     for j in 1:length(vi)
