@@ -132,6 +132,7 @@ end
     return TransferOperator(boxlist, merge(edges...))
 end
 
+# helper + compatibility functions
 function tuple_vgather(
         v::V, idx::SIMD.Vec{simd,Int}# = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
     ) where {N,T,simd,V<:AbstractArray{<:SVNT{N,T}}}
@@ -159,7 +160,6 @@ end
     return vo
 end
 
-# helper + compatibility functions
 @inline function tuple_vgather_lazy(
         v::V, simd
     ) where {N,T,V<:AbstractArray{<:SVNT{N,T}}}
