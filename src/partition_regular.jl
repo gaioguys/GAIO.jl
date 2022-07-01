@@ -64,8 +64,8 @@ end
 
 # TODO: replace with overloaded getindex
 @muladd function key_to_box(
-        partition::BoxPartition{N,T}, key::M
-    ) where {N,T,M<:Union{<:Integer, NTuple{N,<:Integer}}}
+        partition::BoxPartition{N,T,I}, key::M
+    ) where {N,T,I,M<:Union{<:Integer, NTuple{N,<:Integer}}}
 
     x_ints = NTuple{N,I}(CartesianIndices(size(partition))[key].I)
     radius = partition.domain.radius ./ partition.dims
