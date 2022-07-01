@@ -67,9 +67,10 @@ end
         partition::BoxPartition{N,T}, key::M
     ) where {N,T,M<:Union{<:Integer, NTuple{N,<:Integer}}}
 
+    x_ints = NTuple{N,I}(CartesianIndices(size(partition))[key].I)
     radius = partition.domain.radius ./ partition.dims
     left = partition.domain.center .- partition.domain.radius
-    center = left .+ radius .+ (2 .* radius) .* (CartesianIndices(size(partition))[key].I .- 1)
+    center = @. left + radius + (2 * radius) * (x_ints - 1)
     # start at leftmost box in the partition and move $key boxes right
     return Box{N,T}(center, radius)
 end 
