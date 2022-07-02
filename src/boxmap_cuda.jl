@@ -8,11 +8,11 @@ struct BoxMapGPUCache{SZ} end
 
 for T in (:Float64, :J), I in (:Int64, :Int128, :J)
     @eval function Adapt.adapt_structure(
-            a::CUDA.Adaptor, b::BoxPartition{N,$T,$I,D}
-        ) where {N,J,D}
+            a::CUDA.Adaptor, b::BoxPartition{N,$T,$I}
+        ) where {N,J}
 
         Adapt.adapt_storage(a,
-            BoxPartition{N,Float32,Int32,D}(
+            BoxPartition{N,Float32,Int32}(
                 Box{N,Float32}(b.domain.center, b.domain.radius),
                 SVector{N,Float32}(b.left), SVector{N,Float32}(b.scale),
                 SVector{N,Int32}(b.dims), SVector{N,Int32}(b.dimsprod)
