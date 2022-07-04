@@ -39,7 +39,7 @@ end
     expon(ϵ, σ, h, δ) = Int(ceil(log(ϵ * (1/2)^σ)/log(maximum((1 - h, δ)))))
     n = expon(0.2, k, h, 0.1)
 
-    for _ in 1i32:n
+    for _ in 1:n
         Dg = g_jacobian(x)
         x = x - h * (Dg \ g(x))
     end
@@ -50,7 +50,7 @@ end
 function cover_roots(g, Dg, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
     domain = B.partition.domain
     for k in 1:steps
-        B = subdivide(B, (k % N) + 1i32)
+        B = subdivide(B, (k % N) + 1)
         f = x -> adaptive_newton_step(g, Dg, x, k)
         F_k = BoxMap(f, domain, no_of_points = 40)
         B = F_k(B)
