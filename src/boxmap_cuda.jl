@@ -92,28 +92,24 @@ function launch_kernel_then_sync!(n, kernel, args...)
     return
 end
 
-for adaptor in (CUDA.CuArrayAdaptor, CUDA.Adaptor)
-
+for adaptor in (CUDA.CuArrayAdaptor, CUDA.Adaptor), T in (:Float64, :J), I in (:Int64, :Int128, :J)
     @eval function Adapt.adapt_structure(
-            ::$adaptor, x::V
-        ) where {N,Float64,V<:AbstractArray{<:SVNT{N,Float64}}}
+            a::$adaptor, b::BoxPartition{N,$T,$I}
+        ) where {N,J}
 
-        CuArray{SVector{N,Float32},1}(x)
-    end
-
-    for T in (:Float64, :J), I in (:Int64, :Int128, :J)
-        @eval function Adapt.adapt_structure(
-                a::$adaptor, b::BoxPartition{N,$T,$I}
-            ) where {N,J}
-
-            Adapt.adapt_storage(a,
-                BoxPartition{N,Float32,Int32}(
-                    Box{N,Float32}(b.domain.center, b.domain.radius),
-                    SVector{N,Float32}(b.left), SVector{N,Float32}(b.scale),
-                    SVector{N,Int32}(b.dims), SVector{N,Int32}(b.dimsprod)
-                )
+        Adapt.adapt_storage(a,
+            BoxPartition{N,Float32,Int32}(
+                Box{N,Float32}(b.domain.center, b.domain.radius),
+                SVector{N,Float32}(b.left), SVector{N,Float32}(b.scale),
+                SVector{N,Int32}(b.dims), SVector{N,Int32}(b.dimsprod)
             )
-        end
+        )
     end
+end
 
+function Adapt.adapt_structure(
+        ::CUDA.CuArrayAdaptor, x::V
+    ) where {N,Float64,V<:AbstractArray{<:SVNT{N,Float64}}}
+
+    CuArray{SVector{N,Float32},1}(x)
 end
