@@ -68,9 +68,12 @@ function TransferOperator(g::SampledBoxMap{<:BoxMapGPUCache{SZ}}, source::BoxSet
         out_keys = CuArray{Tuple{Int32,Int32},1}(undef, nk * np)
         launch_kernel_then_sync!(nk * np, TransferOperator_kernel!, g.map, in_keys, points, out_keys, P, nk, np)
         out_cpu = Array{Tuple{Int32,Int32},1}(out_keys)
+        inv_n = 1. / np
         for (key, hit) in out_cpu
-            e = (key_to_index[key], key_to_index[hit])
-            edges[e] = get(edges, e, 0.0) + 1.0/np
+            if hit in source.set
+                e = (key_to_index[key], key_to_index[hit])
+                edges[e] = get(edges, e, 0.) + inv_n
+            end
         end
         CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
     end
@@ -89,24 +92,28 @@ function launch_kernel_then_sync!(n, kernel, args...)
     return
 end
 
-for T in (:Float64, :J), I in (:Int64, :Int128, :J)
+for adaptor in (CUDA.CuArrayAdaptor, CUDA.Adaptor)
+
     @eval function Adapt.adapt_structure(
-            a::CUDA.Adaptor, b::BoxPartition{N,$T,$I}
-        ) where {N,J}
+            ::$adaptor, x::V
+        ) where {N,Float64,V<:AbstractArray{<:SVNT{N,Float64}}}
 
-        Adapt.adapt_storage(a,
-            BoxPartition{N,Float32,Int32}(
-                Box{N,Float32}(b.domain.center, b.domain.radius),
-                SVector{N,Float32}(b.left), SVector{N,Float32}(b.scale),
-                SVector{N,Int32}(b.dims), SVector{N,Int32}(b.dimsprod)
-            )
-        )
+        CuArray{SVector{N,Float32},1}(x)
     end
-end
 
-function Adapt.adapt_structure(
-        ::CUDA.CuArrayAdaptor, x::V
-    ) where {N,Float64,V<:AbstractArray{<:SVNT{N,Float64}}}
+    for T in (:Float64, :J), I in (:Int64, :Int128, :J)
+        @eval function Adapt.adapt_structure(
+                a::$adaptor, b::BoxPartition{N,$T,$I}
+            ) where {N,J}
 
-    CuArray{SVector{N,Float32},1}(x)
+            Adapt.adapt_storage(a,
+                BoxPartition{N,Float32,Int32}(
+                    Box{N,Float32}(b.domain.center, b.domain.radius),
+                    SVector{N,Float32}(b.left), SVector{N,Float32}(b.scale),
+                    SVector{N,Int32}(b.dims), SVector{N,Int32}(b.dimsprod)
+                )
+            )
+        end
+    end
+
 end

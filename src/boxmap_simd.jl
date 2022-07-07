@@ -6,17 +6,6 @@ struct BoxMapCPUCache{simd,V,W}
     temp_points_vec::W
 end
 
-function Base.show(io::IO, g::SampledBoxMap{<:BoxMapCPUCache{simd}}) where {simd}
-    center, radius = g.domain.center, g.domain.radius
-    n = length(g.domain_points(center, radius)) * simd
-    print(io, "BoxMap with $(n) sample points")
-end
-
-Base.iterate(c::BoxMapCPUCache) = (c.idx_base, Val(:temp_points))
-Base.iterate(c::BoxMapCPUCache, ::Val{:temp_points}) = (c.temp_points, Val(:temp_points_vec))
-Base.iterate(c::BoxMapCPUCache, ::Val{:temp_points_vec}) = (c.temp_points_vec, Val(:done))
-Base.iterate(c::BoxMapCPUCache, ::Val{:done}) = nothing
-
 function PointDiscretizedMap(map, domain::Box{N,T}, points, ::Val{:cpu}) where {N,T}
     n, simd = length(points), Int(pick_vector_width(T))
     if n % simd != 0
@@ -39,10 +28,7 @@ function sample_adaptive(Df, center::SVector{N,T}, ::Val{simd}) where {N,T,simd}
     n[d] = ceil(Int, n[d] / simd)
     h = 2.0 ./ (n .- 1.0)
     points = Array{SVector{N,SIMD.Vec{simd,T}}}(undef, n...)
-    d = n[d]
-    n[d] = n[d] * simd
-    inds = CartesianIndices(tuple(n...))
-    n[d] = d
+    inds = CartesianIndices(Base.setindex(tuple(n...), n[d] * simd, d))
     for i in 0 : prod(n) - 1
         points[i+1] = ntuple(Val(N)) do j
             SIMD.Vec{simd,T}(ntuple(Val(simd)) do k
@@ -103,7 +89,7 @@ end
 
 @inbounds function TransferOperator(g::SampledBoxMap{<:BoxMapCPUCache{simd},N}, source::BoxSet{<:BoxPartition}) where {simd,N}
     P = source.partition
-    edges = [ Dict{Tuple{Int64,Int64},Float64}() for k = 1:nthreads() ]
+    edges = [ Dict{Tuple{Int64,Int64},Float64}() for _ in 1:nthreads() ]
     boxlist = BoxList(source)
     key_to_index = invert_vector(boxlist.keylist)
     idx_base, temp_vec, temp_points = g.acceleration
@@ -115,7 +101,7 @@ end
         box  = key_to_box(P, boxlist[i])
         c, r = box.center, box.radius
         points = g.domain_points(c, r)
-        n = length(points) * simd
+        inv_n = 1. / (length(points) * simd)
         for p in points
             fp = g.map(@muladd p .* r .+ c)
             tuple_vscatter!(temp_vec, fp, idx)
@@ -124,7 +110,7 @@ end
                 if !isnothing(hit) && hit in source.set
                     j = key_to_index[hit]
                     e = (i,j)
-                    t_edges[e] = get(t_edges, e, 0.0) + 1.0/n
+                    t_edges[e] = get(t_edges, e, 0.) + inv_n
                 end
             end
         end
@@ -133,6 +119,17 @@ end
 end
 
 # helper + compatibility functions
+function Base.show(io::IO, g::SampledBoxMap{<:BoxMapCPUCache{simd}}) where {simd}
+    center, radius = g.domain.center, g.domain.radius
+    n = length(g.domain_points(center, radius)) * simd
+    print(io, "BoxMap with $(n) sample points")
+end
+
+Base.iterate(c::BoxMapCPUCache) = (c.idx_base, Val(:temp_points))
+Base.iterate(c::BoxMapCPUCache, ::Val{:temp_points}) = (c.temp_points, Val(:temp_points_vec))
+Base.iterate(c::BoxMapCPUCache, ::Val{:temp_points_vec}) = (c.temp_points_vec, Val(:done))
+Base.iterate(c::BoxMapCPUCache, ::Val{:done}) = nothing
+
 function tuple_vgather(
         v::V, idx::SIMD.Vec{simd,Int}# = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
     ) where {N,T,simd,V<:AbstractArray{<:SVNT{N,T}}}
