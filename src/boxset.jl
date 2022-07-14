@@ -16,8 +16,7 @@ function Base.show(io::IO, boxset::BoxSet)
     print(io, "$size-element BoxSet in ", boxset.partition)
 end
 
-# TODO: replace with BoxSet(partition)
-function boxset_empty(partition::P) where P <: AbstractBoxPartition
+    function BoxSet(partition::P) where P <: AbstractBoxPartition
     return BoxSet(partition, Set{keytype(P)}())
 end
 
