@@ -64,7 +64,8 @@ include("algorithms.jl")
 include("plot.jl")
 
 if CUDA.functional()
-    include("boxmap_cuda.jl")
+    print("CUDA acceleration available")
+    include("boxmap_cuda.jl")    
 end
 
 end # module
