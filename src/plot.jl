@@ -6,7 +6,7 @@ function plot(boxset::BoxSet{<:AbstractBoxPartition{<:Box{N}}}; kwargs...) where
     if !isempty(boxset)
         m = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1))
         c = [box.center .- box.radius for box in boxset]
-        r = [box.radius for box in boxset]
+        r = [2.0 .* box.radius for box in boxset]
         fig, ax, ms = meshscatter(GeometryBasics.Vec{N, Float32}.(c), marker = m, markersize = r,
                             color =:red; kwargs...)
     end
@@ -18,7 +18,7 @@ function plot(boxfun::BoxFun{<:AbstractBoxPartition{<:Box{1}}}; kwargs...)
     for (key, value) in boxfun.dict
         box = key_to_box(boxfun.partition, key)
         push!(c, box.center[1])
-        push!(r, box.radius[1])
+        push!(r, 2.0 * box.radius[1])
         push!(v, value)
     end
     fig, ax, bp = barplot(c, v, width = r; kwargs ...)
@@ -30,7 +30,7 @@ function plot(boxfun::BoxFun{<:AbstractBoxPartition{<:Box{3}}}; kwargs...) where
     for (key, value) in boxfun.dict
         box = GAIO.key_to_box(boxfun.partition, key)
         push!(center, box.center)
-        push!(radius, box.radius)
+        push!(radius, 2.0 .* box.radius)
         push!(color, value)
     end
     m = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1))
