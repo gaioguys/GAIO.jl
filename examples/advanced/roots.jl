@@ -48,6 +48,6 @@ Dg = x -> ForwardDiff.jacobian(g, x)
 center, radius = [0.0 for _ in 1:dim], [40.0 for _ in 1:dim]
 P = BoxPartition(Box(center, radius))
 
-R = cover_roots(g, Dg, P[:], depth=dim*8)
+R = cover_roots(g, Dg, P[:]; steps=dim*8)
 
 plot(R)

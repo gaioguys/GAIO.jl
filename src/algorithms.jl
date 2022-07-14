@@ -25,23 +25,24 @@ function chain_recurrent_set(F::BoxMap, B::BoxSet{<:AbstractBoxPartition{Box{N,T
     return B
 end
 
-@muladd function adaptive_newton_step(g, g_jacobian, x, k)
-    function armijo_rule(g, x, α, σ, ρ)
-        Dg = g_jacobian(x)
-        d = Dg \ g(x)
-        while any(g(x + α * d) .> g(x) + σ * α * Dg' * d) && α > 0.1
-            α = ρ * α
-        end
-        return α
+function armijo_rule(g, Dg, x, α, σ, ρ)
+    Dgx, gx = Dg(x), g(x)
+    d = Dgx \ gx
+    while any(g(x + α * d) .> gx + σ * α * Dgx' * d) && α > 0.1
+        α = ρ * α
     end
-    h = armijo_rule(g, x, 1.0, 1e-4, 0.8)
+    return α
+end
+
+@muladd function adaptive_newton_step(g, Dg, x, k)
+    h = armijo_rule(g, Dg, x, 1.0, 1e-4, 0.8)
 
     expon(ϵ, σ, h, δ) = Int(ceil(log(ϵ * (1/2)^σ)/log(maximum((1 - h, δ)))))
     n = expon(0.2, k, h, 0.1)
 
     for _ in 1:n
-        Dg = g_jacobian(x)
-        x = x - h * (Dg \ g(x))
+        Dgx = Dg(x)
+        x = x - h * (Dgx \ g(x))
     end
 
     return x
