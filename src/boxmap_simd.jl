@@ -23,24 +23,19 @@ end
 function sample_adaptive(Df, center::SVector{N,T}, ::Val{simd}) where {N,T,simd} 
     D = Df(center)
     _, σ, Vt = svd(D)
-    n = ceil.(Int, σ)
-    d = argmax(n)
-    n[d] = ceil(Int, n[d] / simd)
-    h = 2.0 ./ (n .- 1.0)
-    points = Array{SVector{N,SIMD.Vec{simd,T}}}(undef, n...)
-    inds = CartesianIndices(Base.setindex(tuple(n...), n[d] * simd, d))
-    for i in 0 : prod(n) - 1
-        points[i+1] = ntuple(Val(N)) do j
-            SIMD.Vec{simd,T}(ntuple(Val(simd)) do k
-                    m = getindex(inds[simd*i+k], j)
-                    T(isone(n[j]) ? 0.0 : (m-1) * h[j] - 1.0)
-                end
-            )
-        end
-        points[i+1] = Vt'*points[i+1]
-    end   
+    n = ceil.(Int, σ) 
+    d = argmax(@view n[1:N])
+    r = n[d] % simd
+    n[d] += r == 0 ? r : simd - r
+    h = 2.0./(n.-1)
+    points = Array{SVector{N,T}}(undef, ntuple(i->n[i], N))
+    for i in CartesianIndices(points)
+        points[i] = ntuple(k -> n[k]==1 ? 0.0 : (i[k]-1)*h[k]-1.0, N)
+        points[i] = Vt'*points[i]
+    end
     @debug points
-    return points 
+    points_gathered = tuple_vgather(vec(points), simd)
+    return points_gathered
 end
 
 function AdaptiveBoxMap(f, domain::Box{N,T}, accel::Val{:cpu}) where {N,T}
