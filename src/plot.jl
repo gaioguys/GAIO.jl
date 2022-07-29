@@ -24,8 +24,8 @@ function plot(boxfun::BoxFun{<:AbstractBoxPartition{<:Box{1}}}; kwargs...)
     fig, ax, bp = barplot(c, v, width = r; kwargs ...)
 end
 
-function plot(boxfun::BoxFun{<:AbstractBoxPartition{<:Box{3}}}; kwargs...) where N
-    center, radius, color = GeometryBasics.Vec{3, Float32}[], GeometryBasics.Vec{3, Float32}[], Float32[]
+function plot(boxfun::BoxFun{<:AbstractBoxPartition{<:Box{N}}}; kwargs...) where N
+    center, radius, color = GeometryBasics.Vec{N, Float32}[], GeometryBasics.Vec{N, Float32}[], Float32[]
 
     for (key, value) in boxfun.dict
         box = GAIO.key_to_box(boxfun.partition, key)
