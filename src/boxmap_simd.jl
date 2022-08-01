@@ -26,9 +26,10 @@ function sample_adaptive(Df, center::SVector{N,T}, ::Val{simd}) where {N,T,simd}
     n = ceil.(Int, σ) 
     d = argmax(@view n[1:N])
     r = n[d] % simd
-    n[d] += r == 0 ? r : simd - r
+    r = r == 0 ? r : simd - r
+    n = SVector{N,Int}([i == d ? n[i] + r : n[i] for i in 1:N])
     h = 2.0./(n.-1)
-    points = Array{SVector{N,T}}(undef, ntuple(i->n[i], N))
+    points = Array{SVector{N,T}}(undef, n.data)
     for i in CartesianIndices(points)
         points[i] = ntuple(k -> n[k]==1 ? 0.0 : (i[k]-1)*h[k]-1.0, N)
         points[i] = Vt'*points[i]
