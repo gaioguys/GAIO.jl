@@ -77,7 +77,7 @@ function AdaptiveBoxMap(f, domain::Box{N,T}, accel=nothing) where {N,T}
     return SampledBoxMap(f, domain, domain_points, image_points, nothing)
 end
 
-function AdaptiveBoxMap(f, domain, accel::Symbol)
+function AdaptiveBoxMap(f, domain::Box{N,T}, accel::Symbol) where {N,T}
     AdaptiveBoxMap(f, domain, Val(accel))
 end
 
