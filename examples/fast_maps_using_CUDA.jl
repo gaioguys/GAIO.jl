@@ -34,6 +34,4 @@ P = BoxPartition(Box(center, radius), (128,128,128))
 G = BoxMap(F, P, :gpu)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
-W = unstable_set!(G, P[x])
-
-plot(W)
+@time W = unstable_set!(G, P[x])

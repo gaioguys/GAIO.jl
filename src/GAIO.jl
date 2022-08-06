@@ -18,8 +18,10 @@ using Adapt
 using CUDA
 using Base.Iterators: Stateful, take
 
-using GLMakie
-using WGLMakie
+# using GLMakie
+# using WGLMakie
+using MakieCore
+using MakieCore: @recipe
 
 export Box
 
@@ -45,7 +47,7 @@ export rk4, rk4_flow_map
 export relative_attractor, unstable_set!, chain_recurrent_set
 export cover_roots, finite_time_lyapunov_exponents
 
-export plot
+export plotboxes, plotboxes!
 
 # ENV["JULIA_DEBUG"] = all
 
