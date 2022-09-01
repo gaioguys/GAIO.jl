@@ -1,4 +1,4 @@
-function relative_attractor(F::BoxMap, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
+function relative_attractor(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
     for k = 1:steps
         B = subdivide(B, (k % N) + 1)
         B = B ∩ F(B)
@@ -16,7 +16,7 @@ function unstable_set!(F::BoxMap, B::BoxSet)
     return B
 end
 
-function chain_recurrent_set(F::BoxMap, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
+function chain_recurrent_set(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
         P = TransferOperator(F, B)
@@ -47,7 +47,7 @@ end
     return x
 end
 
-function cover_roots(g, Dg, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
+function cover_roots(g, Dg, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
     domain = B.partition.domain
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
