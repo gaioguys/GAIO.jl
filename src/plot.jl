@@ -4,7 +4,6 @@
 
 const default_box_color = :firebrick1
 const default_box_colormap = :jet
-default_projection_func(N) = N <= 3 ? identity : (x -> x[1:3])
 
 """
 plotboxes(boxset::BoxSet)
@@ -43,18 +42,17 @@ All other attributes are taken from MeshScatter.
     )
 end
 
-function MakieCore.plot!(
-        boxes::PlotBoxes{<:Tuple{<:BoxSet{<:AbstractBoxPartition{Box{N,T}}}}}
-    ) where {N,T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{Box{N,T}}}}) where {N,T}
 
     boxset = boxes[1][]
+    d = min(N, 3)
     if isnothing(boxes.projection_func[])
-        boxes.projection_func[] = default_projection_func(N)
+        boxes.projection_func[] = x -> x[1:d]
     end
     q = boxes.projection_func[]
 
-    center = Vector{GeometryBasics.Vec{N, Float32}}(undef, length(boxset))
-    radius = Vector{GeometryBasics.Vec{N, Float32}}(undef, length(boxset))
+    center = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxset))
+    radius = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxset))
 
     for (i, box) in enumerate(boxset)
         center[i] = q(box.center)
@@ -70,18 +68,17 @@ function MakieCore.plot!(
     )
 end
 
-function MakieCore.plot!(
-        boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{N,T}}}}}
-    ) where {N,T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{N,T}}}}}) where {N,T}
 
     boxfun = boxes[1][]
+    d = min(N, 3)
     if isnothing(boxes.projection_func[])
-        boxes.projection_func[] = default_projection_func(N)
+        boxes.projection_func[] = x -> x[1:d]
     end
     q = boxes.projection_func[]
 
-    center = Vector{GeometryBasics.Vec{N, Float32}}(undef, length(boxfun))
-    radius = Vector{GeometryBasics.Vec{N, Float32}}(undef, length(boxfun))
+    center = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxfun))
+    radius = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxfun))
     colors = Vector{Float32}(undef, length(boxfun))
 
     for (i, (key, value)) in enumerate(boxfun.dict)
@@ -104,9 +101,7 @@ function MakieCore.plot!(
     )
 end
 
-function MakieCore.plot!(
-        boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{2,T}}}}}
-    ) where {T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{2,T}}}}}) where {T}
 
     boxfun = boxes[1][]
 
@@ -132,9 +127,7 @@ function MakieCore.plot!(
     )
 end
 
-function MakieCore.plot!(
-        boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{1,T}}}}}
-    ) where {T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{1,T}}}}}) where {T}
 
     boxfun = boxes[1][]
 
