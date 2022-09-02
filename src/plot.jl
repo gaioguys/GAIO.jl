@@ -68,7 +68,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{Box{N,T}}}}) where {N
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{N,T}}}}) where {N,T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{N,T}}}}}) where {N,T}
 
     boxfun = boxes[1][]
     d = min(N, 3)
@@ -101,7 +101,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{N,T}}}}) where {N
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{2,T}}}}) where {T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{2,T}}}}}) where {T}
 
     boxfun = boxes[1][]
 
@@ -127,7 +127,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{2,T}}}}) where {T
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{1,T}}}}) where {T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{1,T}}}}}) where {T}
 
     boxfun = boxes[1][]
 
