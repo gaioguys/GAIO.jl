@@ -4,3 +4,5 @@
 *.jl.cov
 *.jl.mem
 Manifest.toml
+.vscode
+GAIO-remote.code-workspace

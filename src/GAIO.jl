@@ -3,10 +3,25 @@ module GAIO
 using LinearAlgebra
 using SparseArrays
 using StaticArrays
-using LightGraphs
+# using GLFW
+# using ModernGL
+using GeometryBasics
+using Graphs
 using ForwardDiff
 using Arpack
 using Base.Threads
+using Base: unsafe_trunc
+using MuladdMacro
+using HostCPUFeatures
+using SIMD
+using Adapt
+using CUDA
+using Base.Iterators: Stateful, take
+
+# using GLMakie
+# using WGLMakie
+using MakieCore
+using MakieCore: @recipe
 
 using GLFW
 using ModernGL
@@ -16,7 +31,7 @@ using GLMakie
 export Box, volume
 
 export AbstractBoxPartition, BoxPartition, TreePartition
-export dimension, depth
+export depth, key_to_box, point_to_key, tree_search
 
 export BoxSet
 export empty, subdivide, subdivide!
@@ -34,9 +49,12 @@ export map_boxes, map_boxes_new
 
 export rk4, rk4_flow_map
 
-export relative_attractor, unstable_set!, chain_recurrent_set, cover_roots, finite_time_lyapunov_exponents
+export relative_attractor, unstable_set!, chain_recurrent_set
+export cover_roots, finite_time_lyapunov_exponents
 
-export plot
+export plotboxes, plotboxes!
+
+# ENV["JULIA_DEBUG"] = all
 
 include("box.jl")
 
@@ -48,7 +66,12 @@ include("boxset.jl")
 include("boxmap.jl")
 include("boxfun.jl")  
 include("transfer_operator.jl")
+include("boxmap_simd.jl")
 include("algorithms.jl")
 include("plot.jl")
+
+if CUDA.functional()
+    include("boxmap_cuda.jl")
+end
 
 end # module

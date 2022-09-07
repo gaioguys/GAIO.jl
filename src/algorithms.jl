@@ -1,6 +1,6 @@
-function relative_attractor(F::BoxMap, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
+function relative_attractor(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
     for k = 1:steps
-        B = subdivide(B, (k%N)+1)
+        B = subdivide(B, (k % N) + 1)
         B = B ∩ F(B)
     end
     return B
@@ -16,28 +16,27 @@ function unstable_set!(F::BoxMap, B::BoxSet)
     return B
 end
 
-function chain_recurrent_set(F::BoxMap, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps=12) where {N,T}
+function chain_recurrent_set(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
     for k in 1:steps
-        B = subdivide(B, (k%N)+1)
+        B = subdivide(B, (k % N) + 1)
         P = TransferOperator(F, B)
         B = strongly_connected_components(P)
     end
     return B
 end
 
-function adaptive_newton_step(g, g_jacobian, x, k)
-    armijo_rule = (g, x, α, σ, ρ) -> begin
+@muladd function adaptive_newton_step(g, g_jacobian, x, k)
+    function armijo_rule(g, x, α, σ, ρ)
         Dg = g_jacobian(x)
-        d = Dg\g(x)
+        d = Dg \ g(x)
         while any(g(x + α * d) .> g(x) + σ * α * Dg' * d) && α > 0.1
             α = ρ * α
         end
-
         return α
     end
     h = armijo_rule(g, x, 1.0, 1e-4, 0.8)
 
-    expon = (ϵ, σ, h, δ) -> Int(ceil(log(ϵ * (1/2)^σ)/log(maximum((1 - h, δ)))))
+    expon(ϵ, σ, h, δ) = Int(ceil(log(ϵ * (1/2)^σ)/log(maximum((1 - h, δ)))))
     n = expon(0.2, k, h, 0.1)
 
     for _ in 1:n
@@ -48,10 +47,10 @@ function adaptive_newton_step(g, g_jacobian, x, k)
     return x
 end
 
-function cover_roots(g, Dg, B::BoxSet{<:AbstractBoxPartition{Box{N,T}}}; steps::Int=12) where {N,T}
+function cover_roots(g, Dg, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
     domain = B.partition.domain
     for k in 1:steps
-        B = subdivide(B, (k%N)+1)
+        B = subdivide(B, (k % N) + 1)
         f = x -> adaptive_newton_step(g, Dg, x, k)
         F_k = BoxMap(f, domain, no_of_points = 40)
         B = F_k(B)
@@ -95,26 +94,27 @@ function finite_time_lyapunov_exponents(boxset::BoxSet, g; T, num_points=20, ϵ=
 end
 
 # Runge-Kutta scheme of 4th order
-@inline function rk4(f, x, τ)
-    τ½ = τ/2
+const half, sixth, third = Float32.((1/2, 1/6, 1/3))
+@muladd @inline function rk4(f, x, τ)
+    τ½ = τ * half
 
     k = f(x)
-    dx = @. k/6
+    dx = @. k * sixth
 
-    k = f(@. x+τ½*k)
-    dx = @. dx + k/3
+    k = f(@. x + τ½ * k)
+    dx = @. dx + k * third
 
-    k = f(@. x+τ½*k)
-    dx = @. dx + k/3
+    k = f(@. x + τ½ * k)
+    dx = @. dx + k * third
 
-    k = f(@. x+τ*k)
-    dx = @. dx + k/6
+    k = f(@. x + τ * k)
+    dx = @. dx + k * sixth
 
-    return @. x+τ*dx
+    return @. x + τ * dx
 end
 
-@inline function rk4_flow_map(v, x; step_size=0.01, steps=20)
-    for i = 1:steps
+@inline function rk4_flow_map(v, x, step_size=0.01f0, steps=20)
+    for _ in 1:steps
         x = rk4(v, x, step_size)
     end
     return x

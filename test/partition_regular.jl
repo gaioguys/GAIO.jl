@@ -6,14 +6,14 @@ using Test
     partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0, 0.0),
                                      SVector(1.0, 1.0, 1.0, 1.0)))
     @testset "basics" begin
-        @test dimension(partition) == 4
+        @test ndims(partition) == 4
     end
     @testset "subdivision" begin
         n = 10
         for k in 1:n
             partition = subdivide(partition, (k%3)+1 )
         end
-        @test dimension(partition) == 4
+        @test ndims(partition) == 4
     end
     @testset "size" begin
         partition = BoxPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), (4,2))
@@ -22,13 +22,13 @@ using Test
     @testset "domain with zero radius" begin
         center = SVector(0.0, 0.0)
         radius = SVector(1.0, 0.0)
-        @test_throws ErrorException Box(center, radius)
+        @test_throws DomainError Box(center, radius)
     end
 end
 @testset "internal functionality" begin
     partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), (4,2,2))
     @testset "keys all" begin
-        @test size(GAIO.keys_all(partition)) == (4*2*2,)
+        @test size(keys(partition)) == (4*2*2,)
     end
     inside = SVector(0.5, 0.5, 0.5)
     left = SVector(-1.0, -1.0, -1.0)

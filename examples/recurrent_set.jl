@@ -1,3 +1,4 @@
+using WGLMakie: plot
 using GAIO
 using Interpolations
 using QuadGK
@@ -80,7 +81,7 @@ function interpolate_v(v, a, b, n, tol)
 end
 
 vf = interpolate_v(knotted_v, -3.5, 3.5, 30, 1e-12)
-f(x) = rk4_flow_map(vf, x, step_size = 0.075)
+f(x) = rk4_flow_map(vf, x, 0.075)
 
 center, radius = (0,0,0), (2,2,2)
 P = BoxSet(Box(center, radius))

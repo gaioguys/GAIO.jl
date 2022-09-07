@@ -1,3 +1,4 @@
+using WGLMakie: plot, Colorbar
 using GAIO
 
 # the Lorenz system
@@ -15,4 +16,7 @@ W = unstable_set!(F, P[x])
 T = TransferOperator(F, W)
 (λ, ev) = eigs(T)
 
-plot(log∘abs∘ev[1])
+fig, ax, ms = plot(log ∘ abs ∘ ev[1])
+Colorbar(fig[1,2], ms)
+
+fig

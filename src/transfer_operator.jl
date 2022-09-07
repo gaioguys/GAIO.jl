@@ -47,9 +47,9 @@ function TransferOperator(g::SampledBoxMap, boxset::BoxSet)
         c, r = box.center, box.radius
         points = g.domain_points(c, r)
         for p in points
-            fp = g.map(c.+r.*p)
+            fp = g.map(@muladd p .* r .+ c)
             hit = point_to_key(P, fp)
-            if hit !== nothing
+            if !isnothing(hit)
                 if hit in boxset.set
                     j = key_to_index[hit]
                     e = (i,j)
@@ -64,12 +64,12 @@ function TransferOperator(g::SampledBoxMap, boxset::BoxSet)
 end
 
 
-function strongly_connected_components(gstar::TransferOperator)
+function Graphs.strongly_connected_components(gstar::TransferOperator)
     graph = SimpleDiGraph(
         [Edge(edge[1], edge[2]) for edge in keys(gstar.edges)]
     )
 
-    sccs = LightGraphs.strongly_connected_components(graph)
+    sccs = Graphs.strongly_connected_components(graph)
 
     connected_vertices = Int[]
 
