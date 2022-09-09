@@ -29,7 +29,7 @@ export AbstractBoxPartition, BoxPartition, TreePartition
 export depth, key_to_box, point_to_key, tree_search
 
 export BoxSet
-export empty, subdivide, subdivide!
+export boxset_empty, subdivide, subdivide!
 
 export BoxFun
 

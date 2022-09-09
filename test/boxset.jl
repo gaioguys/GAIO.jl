@@ -6,7 +6,7 @@ using Test
     @testset "regular partition" begin
         partition = BoxPartition(Box((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)), (16,8,8))
         @testset "empty" begin
-            empty_boxset = empty(partition)
+            empty_boxset = boxset_empty(partition)
             @test isempty(empty_boxset)
             @test length(empty_boxset) == 0
 
