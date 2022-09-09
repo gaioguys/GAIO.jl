@@ -1,10 +1,37 @@
 # each node holds the indices of the two partitions that it sends to
 # indices wrt to TreePartition.regular_partitions
+"""
+Node structure used for `TreePartition`s
+
+Fields:
+* `left` and `right` refer to indices w.r.t. `trp.nodes` and 
+`trp.regular_partitions` for a `TreePartition` `trp`. 
+
+.
+"""
 struct Node
     left::Int
     right::Int
 end
 
+"""
+    TreePartition(domain::Box)
+
+Binary tree structure to partition `domain` into (variably sized) boxes. 
+
+Fields:
+* `domain`: `Box` denoting the full domain.
+* `nodes`: vector of `Node`s. Each node holds two indices pointing to 
+other nodes in the vector, or 0. 
+* `regular_partitions`: vector of `BoxPartition`s. The indices held in 
+a node also refer to this vector. 
+
+Methods implemented:
+
+    copy, keytype #, etc...
+
+.
+"""
 struct TreePartition{N,T} <: AbstractBoxPartition{Box{N,T}}
     domain::Box{N,T}
     nodes::Vector{Node}
@@ -13,6 +40,9 @@ end
 
 Base.copy(partition::TreePartition) = TreePartition(partition.domain, copy(partition.nodes), copy(partition.regular_partitions))
 
+"""
+Return the depth of the tree structure. 
+"""
 depth(partition::TreePartition) = length(partition.regular_partitions) - 1
 Base.keytype(::Type{<:TreePartition}) = Tuple{Int,Int}
 

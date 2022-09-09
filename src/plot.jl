@@ -6,10 +6,10 @@ const default_box_color = :firebrick1
 const default_box_colormap = :jet
 
 """
-plotboxes(boxset::BoxSet)
-plotboxes(boxfun::BoxFun)
-plotboxes!(boxset::BoxSet)
-plotboxes!(boxfun::BoxFun)
+    plot(boxset::BoxSet)
+    plot(boxfun::BoxFun)
+    plot!(boxset::BoxSet)
+    plot!(boxfun::BoxFun)
 
 Plot a `BoxSet` or `BoxFun`. 
 

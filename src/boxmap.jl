@@ -1,21 +1,27 @@
 abstract type BoxMap end
 """
-Transforms a `map: B → C, B ⊂ ℝᴺ` to a `SampledBoxMap` defined on `BoxSet`s
+    SampledBoxMap(map, domain::Box, domain_points, image_points, acceleration)
 
-`map`:              map that defines the dynamical system.
+Transforms a ``map: Q → Q`` defined on points in the box ``Q ⊂ ℝᴺ`` to a `SampledBoxMap` defined 
+on `Box`es. 
 
-`domain`:           domain of the map, `B`.
+Constructors:
+* `BoxMap`
+* `PointDiscretizedMap`
+* `AdaptiveBoxMap`
 
-`domain_points`:    the spread of test points to be mapped forward in intersection algorithms.
+Fields:
+* `map`:              map that defines the dynamical system.
+* `domain`:           domain of the map, `B`.
+* `domain_points`:    the spread of test points to be mapped forward in intersection algorithms.
                     (scaled to fit a box with unit radii)
-
-`image_points`:     the spread of test points for comparison in intersection algorithms.
+* `image_points`:     the spread of test points for comparison in intersection algorithms.
                     (scaled to fit a box with unit radii)
-
-`acceleration`:     Whether to use optimized functions in intersection algorithms.
+* `acceleration`:     Whether to use optimized functions in intersection algorithms.
                     Accepted values: `nothing`, `Val(:cpu)`, `Val(:gpu)`.
                     `Val(:gpu)` does nothing unless you have a CUDA capable gpu.
 
+.
 """
 struct SampledBoxMap{A,N,T,F,D,I} <: BoxMap
     map::F
@@ -31,6 +37,13 @@ function Base.show(io::IO, g::SampledBoxMap)
     print(io, "BoxMap with $(n) sample points")
 end
 
+"""
+    PointDiscretizedMap(map, domain, points, accel=nothing) -> SampledBoxMap
+
+Construct a `SampledBoxMap` that uses the iterator `points` as test points. 
+`points` must be an array or iterator of test points within the unit cube 
+``[-1,1]^N``. 
+"""
 function PointDiscretizedMap(map, domain, points, accel=nothing)
     domain_points(center, radius) = points
     image_points(center, radius) = center
@@ -41,6 +54,13 @@ function PointDiscretizedMap(map, domain, points, accel::Symbol)
     return PointDiscretizedMap(map, domain, points, Val(accel))
 end
 
+"""
+    BoxMap(map, domain::Box{N,T}, accel=nothing; no_of_points=4*N*pick_vector_width(T)) -> SampledBoxMap
+    BoxMap(map, P::BoxPartition{N,T}, accel=nothing; no_of_points=4*N*pick_vector_width(T)) -> SampledBoxMap
+
+Construct a `SampledBoxMap` which uses `no_of_points` Monte-Carlo 
+test points. 
+"""
 function BoxMap(map, domain::Box{N,T}, accel=nothing; no_of_points=4*N*pick_vector_width(T)) where {N,T}
     points = [ tuple(2f0*rand(T,N).-1f0 ...) for _ = 1:no_of_points ] 
     return PointDiscretizedMap(map, domain, points, accel) 
@@ -50,6 +70,16 @@ function BoxMap(map, P::BoxPartition{N,T}, accel=nothing; no_of_points=4*N*pick_
     BoxMap(map, P.domain, accel; no_of_points=no_of_points)
 end
 
+"""
+    sample_adaptive(Df, center::SVector, accel=nothing)
+
+Create a grid of test points using the adaptive technique 
+described in 
+
+Oliver Junge. “Rigorous discretization of subdivision techniques”. In: 
+_International Conference on Differential Equations_. Ed. by B. Fiedler, K.
+Gröger, and J. Sprekels. 1999. 
+"""
 function sample_adaptive(Df, center::SVector{N,T}, accel=nothing) where {N,T}  # how does this work?
     D = Df(center)
     _, σ, Vt = svd(D)
@@ -64,6 +94,12 @@ function sample_adaptive(Df, center::SVector{N,T}, accel=nothing) where {N,T}  #
     return points 
 end
 
+"""
+    AdaptiveBoxMap(f, domain::Box, accel=nothing) -> SampledBoxMap
+
+Construct a `SampledBoxMap` which uses `sample_adaptive` to generate 
+test points. 
+"""
 function AdaptiveBoxMap(f, domain::Box{N,T}, accel=nothing) where {N,T}
     Df = x -> ForwardDiff.jacobian(f, x)
     domain_points(center, radius) = sample_adaptive(Df, center)
