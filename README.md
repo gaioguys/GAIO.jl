@@ -53,9 +53,9 @@ R = chain_recurrent_set(F, P[:], steps = 15)  # subdivison algorithm computing
                                               # the chain recurrent set R in Q
 plot(R)                                       # plot R
 ```
-![GitHub Logo](henon.svg)
+![GitHub Logo](docs/src/assets/henon.svg)
 
-For more examples, see the `examples\` folder.
+For more examples, see the `examples` folder.
 
 ## License
 

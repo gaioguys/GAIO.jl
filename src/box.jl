@@ -1,13 +1,24 @@
 const F = (Int == Int64) ? Float64 : Float32
 
-# abstract type AbstractBoxPartition{B <: Box} end
-"""
-A generalized box with
+Core.@doc raw"""
+    Box{N,T}(center, radius)
+    Box(center, radius)
 
-`center`:   vector where the box's center is located
+A generalized box in dimension `N` with element type `T`. 
+Mathematically, this is a set
+```math
+[center_1 - radius_1,\ center_1 + radius_1) \ \times \ [center_N - radius_N,\ center_N + radius_N)
+```
 
-`radius`:   vector of radii, length of the box in each dimension
+Fields:
+* `center`:   vector where the box's center is located
+* `radius`:   vector of radii, length of the box in each dimension
 
+Methods implemented:
+
+    :(==), in #, etc ...
+
+.
 """
 struct Box{N,T <: AbstractFloat}
     center::SVector{N,T}
@@ -32,6 +43,9 @@ Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype
 Base.in(point, box::Box) = all(box.center .- box.radius  .<=  point  .<  box.center .+ box.radius)
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
 
+"""
+Computes the volume of a box. 
+"""
 volume(box::Box) = prod(2 .* box.radius)
 
 function Base.show(io::IO, box::Box) 

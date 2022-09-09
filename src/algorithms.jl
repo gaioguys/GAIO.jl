@@ -1,3 +1,9 @@
+"""
+    relative_attractor(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
+
+Compute the attractor relative to `B`. Generally, `B` should be 
+a box set containing the whole partition `P`, ie `B = P[:]`.
+"""
 function relative_attractor(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
     for k = 1:steps
         B = subdivide(B, (k % N) + 1)
@@ -6,6 +12,13 @@ function relative_attractor(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T
     return B
 end
 
+"""
+    unstable_set!(F::BoxMap, B::BoxSet) -> BoxSet
+
+Compute the unstable set for a box set `B`. Generally, `B` should be 
+a small box surrounding a fixed point of `F`. The partition should 
+be fine enough, since no subdivision occurs in this algorithm. 
+"""
 function unstable_set!(F::BoxMap, B::BoxSet)
     B_new = B
     while !isempty(B_new)
@@ -16,6 +29,13 @@ function unstable_set!(F::BoxMap, B::BoxSet)
     return B
 end
 
+"""
+    chain_recurrent_set(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
+
+Compute the chain recurrent set over the box set `B`. Generally, 
+`B` should be a box set containing the whole partition `P`, 
+ie `B = P[:]`. 
+"""
 function chain_recurrent_set(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
@@ -25,7 +45,15 @@ function chain_recurrent_set(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,
     return B
 end
 
-@muladd function adaptive_newton_step(g, g_jacobian, x, k)
+"""
+    adaptive_newton_step(g, g_jacobian, x, k=1)
+
+Return one step of the adaptive Newton algorithm for the point `x`. 
+
+The optional argument `k` is the iteration number, which is 
+used to tune the step size. 
+"""
+@muladd function adaptive_newton_step(g, g_jacobian, x, k=1)
     function armijo_rule(g, x, α, σ, ρ)
         Dg = g_jacobian(x)
         d = Dg \ g(x)
@@ -47,6 +75,14 @@ end
     return x
 end
 
+"""
+    cover_roots(g, Dg, B::BoxSet; steps=12) -> BoxSet
+
+Compute a covering of the roots of `g` within the 
+partition `P`. Generally, `B` should be 
+a box set containing the whole partition `P`, ie `B = P[:]`,
+and should contain a root of `g`. 
+"""
 function cover_roots(g, Dg, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
     domain = B.partition.domain
     for k in 1:steps
@@ -95,6 +131,13 @@ end
 
 # Runge-Kutta scheme of 4th order
 const half, sixth, third = Float32.((1/2, 1/6, 1/3))
+
+"""
+    rk4(f, x, τ)
+
+Compute one step with step size `τ` of the classic 
+fourth order Runge-Kutta method. 
+"""
 @muladd @inline function rk4(f, x, τ)
     τ½ = τ * half
 
@@ -113,9 +156,15 @@ const half, sixth, third = Float32.((1/2, 1/6, 1/3))
     return @. x + τ * dx
 end
 
-@inline function rk4_flow_map(v, x, step_size=0.01f0, steps=20)
+"""
+    rk4_flow_map(f, x, step_size=0.01, steps=20)
+
+Perform `steps` steps of the classic Runge-Kutta fourth order method,
+with step size `step_size`. 
+"""
+@inline function rk4_flow_map(f, x, step_size=0.01f0, steps=20)
     for _ in 1:steps
-        x = rk4(v, x, step_size)
+        x = rk4(f, x, step_size)
     end
     return x
 end

@@ -1,5 +1,5 @@
 using GAIO
-using Documenter
+using Documenter, LinearAlgebra, SparseArrays
 
 makedocs(
     modules = [GAIO],
@@ -7,15 +7,20 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Getting started" => "getting_started.md",
-        "Data structures" => "data_structures.md",
         "General usage" => "general.md",
         "Algorithms" => "algorithms.md",
         "Plotting" => "plotting.md",
         "Examples" => "examples.md",
+        "Reference" => [
+            "data_structures.md",
+            "library_reference.md"
+        ]
     ],
+    doctest = false
 )
 
 deploydocs(
     repo = "github.com/gaioguys/GAIO.jl.git",
-    push_preview = true
+    push_preview = true,
+    versions = nothing
 )

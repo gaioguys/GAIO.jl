@@ -23,11 +23,6 @@ using Base.Iterators: Stateful, take
 using MakieCore
 using MakieCore: @recipe
 
-using GLFW
-using ModernGL
-using GeometryBasics
-using GLMakie
-
 export Box, volume
 
 export AbstractBoxPartition, BoxPartition, TreePartition
@@ -55,6 +50,9 @@ export cover_roots, finite_time_lyapunov_exponents
 export plotboxes, plotboxes!
 
 # ENV["JULIA_DEBUG"] = all
+
+const SVNT{N,T} = Union{<:NTuple{N,T}, <:StaticVector{N,T}}
+const IndexTypes{N} = Union{<:Integer,<:NTuple{N,<:Integer},<:CartesianIndex{N}}
 
 include("box.jl")
 

@@ -1,72 +1,73 @@
 # Algorithms and Mathematical Background
 !!! note "Note"
-    In the following, ``f`` will always refer to the map describing the dynamics of a system, while `g` will be the corresponding `BoxMap`.
+    In the following, let ``Q \subset \mathbb{R}^d`` be compact. Further, ``f : \mathbb{R}^d \to \mathbb{R}^d`` will always refer to the map describing the dynamics of a system, while `F` will be the corresponding `BoxMap`.
     
+## Mapping Boxes
 
-## The Relative Global Attractor
+### Mathematical Background
+The following algorithms all require a method to approximate the set-wise image ``f(b)`` of a box ``b``. To do this, GAIO.jl splits the domain ``Q`` into a partition `P` of boxes, and uses test points within `b`. When a SampledBoxMap is initialized, we require a function to calculate test points that are mapped by the given function f. This function is domain_points. These test points are then mapped forward by f, and the boxes which are hit become the image set. More precisely, mapping a box set is done in two main steps within GAIO.jl: 
+1. Test points within the box are generated (or retrieved) using `F.domain_points(b.center, b.radius)`. These test points are mapped forward by the given function `f`.
+2. For each mapped test point `fp`, an optional set of ”perturbations” are generated using `F.image_points(fp, b.radius)`. For each of the perturbed points, the index of the box within the partition containing this point is calculated. This index gets added to the image set.
 
-Consider a time discrete dynamical system induced by the map ``f: \mathbb{R}^d \to \mathbb{R}^d``. Let ``Q \subset \mathbb{R}^d`` compact.
-The set 
-```math
-A_Q := \bigcap_{k \geq 0} f^k(Q)
-```
-is called the global attractor relative to ``Q``.
-The relative global attractor can be seen as the set which is eventually approached by every orbit originating in ``Q``. In particular, ``A_Q`` contains each invariant set in ``Q`` and therefore all the potentially interesting dynamics. Thus it is of great interest to be able to compute a relative global attractor numerically. 
-The idea of the algorithm is to cover the relative global attractor with boxes and recursively tighten the covering by refining appropriately selected boxes.
-
-### Mathematical Background of the Algorithm
-Mathematically, the algorithm to compute the global attractor relative to ``Q`` takes two input arguments: a compact set ``Q`` as well as a map ``f``, which describes the dynamics. Now in each iteration, two steps happen:
-1. **subdivision-step:** The domain ``B_{k-1}`` is subdivided once, i.e. every box is bisected along one axis, which gives rise to a new partition of the domain, ``\hat{B}_k``, with double the amount of boxes.
-2. **selection_step:** For each box ``B`` of the new partition we check, if there is another Box ``B'`` that is mapped into ``B`` under `g`, i.e. if ``f(B') \cap B \neq \emptyset``. If not, we remove ``B`` from the domain.
-
-After removing every non-hit box, we arrive at the new domain ``B_k``, and as ``k \to \infty``, the collection of boxes ``B_k`` converges to the relative global attractor ``A_Q``.
-
-### Implementation of the Algorithm
-So, how was taken care of the discretization, which is necessary for the implementation? In other words, how did we translate this Algorithm into GAIO?
+### Implementation
 ```julia
-function relative_attractor(boxset::BoxSet, g::BoxMap, depth::Int)
-    for k = 1:depth
-        boxset = subdivide(boxset)
-        boxset = g(boxset; target=boxset)
-    end
-
-    return boxset
-end
-```
-The first thing one notices is that the implementation has a third input parameter `depth`, which describes the level of approximation. Since in each step of the algorithm the initial domain is divided in half, the final partition after `depth` many steps will contain ``n := 2^{\text{depth}}`` boxes, i.e. every box in the final covering is ``\frac{1}{n}`` times the size of the initial box. Besides `depth` we have the input parameters `boxset` and `g`, which is the `BoxMap` describing the dynamics.
-For this algorithm the partition needs to be the full regular partition of the initial set (i.e. the starting domain).
-Now, for each step in the algorithm, the current set is subdivided via the subdivision algorithm,
-```julia
-boxset = subdivide(boxset)
-```
-and it is checked, if a box is hit by another box under the dynamics:
-```julia
-function map_boxes_with_target(g, source::BoxSet, target::BoxSet)
-    result = boxset_empty(target.partition)
-
-    for (_, hit) in ParallelBoxIterator(g, source, target.partition)
-        if hit !== nothing # check that point was inside domain
-            if hit in target.set
-                push!(result.set, hit)
+function map_boxes(F::BoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
+    P = source.partition
+    @floop for box in source
+        c, r = box.center, box.radius
+        for p in F.domain_points(c, r)
+            fp = F.map(p)
+            hitbox = point_to_box(P, fp)
+            isnothing(hitbox) && continue
+            r = hitbox.radius
+            for ip in F.image_points(fp, r)
+                hit = point_to_key(P, ip)
+                isnothing(hit) && continue
+                @reduce(image = union!(S(), hit))
             end
         end
     end
+    return BoxSet(P, image)
+end 
+```
 
-    return result
+## Relative Global Attractor
+
+### Mathematical Background
+The set 
+```math
+A_Q = \bigcap_{k \geq 0} f^k(Q)
+```
+is called the global attractor relative to ``Q``.
+The relative global attractor can be seen as the set which is eventually approached by every orbit originating in ``Q``. In particular, ``A_Q`` contains each invariant set in ``Q`` and therefore all the potentially interesting dynamics. 
+The idea of the algorithm is to cover the relative global attractor with boxes and recursively tighten the covering by refining appropriately selected boxes.
+
+Mathematically, the algorithm to compute the global attractor relative to ``Q`` takes two input arguments: a compact set ``Q`` as well as a map ``f``, which describes the dynamics. Now in each iteration, two steps happen:
+1. **subdivision-step:** The box set `B` is subdivided once, i.e. every box is bisected along one axis, which gives rise to a new partition of the domain, with double the amount of boxes. This is saved in `B`. 
+2. **selection_step:** All those boxes `b` in the new box set `B` whose image does not intersect the domain, ie ``f(b) \cap \left( \bigcup_{b' \in B} b' \right) \neq \emptyset``, get discarded. 
+
+If we repeatedly refine the box set `B` through ``k`` subdivision steps, then as ``k \to \infty`` the collection of boxes ``B`` converges to the relative global attractor ``A_Q`` in the Hausdorff metric.
+
+### Implementation
+```julia
+function relative_attractor(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    for k = 1:steps
+        B = subdivide(B, (k % N) + 1)
+        B = B ∩ F(B)
+    end
+    return B
 end
-``` 
-where implementationally we start with an empty boxset and store each box that is hit in it.
+```
+The third input parameter `steps` describes the level of approximation. Since in each step of the algorithm the initial domain is divided in half, the final partition after `steps` many steps will contain ``n := 2^{\text{depth}}`` boxes, i.e. every box in the final covering is ``\frac{1}{n}`` times the size of the initial box. 
+For this algorithm the box set should be the full partition of the set ``Q``. 
 
----
+## Unstable Set
 
-## unstable_set
-In the following we are presenting the algorithm to cover invariant manifolds within some domain ``Q`` (which has to contain a fixed point).
+In the following we are presenting the algorithm to cover invariant manifolds within some domain ``Q``, which has to contain a fixed point.
 !!! note "Note"
     For simplicity, we will explain the algorithm for the case of the *unstable manifold*. However one can compute the stable manifold as well by considering the boxmap describing the inverse map ``f^{-1}`` as input argument for the algorithm.
-    
-Usually, the computation of the unstable manifold is relatively simple in 1D, but the higher the dimension, the more complicated it becomes. GAIO is able to compute the unstable manifold for arbitrary dimension.
-    
-### Mathematical Background of the Algorithm
+
+### Mathematical Background
 The unstable manifold is defined as
 ```math
 W^U(x_0) = \{x: \lim_{k \to - \infty} f^k(x) = x_0 \}
@@ -74,72 +75,165 @@ W^U(x_0) = \{x: \lim_{k \to - \infty} f^k(x) = x_0 \}
 where ``x_0`` is a fixed point of ``f``.
 
 The idea behind the algorithm to compute the unstable manifold can be explained in two steps. Before starting we need to identify a hyperbolic fixed point and the region ``Q``, which we are going to compute the manifold in. The region ``Q`` needs to be already partitioned into small boxes.
-1. Since a fixed point is always part of the unstable manifold, we need to identify a small region/box containing this fixed point.
-2. The small box containing the fixed point is then mapped forward under the dynamics defined by ``f`` and the boxes that are hit under the image are added to the box collection. Then those newly included boxes are mapped forward and the procedure is repeated. 
+1. **initialization step** Since a fixed point is always part of the unstable manifold, we need to identify a small region/box containing this fixed point. This box may be known a-priori, or one can use the `relative_attractor` around a region where one suspects a fixed point to exist. 
+2. **continuation step** The small box containing the fixed point is then mapped forward by `F` and the boxes that are hit under the image are added to the box collection. Then those newly included boxes are mapped forward and the procedure is repeated until no new boxes are added. 
 
-With these two steps we obtain a covering of part of the global unstable manifold.
-
-!!! warning "Warning"
+!!! warning "Note on Convergence"
     One might not be able to compute the parts of the unstable manifold whose preimage lies outside the domain ``Q``.
     Thus, it is important to choose ``Q`` large enough.
 
-How was this algorithm translated into the language of GAIO?
-
-### Implementation of the Algorithm
-    
-
+### Implementation
 ```julia
-function unstable_set!(boxset::BoxSet, g::BoxMap)
-    boxset_new = boxset
-
-    while !isempty(boxset_new)
-        boxset_new = g(boxset_new)
-
-        setdiff!(boxset_new, boxset)
-        union!(boxset, boxset_new)
+function unstable_set!(F::BoxMap, B::BoxSet)
+    B_new = B
+    while !isempty(B_new)
+        B_new = F(B_new)
+        setdiff!(B_new, B)
+        union!(B, B_new)
     end
-
-    return boxset
+    return B
 end
 ```
-Let us start with the input arguments for the algorithm:
-Again, like in the relative attractor Algorithm from above, `g` is the `BoxMap` describing the underlying dynamics ``f``. It thus stores ``f`` and a set of reference points necessary for the discretization of the boxes.
-The other input argument ``boxset`` includes two things:
-1. The domain ``Q`` we are going to compute the unstable manifold in (``Q`` can be implemented as a large `Box`) and the underlying partition of the domain. Unlike in the previous algorithm, the domain will not be subdivided along the algorithms course, but we need to pass a partition which is already subdivided to the depth ``d`` (and therefore the level of accuracy) we want our final boxcovering to have.
-2. Since `boxset` is going to store all the new boxes we aquire in every iteration of the algorithm, it has to be initialized containing no other box than the single box of size ``\frac{1}{2^d}`` around the fixed point that is part of the unstable manifold we intend to compute.
+The input argument `B` includes two things:
 
-Note: This algorithm works with two mutable sets of boxes: `boxset`, which collects the boxes we aquire in each iteration and will eventually cover part of the unstable manifold, and `boxset_new`, which will be overwritten in each iteration and contains only the boxes which will be newly added to our collection.
-To initialize, we set
-```julia
-boxset_new = boxset
-```
-Now we repeat the following steps: 
-First, we map the newly aquired boxes one step forward in time
-```julia
-boxset_new = g(boxset_new)
-```
-Note: Mapping only the newly acquired boxes from the previous step saves memory and computation time since we already computed the images of the old boxes in previous steps and thus those boximages are already part of the collector `boxset`.
-Now we need to update `boxset_new` and `boxset`.
-As mentioned prior, we only want to consider boxes in each iteration step, that have not been 'hit' under `g` by any boxes we acquired in a previous iteration step, because that would mean that this box image already is part of our box collection. To differ between truly new boxes and boxes we already added, we take the setdifference between the images of boxes `boxset_new` and the whole boxcollection `boxset`:
-```julia
-setdiff!(boxset_new, boxset)
-```
-Now `boxset_new` contains nothing but the truly new boxes.
-`boxset` is then updated by adding those new image boxes to our collection of boxes by forming the union with the already existing collection:
-```julia
-union!(boxset, boxset_new)
-```
-We repeat these steps as long as
-```julia
-while !isempty(boxset_new)
-```
-is true. Thus, the iteration will end when no new boxes can be added to the boxcollection, because we e.g. got so close to the border of the domain ``Q``, that every further image of boxes lies beyond the border, or the unstable manifold oscillates so strongly, that our chosen level of accuracy can no longer distinguish between the oscillations.
+The domain ``Q`` we are going to compute the unstable manifold in (``Q`` can be implemented as a large `Box`) and the underlying partition of the domain. Unlike in the previous algorithm, the domain will not be subdivided along the algorithms course, but we need to pass a partition which is already subdivided to the depth ``d`` (and therefore the level of accuracy) we want our final boxcovering to have. 
 
----
-## transition_matrix
+Note: This algorithm works with two mutable sets of boxes: `B`, which collects the boxes we aquire in each iteration and will eventually cover part of the unstable manifold, and `B_new`, which will be overwritten in each iteration and contains only the boxes which will be newly added to our collection.
 
----
-## chain_recurrent_set
+## Chain Recurrent Set
 
----
-## root_covering
+### Mathematical Background
+The _chain recurrent set over ``Q``_ ``R_Q`` is defined as the set of all ``x_0 \in Q`` such that for every ``\epsilon > 0`` there exists a set 
+```math 
+\left\{ x_0,\, x_1,\, x_2,\, \ldots,\, x_{n-1} \right\} \subset Q \quad \text{with} \quad \| f(x_{i \, \text{mod} \, n}) - x_{i+1 \, \text{mod} \, n} \| < \epsilon \,\ \text{for all} \,\ i
+```
+The chain recurrent set describes "arbitrarily small perturbations" of periodic orbits. This definition is useful since our box coverings our finite and hence inherently slightly uncertain. 
+
+The idea for the algorithm is to construct a directed graph ``G`` whose vertices are the box set ``B``, and for which edges are drawn from ``B_1`` to ``B_2`` if ``f(B_1) \cap B_2 \neq \emptyset``. We can now ask for a subset of the vertices, for which each vertex is part of a directed cycle. This set is equivalent to the _strongly connected subset of ``G``_. We therefore perform two steps: 
+1. **subdivision step** The box set `B` is subdivided once, i.e. every box is bisected along one axis, which gives rise to a new partition of the domain, with double the amount of boxes. This is saved in `B`. 
+2. **graph construction step** Generate the graph `G`. This is done by generating the _transition matrix over `B`_ (see the next algorithm) and noting the nonzero elements. This is the adjacency matrix for the graph `G`. 
+3. **selection step** Find the strongly connected subset of `G`. Discard all vertices (boxes) which are not part of a strongly connected component. 
+
+If we repeadetly refine the strongly connected box set through ``k`` subdivision steps, then the algorithm converges to the chain recurrent set as ``k \to \infty`` in the Hausdorff metric. 
+
+### Implementation
+```julia
+function chain_recurrent_set(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    for k in 1:steps
+        B = subdivide(B, (k % N) + 1)
+        P = TransferOperator(F, B)
+        G = Graph(P)
+        B = strongly_connected_components(G)
+    end
+    return B
+end
+```
+
+## Transfer Operator
+
+### Mathematical Background
+The transition matrix is the discretization of the _transfer operator ``P`` w.r.t. ``f``_. Formally, the transfer operator is defined for measurable nonsingular functions implicitly through the integral equation
+```math
+\int_A Pf (x) \, d\mu (x) = \int_{f^{-1}(A)} f(x) \, d\mu (x) \quad \text{for any} \ \ A \ \ \text{measurable}
+```
+We will use a Galerkin approximation for ``P`` which maintains the eigenvalues and cyclic behavior of ``P``. To do this, we project to a subspace ``\chi_B`` generated by the basis ``\left\{ \chi_b\ \vert\ b \in B \right\}`` 
+of indicator functions on the boxes of our box set. Further, we enumerate the partition `P = {b_1, b_2, ..., b_n}` with integer indices and define the matrix 
+```math
+    (P^n)_{ij} = \frac{\mathcal{L}\left(B_j \cap f^{-1}(B_i)\right)}{\mathcal{L}(B_j)}, \quad i,\, j = 1, \ldots, n,
+```
+as well as a linear operator ``Q_n P : \chi_B \to \chi_B`` as the linear extension of 
+```math
+    (Q_n P)\, \chi_{b_i} = \sum_{j = 1}^n P_{ij}^n\, \chi_{b_j}, \quad i = 1, \ldots, n.
+```
+The operator ``Q_n P`` can be created in GAIO.jl by calling 
+```julia
+T = TransferOperator(F, B)
+```
+where `F` is a `BoxMap` and `B` is a box set. `T` acts as a matrix in every way, but the explicit transition matrix ``P^n_{ij}`` can be generated by calling 
+```julia
+M = sparse(T)
+```
+To realize this approximation, we need to calculate ``P^n_{ij}``. For this there are two techniques discussed in [1]. The simpler of the two techniques is a Monte-Carlo approach. Namely, we choose a fixed number ``r`` of test points in one of the boxes ``b_j``, and set ``P^n_{ij}`` as the fraction of test points which land in ``b_i``. 
+
+It is important to note that `TranferOperator` is only supported over the box set `B`, but if one lets a `TranferOperator` act on a `BoxFun` (see general), then the support `B` is extended "on the fly" to include the support of the `BoxFun`.
+
+### Implementation
+```julia
+const plusmerge! = mergewith!(+)
+function TransferOperator(
+        g::BoxMap, boxset::BoxSet{B,Q,S}
+    ) where {N,T,I,B,Q<:BoxPartition{N,T,I},S}
+
+    P = boxset.partition
+    D = Dict{Tuple{I,I},T}      # initialize a "dict-of-keys" sparse matrix
+    @floop for key in boxset.set
+        box = key_to_box(P, key)
+        c, r = box.center, box.radius
+        domain_points = g.domain_points(c, r)
+        inv_n = 1. / length(domain_points)
+        for p in domain_points
+            c = g.map(p)
+            hitbox = point_to_box(P, c)
+            isnothing(hitbox) && continue
+            r = hitbox.radius
+            for ip in g.image_points(c, r)
+                hit = point_to_key(P, ip)
+                isnothing(hit) && continue
+                @reduce(mat = plusmerge!(D(), D((key,hit) => inv_n)))
+            end
+        end
+    end
+    matcsc = sparse(mat, length(P), length(P))      # convert to "compressed sparse column" format
+    return TransferOperator(g, boxset, matcsc)
+end
+```
+
+## Root Covering
+
+### Mathematical Background
+Nonlinear optimization theory offers a multitude of algorithms to iteratively approximate roots of functions ``h : \mathbb{R}^d \to \mathbb{R}``, that is, algorithms ``f : \mathbb{R}^d \to \mathbb{R}^d`` such that (under some conditions) ``f^k (x) \to x_0`` as ``k \to \infty`` with ``f(x_0) = 0``. We can consider these algorithms from the point of view of dynamics, and reframe the problem of finding a root of ``h`` to finding a fixed point of ``f``. 
+
+Specifically, we will consider ``f`` to be a globalized Newton algorithm. One step of the (local) Newton algorithm follows the specification: solve the linear equation 
+```math
+J_h (x) d = - h(x)
+```
+and set 
+```math
+f(x) = x + d, 
+```
+where ``J_h (x)`` is the Jacobi matrix of ``h`` at ``x``. 
+
+The local Newton algorithm is not guaranteed to converge to a global solution to ``h(x) = 0``. To rectify this, the step size ``\| d \|`` and direction ``d / \| d \|`` need to be modified. There are multiple heuristics to do this, and GAIO.jl uses the "Armijo rule": fix some ``\sigma < 1`` and find the largest ``\alpha \leq 1`` such that 
+```math
+h(x + \alpha d) - h(x) \leq \alpha \sigma \, J_h (x)^T d.
+```
+This is done by Initializing ``\alpha = 1`` and testing the above condition. If it is not satisfied, scale ``\alpha`` by some constant ``\rho``, ie set ``\alpha \gets \rho \cdot \alpha``, and test the condition again. GAIO.jl uses ``\sigma = 10^{-4}`` and ``\rho = 4 / 5``. 
+
+Using this iterative solver, one can follow a technique very similar to the algorithm for the realtive attractor. 
+1. **subdivision-step:** The box set `B` is subdivided once, i.e. every box is bisected along one axis, which gives rise to a new partition of the domain, with double the amount of boxes. This is saved in `B`. 
+2. **selection_step:** The box set `B` is mapped forward using one step of the adaptive newton algorithm. 
+
+If we repeadetly refine the box set `B` through ``k`` subdivision steps, then as ``k \to \infty`` the collection of boxes converges to the set of roots of `h` in the Hausdorff metric. 
+
+### Implementation
+```julia
+function cover_roots(h, Dh, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    domain = B.partition.domain
+    for k in 1:steps
+        B = subdivide(B, (k % N) + 1)
+        f = x -> adaptive_newton_step(h, Dh, x, k)
+        F = BoxMap(f, domain)
+        B = F(B)
+    end
+    return B
+end
+```
+The arguments needed are the map `h`, some approximation of the Jacobian ``J_h`` which we call `Dh`, and a box set `B` containing some root of `h`. 
+
+## Finite Time Lyapunov Exponents
+
+(TODO)
+
+## References
+
+[1] Michael Dellnitz, Oliver Junge, and Gary Froyland. “The Algorithms Behind GAIO - Set Oriented Numerical Methods for Dynamical Systems”. In: _Ergodic Theory,Analysis, and Efficient Simulations of Dynamical Systems_. Ed. by Bernold Fiedler.Springer Berlin, 2001, pp. 145–174. doi: https://doi.org/10.1007/3-540-35593-6. 

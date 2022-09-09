@@ -1,9 +1,31 @@
 """
-Internal data structure to hold sets
+    BoxSet(partition, indices::AbstractSet)
 
-`partition`:  the partition that the set is defined over
+Internal data structure to hold boxes within a partition. 
 
-`set`:        set of partition-keys corresponding to the boxes in the set
+Constructors:
+* For all boxes in a partition: 
+```julia
+partition[:]
+```
+* For one box containing a point `x`: 
+```julia
+partition[x]
+```
+* For a covering of a set `S = [Box(c_1, r_1), Box(c_2, r_r)] # etc...`: 
+```julia
+partition[S]
+```
+
+Fields:
+* `partition`:  the partition that the set is defined over
+* `set`:        set of partition-keys corresponding to the boxes in the set
+
+Most set operations such as 
+```julia
+union, intersect, setdiff, symdiff, issubset, isdisjoint, issetequal, isempty, length, # etc...
+```
+are supported. 
 
 """
 struct BoxSet{B,P<:AbstractBoxPartition{B},S<:AbstractSet} <: AbstractSet{B}
@@ -102,6 +124,12 @@ function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}
     return BoxSet(partition_subdivided, set)
 end
 
+"""
+    subdivide!(boxset::BoxSet{<:Any,<:Any,<:TreePartition}, key::NTuple{2,<:Integer})
+
+Subdivide a `TreePartition` at the node `key`. Dimension along which 
+the node is subdivided depends on the depth of the node. 
+"""
 function subdivide!(boxset::BoxSet{B,P,S}, key::NTuple{2,<:Integer}) where {B,P<:TreePartition,S}
     !( key in boxset.set ) && throw(KeyError(key))
 
@@ -118,6 +146,11 @@ function subdivide!(boxset::BoxSet{B,P,S}, key::NTuple{2,<:Integer}) where {B,P<
     return boxset
 end
 
+"""
+Bisect every box in `boxset` along an axis, giving rise to a new 
+partition of the domain, with double the amount of boxes. 
+Axis along which to bisect depends on the depth of the nodes. 
+"""
 function subdivide(boxset::BoxSet{B,P,S}) where {B,P<:TreePartition,S}
     boxset_new = BoxSet(copy(boxset.partition), copy(boxset.set))
 
