@@ -9,6 +9,10 @@ makedocs(
         "Getting started" => "getting_started.md",
         "General usage" => "general.md",
         "Algorithms" => "algorithms.md",
+        "Maximizing Performance" => [
+            "simd.md",
+            "cuda.md"
+        ],
         "Plotting" => "plotting.md",
         "Examples" => "examples.md",
         "Reference" => [

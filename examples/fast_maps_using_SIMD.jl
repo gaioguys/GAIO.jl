@@ -3,7 +3,6 @@ using GAIO
 # This example demonstrates how to get a ~2x speedup
 # in your code using your CPU's SIMD capabilities.
 
-N = 3
 const σ, ρ, β = 10.0, 28.0, 0.4
 
 # By default, GAIO is set up to accept functions of the form
