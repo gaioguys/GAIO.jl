@@ -136,7 +136,7 @@ end
 
 
 """
-    eigs(gstar::TransferOperator; kwargs...) -> (d[, v], nconv)
+    eigs(gstar::TransferOperator [; kwargs...]) -> (d[, v], nconv)
 
 Compute a set of eigenvalues `d` and eigenmeasures `v` of `gstar`. 
 Works with the adjoint _Koopman operator_ as well. 

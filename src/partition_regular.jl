@@ -66,18 +66,34 @@ function Base.show(io::IO, partition::BoxPartition)
 end
 
 """
-Bisect every box in `boxset` along the axis `dim`, giving rise to a new 
-partition of the domain, with double the amount of boxes. 
+    subdivide(P::BoxPartition, dim) -> BoxPartition
+    subdivide(B::BoxSet, dim) -> BoxSet
+
+Bisect every box in `boxset` along the axis `dim`, 
+giving rise to a new partition of the domain, with 
+double the amount of boxes. 
 """
 function subdivide(P::BoxPartition{N,T,I}, dim) where {N,T,I}
     new_dims = ntuple(i -> P.dims[i] * I(i==dim ? 2 : 1), N)
     return BoxPartition(P.domain, new_dims)
 end
 
+"""
+    key_to_ints(P::BoxPartition, key)
+
+Convert an index (linear or cartesian) in a `BoxPartition` to 
+cartesian indices.
+"""
 function key_to_ints(partition::BoxPartition{N,T,I}, key::IndexTypes{N}) where {N,T,I}
     return NTuple{N,I}(CartesianIndices(size(partition))[key].I)
 end
 
+"""
+    ints_to_box(P::BoxPartition, x_ints)
+
+Return the box associated with the cartesian index `x_ints` 
+within a `BoxPartition`.
+"""
 function ints_to_box(partition::BoxPartition{N,T}, x_ints::SVNT{N,I}) where {N,T,I<:Integer}
     radius = partition.domain.radius ./ partition.dims
     left = partition.domain.center .- partition.domain.radius
@@ -85,17 +101,38 @@ function ints_to_box(partition::BoxPartition{N,T}, x_ints::SVNT{N,I}) where {N,T
     return Box{N,T}(center, radius)
 end 
 
+"""
+    key_to_box(P::BoxPartition, key)
+
+Return the box associated with the index within a `BoxPartition`. 
+"""
 function key_to_box(partition::BoxPartition{N,T,I}, key::IndexTypes{N}) where {N,T,I}
     x_ints = key_to_ints(partition, key)
     box = ints_to_box(partition, x_ints)
     return box
 end
 
+"""
+    unsafe_point_to_ints(P::BoxPartiton, point)
+
+Find the cartesian index for the box within a `BoxPartition` 
+containing a point.
+
+!!! danger "bounds checking"
+    `unsafe_point_to_ints` does not do any bounds checking. The returned 
+    cartesian index will be out of bounds if the point does not lie in the 
+    partition. 
+"""
 function unsafe_point_to_ints(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     xi = (point .- partition.left) .* partition.scale
     return unsafe_trunc.(I, xi)
 end
 
+"""
+    ints_to_key(P::BoxPartition, x_ints)
+
+Convert linear to cartesian indices for a `BoxPartition`
+"""
 function ints_to_key(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I<:Integer}
     if !all(zero(I) .<= x_ints .< size(partition))
         #@debug "point does not lie in the domain" point partition.domain
@@ -105,12 +142,27 @@ function ints_to_key(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I<:Integ
     return key
 end
 
+"""
+    point_to_key(P::BoxPartition, point)
+
+Find the linear index for the box within a `BoxPartition` 
+contatining a point. 
+
+!!! note "Bounds checking"
+    unlike `unsafe_point_to_ints`, `point_to_key` will return 
+    `nothing` if the point does not lie in the partition. 
+"""
 function point_to_key(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     x_ints = unsafe_point_to_ints(partition, point)
     key = ints_to_key(partition, x_ints)
     return key
 end
 
+"""
+    point_to_box(P::BoxPartition, point)
+
+Find the box within a `BoxPartition` containing a point. 
+"""
 function point_to_box(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     x_ints = unsafe_point_to_ints(partition, point)
     if !all(zero(I) .<= x_ints .< size(partition))

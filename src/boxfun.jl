@@ -1,6 +1,6 @@
 # TODO: cleanup type params. key type of partition must equal K
 """
-    BoxFun(partition, dict)
+    BoxFun(partition, vals)
 
 Discretization of a function over the domain `partition.domain`,
 as a piecewise constant function over the boxes of `partition`. 
@@ -59,6 +59,8 @@ end
 import Base: ∘
 
 """
+    ∘(f, boxfun::BoxFun) -> BoxFun
+
 Compose the function `f` with the `boxfun`. 
 """
 function ∘(f, boxfun::BoxFun{P,K,V}) where {P,K,V}

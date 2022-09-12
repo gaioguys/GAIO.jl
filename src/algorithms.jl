@@ -95,7 +95,7 @@ function cover_roots(g, Dg, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
 end
 
 """
-    relative_attractor(boxset::BoxSet, g; T, num_points=20, ϵ=1e-6) -> BoxFun
+    finite_time_lyapunov_exponents(boxset::BoxSet, g; T, num_points=20, ϵ=1e-6) -> BoxFun
 
 Compute the Finite Time Lyapunov Exponent for every box in boxset.
 

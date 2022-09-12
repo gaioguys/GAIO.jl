@@ -115,6 +115,13 @@ function point_to_key(partition::TreePartition, point)
     return tree_search(partition, point)[1]
 end
 
+"""
+    subdivide!(tree:TreePartition), key::NTuple{2,<:Integer}) -> TreePartition
+    subdivide!(boxset::BoxSet{<:Any,<:Any,<:TreePartition}, key::NTuple{2,<:Integer}) -> BoxSet
+
+Subdivide a `TreePartition` at the node `key`. Dimension along which 
+the node is subdivided depends on the depth of the node. 
+"""
 function subdivide!(tree::TreePartition{N, T}, key::Tuple{Int,Int}) where {N, T}
     search_key, node_idx = tree_search(tree, key_to_box(tree, key).center)
 
