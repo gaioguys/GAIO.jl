@@ -45,6 +45,23 @@ function boxset_empty(partition::P) where P <: AbstractBoxPartition
     return BoxSet(partition, Set{keytype(P)}())
 end
 
+"""
+* set of all boxes in `P`:
+```julia
+B = P[:]    
+```
+* cover the point `x`, or points `x = [x_1, x_2, x_3] # etc ...` using boxes from `P`
+```julia
+B = P[x]
+```    
+* a covering of `S` using boxes from `P`
+```julia
+S = [Box(center_1, radius_1), Box(center_2, radius_2), Box(center_3, radius_3)] # etc... 
+B = P[S]    
+```
+
+Return a subset of the partition `P` based on the second argument. 
+"""
 function Base.getindex(partition::AbstractBoxPartition, points)
     eltype(points) <: Number && ndims(partition) > 1 && return partition[(points,)]
     gen = Iterators.filter(!isnothing, (point_to_key(partition, point) for point in points))
@@ -124,12 +141,6 @@ function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}
     return BoxSet(partition_subdivided, set)
 end
 
-"""
-    subdivide!(boxset::BoxSet{<:Any,<:Any,<:TreePartition}, key::NTuple{2,<:Integer})
-
-Subdivide a `TreePartition` at the node `key`. Dimension along which 
-the node is subdivided depends on the depth of the node. 
-"""
 function subdivide!(boxset::BoxSet{B,P,S}, key::NTuple{2,<:Integer}) where {B,P<:TreePartition,S}
     !( key in boxset.set ) && throw(KeyError(key))
 
@@ -147,6 +158,8 @@ function subdivide!(boxset::BoxSet{B,P,S}, key::NTuple{2,<:Integer}) where {B,P<
 end
 
 """
+    subdivide(B::BoxSet{<:Any,<:Any,<:TreePartition}) -> BoxSet
+
 Bisect every box in `boxset` along an axis, giving rise to a new 
 partition of the domain, with double the amount of boxes. 
 Axis along which to bisect depends on the depth of the nodes. 
