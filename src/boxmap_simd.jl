@@ -1,5 +1,3 @@
-const SVNT{N,T} = Union{NTuple{N,T}, <:StaticVector{N,T}}
-
 struct BoxMapCPUCache{simd,V,W}
     idx_base::SIMD.Vec{simd,Int}
     temp_points::V

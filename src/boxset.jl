@@ -1,9 +1,31 @@
 """
-Internal data structure to hold sets
+    BoxSet(partition, indices::AbstractSet)
 
-`partition`:  the partition that the set is defined over
+Internal data structure to hold boxes within a partition. 
 
-`set`:        set of partition-keys corresponding to the boxes in the set
+Constructors:
+* For all boxes in a partition: 
+```julia
+partition[:]
+```
+* For one box containing a point `x`: 
+```julia
+partition[x]
+```
+* For a covering of a set `S = [Box(c_1, r_1), Box(c_2, r_r)] # etc...`: 
+```julia
+partition[S]
+```
+
+Fields:
+* `partition`:  the partition that the set is defined over
+* `set`:        set of partition-keys corresponding to the boxes in the set
+
+Most set operations such as 
+```julia
+union, intersect, setdiff, symdiff, issubset, isdisjoint, issetequal, isempty, length, # etc...
+```
+are supported. 
 
 """
 struct BoxSet{B,P<:AbstractBoxPartition{B},S<:AbstractSet} <: AbstractSet{B}
@@ -23,6 +45,23 @@ function boxset_empty(partition::P) where P <: AbstractBoxPartition
     return BoxSet(partition, Set{keytype(P)}())
 end
 
+"""
+* set of all boxes in `P`:
+```julia
+B = P[:]    
+```
+* cover the point `x`, or points `x = [x_1, x_2, x_3] # etc ...` using boxes from `P`
+```julia
+B = P[x]
+```    
+* a covering of `S` using boxes from `P`
+```julia
+S = [Box(center_1, radius_1), Box(center_2, radius_2), Box(center_3, radius_3)] # etc... 
+B = P[S]    
+```
+
+Return a subset of the partition `P` based on the second argument. 
+"""
 function Base.getindex(partition::AbstractBoxPartition, points)
     eltype(points) <: Number && ndims(partition) > 1 && return partition[(points,)]
     gen = Iterators.filter(!isnothing, (point_to_key(partition, point) for point in points))
@@ -32,6 +71,12 @@ end
 function Base.getindex(partition::AbstractBoxPartition, key::Integer)
     BoxSet(partition, Set([key]))
 end
+
+function Base.getindex(B::BoxSet, points)
+    A = getindex(B.partition, points)
+    return B ∩ A
+end
+
 
 function Base.getindex(partition::AbstractBoxPartition, ::Colon)
     return BoxSet(partition, Set(keys(partition)))
@@ -112,6 +157,13 @@ function subdivide!(boxset::BoxSet{B,P,S}, key::NTuple{2,<:Integer}) where {B,P<
     return boxset
 end
 
+"""
+    subdivide(B::BoxSet{<:Any,<:Any,<:TreePartition}) -> BoxSet
+
+Bisect every box in `boxset` along an axis, giving rise to a new 
+partition of the domain, with double the amount of boxes. 
+Axis along which to bisect depends on the depth of the nodes. 
+"""
 function subdivide(boxset::BoxSet{B,P,S}) where {B,P<:TreePartition,S}
     boxset_new = BoxSet(copy(boxset.partition), copy(boxset.set))
 

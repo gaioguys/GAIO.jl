@@ -23,7 +23,7 @@ using Base.Iterators: Stateful, take
 using MakieCore
 using MakieCore: @recipe
 
-export Box
+export Box, volume
 
 export AbstractBoxPartition, BoxPartition, TreePartition
 export depth, key_to_box, point_to_key, tree_search
@@ -50,6 +50,9 @@ export cover_roots, finite_time_lyapunov_exponents
 export plotboxes, plotboxes!
 
 # ENV["JULIA_DEBUG"] = all
+
+const SVNT{N,T} = Union{<:NTuple{N,T}, <:StaticVector{N,T}}
+const IndexTypes{N} = Union{<:Integer,<:NTuple{N,<:Integer},<:CartesianIndex{N}}
 
 include("box.jl")
 

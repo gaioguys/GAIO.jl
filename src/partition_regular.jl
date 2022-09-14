@@ -1,23 +1,31 @@
 """
-Internal data structure to partition a box
+    BoxPartition(domain::Box{N}, dims::NTuple{N,<:Integer} = ntuple(_->1, N))
 
-`domain`:       box defining the entire domain
+Data structure to partition a box into a 
+`dims[1] x dims[2] x ... dims[N]` equidistant grid. 
 
-`left`:         leftmost / bottom edge of the domain
+Fields:
+* `domain`:       box defining the entire domain
+* `left`:         leftmost / bottom edge of the domain
+* `scale`:        1 / diameter of each box in the new partition (componentwise)
+* `dims`:         tuple, number of boxes in each dimension
+* `dimsprod`:     for indexing the partition. `BoxPartition` uses linear indices, i.e.
+                  keys are counted up in first dimension first, 
+                  then second dimension, etc... 
 
-`scale`:        1 / diameter of each box in the new partition (componentwise)
+```julia
+         1st dim →
+          * — * — * — *
+    2nd   | 1 | 2 | 3 |
+    dim   * — * — * — *
+    ↓     | 4 | 5 | 6 |
+          * — * — * — *
+```
 
-`dims`:         tuple, number of boxes in each dimension
+Methods implemented:
 
-`dimsprod`:     for indexing the partition:
-                key is counted up in first dimension first, then second dimension, etc... ie
+    :(==), ndims, size, length, keys, keytype #, etc ...
 
-                 1st dim →
-                  * — * — * — *
-            2nd   | 1 | 2 | 3 |
-            dim   * — * — * — *
-            ↓     | 4 | 5 | 6 |
-                  * — * — * — *
 .
 """
 struct BoxPartition{N,T,I<:Integer} <: AbstractBoxPartition{Box{N,T}}
@@ -57,31 +65,75 @@ function Base.show(io::IO, partition::BoxPartition)
     print(io, join(size(partition), " x "), "  BoxPartition")
 end
 
-function subdivide(P::BoxPartition{N,T,I}, dim::Integer) where {N,T,I}
+"""
+    subdivide(P::BoxPartition, dim) -> BoxPartition
+    subdivide(B::BoxSet, dim) -> BoxSet
+
+Bisect every box in `boxset` along the axis `dim`, 
+giving rise to a new partition of the domain, with 
+double the amount of boxes. 
+"""
+function subdivide(P::BoxPartition{N,T,I}, dim) where {N,T,I}
     new_dims = ntuple(i -> P.dims[i] * I(i==dim ? 2 : 1), N)
     return BoxPartition(P.domain, new_dims)
 end
 
-# TODO: replace with overloaded getindex
-@muladd function key_to_box(
-        partition::BoxPartition{N,T,I}, key::M
-    ) where {N,T,I,M<:Union{<:Integer, NTuple{N,<:Integer}}}
+"""
+    key_to_ints(P::BoxPartition, key)
 
-    x_ints = NTuple{N,I}(CartesianIndices(size(partition))[key].I)
+Convert an index (linear or cartesian) in a `BoxPartition` to 
+cartesian indices.
+"""
+function key_to_ints(partition::BoxPartition{N,T,I}, key::IndexTypes{N}) where {N,T,I}
+    return NTuple{N,I}(CartesianIndices(size(partition))[key].I)
+end
+
+"""
+    ints_to_box(P::BoxPartition, x_ints)
+
+Return the box associated with the cartesian index `x_ints` 
+within a `BoxPartition`.
+"""
+function ints_to_box(partition::BoxPartition{N,T}, x_ints::SVNT{N,I}) where {N,T,I<:Integer}
     radius = partition.domain.radius ./ partition.dims
     left = partition.domain.center .- partition.domain.radius
-    center = @. left + radius + (2 * radius) * (x_ints - 1)
-    # start at leftmost box in the partition and move $key boxes right
+    center = @muladd left .+ radius .+ (2 .* radius) .* (x_ints .- 1)
     return Box{N,T}(center, radius)
 end 
 
+"""
+    key_to_box(P::BoxPartition, key)
+
+Return the box associated with the index within a `BoxPartition`. 
+"""
+function key_to_box(partition::BoxPartition{N,T,I}, key::IndexTypes{N}) where {N,T,I}
+    x_ints = key_to_ints(partition, key)
+    box = ints_to_box(partition, x_ints)
+    return box
+end
+
+"""
+    unsafe_point_to_ints(P::BoxPartiton, point)
+
+Find the cartesian index for the box within a `BoxPartition` 
+containing a point.
+
+!!! danger "bounds checking"
+    `unsafe_point_to_ints` does not do any bounds checking. The returned 
+    cartesian index will be out of bounds if the point does not lie in the 
+    partition. 
+"""
 function unsafe_point_to_ints(partition::BoxPartition{N,T,I}, point) where {N,T,I}
-    xi = (point .- partition.left) .* partition.scale    
-    # counts how many boxes x is away from left (componentwise)
+    xi = (point .- partition.left) .* partition.scale
     return unsafe_trunc.(I, xi)
 end
 
-function ints_to_key(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I}
+"""
+    ints_to_key(P::BoxPartition, x_ints)
+
+Convert linear to cartesian indices for a `BoxPartition`
+"""
+function ints_to_key(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I<:Integer}
     if !all(zero(I) .<= x_ints .< size(partition))
         #@debug "point does not lie in the domain" point partition.domain
         return nothing
@@ -90,8 +142,32 @@ function ints_to_key(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I}
     return key
 end
 
-function point_to_key(partition::BoxPartition, point)
+"""
+    point_to_key(P::BoxPartition, point)
+
+Find the linear index for the box within a `BoxPartition` 
+contatining a point. 
+
+!!! note "Bounds checking"
+    unlike `unsafe_point_to_ints`, `point_to_key` will return 
+    `nothing` if the point does not lie in the partition. 
+"""
+function point_to_key(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     x_ints = unsafe_point_to_ints(partition, point)
     key = ints_to_key(partition, x_ints)
     return key
+end
+
+"""
+    point_to_box(P::BoxPartition, point)
+
+Find the box within a `BoxPartition` containing a point. 
+"""
+function point_to_box(partition::BoxPartition{N,T,I}, point) where {N,T,I}
+    x_ints = unsafe_point_to_ints(partition, point)
+    if !all(zero(I) .<= x_ints .< size(partition))
+        return nothing
+    end
+    box = ints_to_box(partition, x_ints)
+    return box
 end
