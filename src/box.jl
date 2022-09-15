@@ -48,6 +48,14 @@ Computes the volume of a box.
 """
 volume(box::Box) = prod(2 .* box.radius)
 
-function Base.show(io::IO, box::Box) 
-    print(io, "Box:\n    center = $(box.center),\n    radii = $(box.radius)")
+"""
+    vertices(box)
+    vertices(center, radius)
+
+Return an iterator over the vertices of a `box = Box(center, radius)`. 
+"""
+function vertices(center::SVNT{N,T}, radius::SVNT{N,T}) where {N,T}
+    I = CartesianIndices(ntuple(_->-1:2:1, N))
+    (@muladd(center .+ radius .* Tuple(i)) for i in I)
 end
+vertices(box::Box) = vertices(box.center, box.radius)
