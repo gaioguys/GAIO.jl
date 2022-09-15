@@ -23,7 +23,8 @@ using Base.Iterators: Stateful, take
 using MakieCore
 using MakieCore: @recipe
 
-export Box, volume
+export Box
+export volume, vertices
 
 export AbstractBoxPartition, BoxPartition, TreePartition
 export depth, key_to_box, point_to_key, tree_search

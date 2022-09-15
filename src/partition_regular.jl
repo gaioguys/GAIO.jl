@@ -115,8 +115,8 @@ end
 """
     unsafe_point_to_ints(P::BoxPartiton, point)
 
-Find the cartesian index for the box within a `BoxPartition` 
-containing a point.
+Find the cartesian index for the box within a 
+`BoxPartition` containing a point.
 
 !!! danger "bounds checking"
     `unsafe_point_to_ints` does not do any bounds checking. The returned 
@@ -125,20 +125,35 @@ containing a point.
 """
 function unsafe_point_to_ints(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     xi = (point .- partition.left) .* partition.scale
-    return unsafe_trunc.(I, xi)
+    return unsafe_trunc.(I, xi) .+ oneunit(I)
+end
+
+"""
+    bounded_point_to_ints(partition::BoxPartition, point)
+
+Find the cartesian index of the nearest box within a 
+`BoxPartition` to a point. Conicides with `unsafe_point_to_ints` 
+if the point lies in the partition. 
+"""
+function bounded_point_to_ints(partition::BoxPartition{N,T,I}, point) where {N,T,I}
+    xi = (point .- partition.left) .* partition.scale
+    xi = max.(zero(I), xi)
+    xi = min.(size(partition) .- oneunit(I), xi)
+    return trunc.(I, xi) .+ oneunit(I)
 end
 
 """
     ints_to_key(P::BoxPartition, x_ints)
 
-Convert linear to cartesian indices for a `BoxPartition`
+Convert cartesian index to linear 
+index for a `BoxPartition`. 
 """
 function ints_to_key(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I<:Integer}
-    if !all(zero(I) .<= x_ints .< size(partition))
+    if !all(oneunit(I) .<= x_ints .<= size(partition))
         #@debug "point does not lie in the domain" point partition.domain
         return nothing
     end
-    key = sum(x_ints .* partition.dimsprod) + I(1)
+    key = sum((x_ints .- oneunit(I)) .* partition.dimsprod) + oneunit(I)
     return key
 end
 
@@ -165,7 +180,7 @@ Find the box within a `BoxPartition` containing a point.
 """
 function point_to_box(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     x_ints = unsafe_point_to_ints(partition, point)
-    if !all(zero(I) .<= x_ints .< size(partition))
+    if !all(oneunit(I) .<= x_ints .<= size(partition))
         return nothing
     end
     box = ints_to_box(partition, x_ints)

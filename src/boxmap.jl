@@ -14,12 +14,14 @@ Fields:
 * `map`:              map that defines the dynamical system.
 * `domain`:           domain of the map, `B`.
 * `domain_points`:    the spread of test points to be mapped forward in intersection algorithms.
-                    (scaled to fit a box with unit radii)
+                      Must have the signature `domain_points(center, radius)` and return 
+                      an iterator of points within `Box(center, radius)`. 
 * `image_points`:     the spread of test points for comparison in intersection algorithms.
-                    (scaled to fit a box with unit radii)
+                      Must have the signature `domain_points(center, radius)` and return 
+                      an iterator of points within `Box(center, radius)`. 
 * `acceleration`:     Whether to use optimized functions in intersection algorithms.
-                    Accepted values: `nothing`, `Val(:cpu)`, `Val(:gpu)`.
-                    `Val(:gpu)` does nothing unless you have a CUDA capable gpu.
+                      Accepted values: `nothing`, `BoxMapCPUCache`, `BoxMapGPUCache`.
+                      `BoxMapGPUCache` does nothing unless you have a CUDA capable gpu.
 
 .
 """

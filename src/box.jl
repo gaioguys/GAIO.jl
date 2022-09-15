@@ -40,6 +40,10 @@ end
 
 Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype(radius))}(center, radius)
 
+function Base.show(io::IO, box::B) where {B<:Box} 
+    print(io, "$(B):\n    center = $(box.center),\n    radii = $(box.radius)")
+end
+
 Base.in(point, box::Box) = all(box.center .- box.radius  .<=  point  .<  box.center .+ box.radius)
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
 
@@ -48,6 +52,14 @@ Computes the volume of a box.
 """
 volume(box::Box) = prod(2 .* box.radius)
 
-function Base.show(io::IO, box::Box) 
-    print(io, "Box:\n    center = $(box.center),\n    radii = $(box.radius)")
+"""
+    vertices(box)
+    vertices(center, radius)
+
+Return an iterator over the vertices of a `box = Box(center, radius)`. 
+"""
+function vertices(center::SVNT{N,T}, radius::SVNT{N,T}) where {N,T}
+    I = CartesianIndices(ntuple(_->-1:2:1, N))
+    (@muladd(center .+ radius .* Tuple(i)) for i in I)
 end
+vertices(box::Box) = vertices(box.center, box.radius)
