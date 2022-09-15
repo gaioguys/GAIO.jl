@@ -86,7 +86,7 @@ function tree_search(tree::TreePartition{N,T}, point) where {N,T}
         ints_next = unsafe_point_to_ints(regular_partitions[current_depth+2], point)
 
         # cycles through components, decides whether point lies in an even or odd box in that component
-        point_is_left = iseven(ints_next[(current_depth % N) + 1])
+        point_is_left = iseven(ints_next[(current_depth % N) + 1] - 1)
 
         
         node = tree.nodes[node_idx]
@@ -102,7 +102,7 @@ function tree_search(tree::TreePartition{N,T}, point) where {N,T}
         current_depth += 1
     end
 
-    key = (current_depth, sum(ints .* regular_partitions[current_depth+1].dimsprod) + 1)
+    key = (current_depth, ints_to_key(regular_partitions[current_depth+1], ints))
 
     return key, node_idx
 end

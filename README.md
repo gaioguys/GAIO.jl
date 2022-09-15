@@ -14,7 +14,7 @@ GAIO.jl is a Julia package for set oriented computations.  Sets are represented 
 
 ## Documentation
 
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://gaioguys.github.io/GAIO.jl/dev/)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://gaioguys.github.io/GAIO.jl/)
 
 ## Installation
 
