@@ -40,6 +40,10 @@ end
 
 Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype(radius))}(center, radius)
 
+function Base.show(io::IO, box::B) where {B<:Box} 
+    print(io, "$(B):\n    center = $(box.center),\n    radii = $(box.radius)")
+end
+
 Base.in(point, box::Box) = all(box.center .- box.radius  .<=  point  .<  box.center .+ box.radius)
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
 
