@@ -64,7 +64,7 @@ function invert_vector(x::AbstractVector{T}) where T
 end
 
 # TODO: this code is generally incorrect. only valid for BoxPartition and special choices of points
-function TransferOperator(g::SampledBoxMap, boxset::BoxSet)
+function TransferOperator(g::SampledBoxMap, boxset::BoxSet{BB,QQ,SS}) where {BB,QQ,SS}
     Q = g.domain    
     n = length(g.domain_points(Q.center, Q.radius))
     P = boxset.partition

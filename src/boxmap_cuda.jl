@@ -90,7 +90,7 @@ function TransferOperator(
         available_array_memory() ÷ (sizeof(Int32) * 10 * (N + 1) * np)
     ) ÷ 2
     for i in 0:SZ2:max(0, length(boxlist)-SZ2)
-        in_keys = CuArray{Int32,1}(boxlist.keylist[i+1:i+stride])
+        in_keys = CuArray{Int32,1}(boxlist.keylist[i+1:i+SZ2])
         nk = Int32(length(in_keys))
         out_keys = CuArray{Tuple{Int32,Int32},1}(undef, nk * np)
         launch_kernel_then_sync!(nk * np, TransferOperator_kernel!, g.map, P, points, in_keys, out_keys)
@@ -103,7 +103,7 @@ function TransferOperator(
         end
         CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
     end
-    delete!(edges, (0,0))
+    delete!(edges, (0.,0.))
     return TransferOperator(boxlist, edges)
 end
 
