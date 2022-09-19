@@ -47,8 +47,8 @@ Construct a `SampledBoxMap` that uses the iterator `points` as test points.
 ``[-1,1]^N``. 
 """
 function PointDiscretizedMap(map, domain, points, accel=nothing)
-    domain_points(center, radius) = points
-    image_points(center, radius) = center
+    domain_points = rescale(points)
+    image_points = center
     return SampledBoxMap(map, domain, domain_points, image_points, accel)
 end
 
@@ -103,38 +103,41 @@ Construct a `SampledBoxMap` which uses `sample_adaptive` to generate
 test points. 
 """
 function AdaptiveBoxMap(f, domain::Box{N,T}, accel=nothing) where {N,T}
-    Df = x -> ForwardDiff.jacobian(f, x)
-    domain_points(center, radius) = sample_adaptive(Df, center)
-
-    vertices = Array{SVector{N,T}}(undef, ntuple(k->2, N))
-    for i in CartesianIndices(vertices)
-        vertices[i] = ntuple(k -> (-1.0)^i[k], N)
-    end
-    # calculates the vertices of each box
-    image_points(center, radius) = vertices
+    Df(x) = ForwardDiff.jacobian(f, x)
+    domain_points(center, radius) = rescale(center, radius, sample_adaptive(Df, center))
+    image_points = vertices
     return SampledBoxMap(f, domain, domain_points, image_points, nothing)
+end
+
+function AdaptiveBoxMap(f, domain::BoxPartition{N,T}, accel=nothing) where {N,T}
+    AdaptiveBoxMap(f, domain, Val(accel))
 end
 
 function AdaptiveBoxMap(f, domain::Box{N,T}, accel::Symbol) where {N,T}
     AdaptiveBoxMap(f, domain, Val(accel))
 end
 
-@inbounds function map_boxes(g::BoxMap, source::BoxSet)
-    P, keys = source.partition, collect(source.set)
-    image = [ Set{eltype(keys)}() for _ in 1:nthreads() ]
-    @threads for key in keys
-        box = key_to_box(P, key)
+function AdaptiveBoxMap(f, P::BoxPartition{N,T}, accel::Symbol) where {N,T}
+    AdaptiveBoxMap(f, P.domain, Val(accel))
+end
+
+@inbounds @muladd function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
+    P = source.partition
+    @floop for box in source
         c, r = box.center, box.radius
-        points = g.domain_points(c, r)
-        for p in points
-            fp = g.map(@muladd p .* r .+ c)
-            hit = point_to_key(P, fp)
-            if !isnothing(hit)
-                push!(image[threadid()], hit)
+        for p in g.domain_points(c, r)
+            fp = g.map(p)
+            hitbox = point_to_box(P, fp)
+            isnothing(hitbox) && continue
+            r = hitbox.radius
+            for ip in g.image_points(fp, r)
+                hit = point_to_key(P, ip)
+                isnothing(hit) && continue
+                @reduce(image = union!(S(), hit))
             end
         end
     end
-    return BoxSet(P, union(image...))
+    return BoxSet(P, image)
 end 
 
 (g::BoxMap)(source::BoxSet) = map_boxes(g, source)

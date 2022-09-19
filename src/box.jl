@@ -63,3 +63,42 @@ function vertices(center::SVNT{N,T}, radius::SVNT{N,T}) where {N,T}
     (@muladd(center .+ radius .* Tuple(i)) for i in I)
 end
 vertices(box::Box) = vertices(box.center, box.radius)
+
+"""
+    center(b::Box)
+    center(center, radius)
+
+Return the center of a box as an iterable. 
+Default function for `image_points` in `SampledBoxMap`s. 
+"""
+center(center, radius) = (center,)
+center(box::Box) = (box.center,)
+
+"""
+    rescale(box, point::Union{<:StaticVector{N,T}, <:NTuple{N,T}})
+    rescale(center, radius, point::Union{<:StaticVector{N,T}, <:NTuple{N,T}})
+
+Scale a `point` within the unit box ``[-1, 1]^N`` 
+to lie within `box = Box(center, radius)`. 
+"""
+rescale(center, radius, point::SVNT{N,T}) where {N,T} = @muladd center .+ point .* radius
+rescale(box::Box, points) = rescale(box.center, box.radius, points)
+
+"""
+    rescale(center, radius, points)
+
+Return an iterable which calls
+`rescale(center, radius, point)` for each point in `points`. 
+"""
+rescale(center, radius, points) = (rescale(center, radius, point) for point in points)
+
+"""
+    rescale(points)
+
+Return a function 
+```julia
+(center, radius) -> rescale(center, radius, points)
+```
+Used in `domain_points` for `BoxMap`, `PointDiscretizedMap`. 
+"""
+rescale(points) = (center, radius) -> rescale(center, radius, points)

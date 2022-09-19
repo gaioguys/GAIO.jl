@@ -47,19 +47,19 @@ end
 
 """
 * getindex constructors:
-* set of all boxes in `P`:
-```julia
-B = P[:]    
-```
-* cover the point `x`, or points `x = [x_1, x_2, x_3] # etc ...` using boxes from `P`
-```julia
-B = P[x]
-```    
-* a covering of `S` using boxes from `P`
-```julia
-S = [Box(center_1, radius_1), Box(center_2, radius_2), Box(center_3, radius_3)] # etc... 
-B = P[S]    
-```
+    * set of all boxes in `P`:
+    ```julia
+    B = P[:]    
+    ```
+    * cover the point `x`, or points `x = [x_1, x_2, x_3] # etc ...` using boxes from `P`
+    ```julia
+    B = P[x]
+    ```    
+    * a covering of `S` using boxes from `P`
+    ```julia
+    S = [Box(center_1, radius_1), Box(center_2, radius_2), Box(center_3, radius_3)] # etc... 
+    B = P[S]    
+    ```
 
 Return a subset of the partition `P` based on the second argument. 
 """
@@ -146,6 +146,13 @@ Base.push!(boxset::BoxSet, key) = push!(boxset.set, key)
 Base.sizehint!(boxset::BoxSet, size) = sizehint!(boxset.set, size)
 Base.eltype(::Type{<:BoxSet{B}}) where B = B
 Base.iterate(boxset::BoxSet, state...) = iterate((key_to_box(boxset.partition, key) for key in boxset.set), state...)
+SplittablesBase.amount(boxset::BoxSet) = SplittablesBase.amount(boxset.set)
+
+function SplittablesBase.halve(boxset::BoxSet)
+    P = boxset.partition
+    left, right = SplittablesBase.halve(boxset.set)
+    ((key_to_box(P, key) for key in left), (key_to_box(P, key) for key in right))
+end
 
 function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}
     partition = boxset.partition
