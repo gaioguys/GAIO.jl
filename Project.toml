@@ -1,12 +1,13 @@
 name = "GAIO"
 uuid = "33d280d1-ac47-4b0f-9c2e-fa6a385d0226"
 authors = ["The GAIO.jl Team"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+FLoops = "cc61a311-1640-44b5-9fba-1b764f453329"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
@@ -17,4 +18,5 @@ MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 SIMD = "fdea26ae-647d-5447-a871-4b548cad5224"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+SplittablesBase = "171d559e-b47b-412a-8079-5efa626c420e"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"

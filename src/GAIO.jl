@@ -10,6 +10,7 @@ using Graphs
 using ForwardDiff
 using Arpack
 using Base.Threads
+using FLoops
 using Base: unsafe_trunc
 using MuladdMacro
 using HostCPUFeatures
@@ -17,6 +18,7 @@ using SIMD
 using Adapt
 using CUDA
 using Base.Iterators: Stateful, take
+using SplittablesBase
 
 # using GLMakie
 # using WGLMakie
@@ -24,7 +26,7 @@ using MakieCore
 using MakieCore: @recipe
 
 export Box
-export volume, vertices
+export volume, center, vertices
 
 export AbstractBoxPartition, BoxPartition, TreePartition
 export depth, key_to_box, point_to_key, tree_search
