@@ -1,5 +1,7 @@
 # GAIO.jl
 
+Currently under development -- breaking changes may occur at any time ...
+
 ## About 
 
 GAIO.jl is a Julia package for set oriented computations.  Sets are represented by collections of boxes (i.e. cubes).  GAIO.jl provides algorithms for  
@@ -47,3 +49,9 @@ For more examples, see the `examples\` folder.
 ## License
 
 See `LICENSE` for GAIO.jl's licensing information.
+
+## References
+
+* Dellnitz, M.; Froyland, G.; Junge, O.: The algorithms behind GAIO - Set oriented numerical methods for dynamical systems, in: B. Fiedler (ed.): Ergodic theory, analysis, and efficient simulation of dynamical systems, Springer, 2001.
+* Dellnitz, M.; Junge, O.: On the approximation of complicated dynamical behavior, SIAM Journal on Numerical Analysis, 36 (2), 1999.
+* Dellnitz, M.; Hohmann, A.: A subdivision algorithm for the computation of unstable manifolds and global attractors. Numerische Mathematik 75, pp. 293-317, 1997.
