@@ -120,7 +120,7 @@ _International Conference on Differential Equations_. Ed. by B. Fiedler, K.
 Gröger, and J. Sprekels. 1999. 
 """
 function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}, accel=nothing) where {N,T}
-    L, y = MMatrix{N,N,T}(zeros(T,N,N)), MVector{N,T}(zeros(T,N))
+    L, y, n, h = zeros(T,N,N), MVector{N,T}(zeros(T,N)), MVector{N,Int}(undef), MVector{N,T}(undef)
     fc = f(center)
     for dim in 1:N
         y[dim] = radius[dim]
@@ -128,36 +128,17 @@ function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}, accel=nothing)
         L[:, dim] .= abs.(fr .- fc) ./ radius[dim]
         y[dim] = zero(T)
     end
-    if any(!isfinite, L)
-        @warn(
-            """The dynamical system diverges within the box. 
-            Cannot calculate Lipschitz constant. 
-            Returning Monte-Carlo test points.""",
-            box=Box{N,T}(center, radius)
-        )
-        points = [ tuple(2f0*rand(T,N).-1f0 ...) for _ = 1:4*N*pick_vector_width(T) ]
-        return rescale(center, radius, points)
+    all(isfinite, L) || @error "The dynamical system diverges within the box. Cannot calculate Lipschitz constant." box=Box{N,T}(center, radius)
+    _, σ, Vt = svd(L)
+    n .= ceil.(Int, σ)
+    h .= 2.0 ./ (n .- 1)
+    points = Iterators.map(CartesianIndices(ntuple(k -> n[k], Val(N)))) do i
+        p = [n[k] == 1 ? zero(T) : (i[k] - 1) * h[k] - 1 for k in 1:N]
+        p .= Vt'p
+        @muladd p .= center .+ radius .* p
+        sp = SVector{N,T}(p)
     end
-    try
-        _, σ, Vt = svd(L)
-        n = ceil.(Int, σ[1:N])
-        h = 2.0 ./ (n .- 1)
-        points = Iterators.map(CartesianIndices(tuple(n...))) do i
-            p = SVector{N,T}(ntuple(k -> n[k] == 1 ? zero(T) : (i[k] - 1) * h[k] - 1, Val(N)))
-            lp = rescale(center, radius, Vt'p)
-        end
-        return points
-    catch ex
-        @warn "$ex was thrown when calculating adaptive grid. Using fallback grid." maxlog=100
-        op = opnorm(L, Inf)
-        h = (2 * minimum(radius) / (isnan(op) ? 0.5f0 : op)) .* ones(T,N)
-        n = floor.(Int, radius ./ h)
-        points = Iterators.map(CartesianIndices(ntuple(k -> -n[k]:n[k], Val(N)))) do i
-            p = SVector{N,T}(Tuple(i))
-            lp = rescale(center, radius, p)
-        end
-        return points
-    end
+    return points
 end
 
 sample_adaptive(f, accel=nothing) = (center, radius) -> sample_adaptive(f, center, radius, accel)
