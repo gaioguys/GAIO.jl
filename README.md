@@ -1,12 +1,10 @@
 # GAIO.jl
 
+Currently under development -- breaking changes may occur at any time ...
+
 ## About 
 
-GAIO.jl is a Julia package for set oriented computations.  Sets are represented by box collections. A _box_ (or _cube_) is a higher dimensional interval, i.e. a set of the form
-```math
-[a₁,b₁) × ... × [aₙ,bₙ),    aₖ,bₖ ∈ ℝ
-```
-GAIO.jl provides algorithms for  
+GAIO.jl is a Julia package for set oriented computations.  Sets are represented by collections of boxes (i.e. cubes).  GAIO.jl provides algorithms for  
 * dynamical systems
   * invariant sets (maximal invariant set, chain recurrent set, (relative) attractor, (un-)stable manifold)
   * almost invariant and coherent sets
@@ -18,7 +16,7 @@ GAIO.jl provides algorithms for
 
 ## Documentation
 
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://gaioguys.github.io/GAIO.jl/dev/)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://gaioguys.github.io/GAIO.jl/)
 
 ## Installation
 
@@ -44,7 +42,7 @@ R = chain_recurrent_set(F, P[:], steps = 15)  # subdivison algorithm computing
                                               # the chain recurrent set R in Q
 plot(R)                                       # plot R
 ```
-![GitHub Logo](henon.svg)
+![GitHub Logo](docs/src/assets/henon.svg)
 
 For more examples, see the `examples\` folder.
 
@@ -52,3 +50,8 @@ For more examples, see the `examples\` folder.
 
 See `LICENSE` for GAIO.jl's licensing information.
 
+## References
+
+* Dellnitz, M.; Froyland, G.; Junge, O.: The algorithms behind GAIO - Set oriented numerical methods for dynamical systems, in: B. Fiedler (ed.): Ergodic theory, analysis, and efficient simulation of dynamical systems, Springer, 2001.
+* Dellnitz, M.; Junge, O.: On the approximation of complicated dynamical behavior, SIAM Journal on Numerical Analysis, 36 (2), 1999.
+* Dellnitz, M.; Hohmann, A.: A subdivision algorithm for the computation of unstable manifolds and global attractors. Numerische Mathematik 75, pp. 293-317, 1997.

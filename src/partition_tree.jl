@@ -1,10 +1,37 @@
 # each node holds the indices of the two partitions that it sends to
 # indices wrt to TreePartition.regular_partitions
+"""
+Node structure used for `TreePartition`s
+
+Fields:
+* `left` and `right` refer to indices w.r.t. `trp.nodes` and 
+`trp.regular_partitions` for a `TreePartition` `trp`. 
+
+.
+"""
 struct Node
     left::Int
     right::Int
 end
 
+"""
+    TreePartition(domain::Box)
+
+Binary tree structure to partition `domain` into (variably sized) boxes. 
+
+Fields:
+* `domain`: `Box` denoting the full domain.
+* `nodes`: vector of `Node`s. Each node holds two indices pointing to 
+other nodes in the vector, or 0. 
+* `regular_partitions`: vector of `BoxPartition`s. The indices held in 
+a node also refer to this vector. 
+
+Methods implemented:
+
+    copy, keytype #, etc...
+
+.
+"""
 struct TreePartition{N,T} <: AbstractBoxPartition{Box{N,T}}
     domain::Box{N,T}
     nodes::Vector{Node}
@@ -13,6 +40,9 @@ end
 
 Base.copy(partition::TreePartition) = TreePartition(partition.domain, copy(partition.nodes), copy(partition.regular_partitions))
 
+"""
+Return the depth of the tree structure. 
+"""
 depth(partition::TreePartition) = length(partition.regular_partitions) - 1
 Base.keytype(::Type{<:TreePartition}) = Tuple{Int,Int}
 
@@ -56,7 +86,7 @@ function tree_search(tree::TreePartition{N,T}, point) where {N,T}
         ints_next = unsafe_point_to_ints(regular_partitions[current_depth+2], point)
 
         # cycles through components, decides whether point lies in an even or odd box in that component
-        point_is_left = iseven(ints_next[(current_depth % N) + 1])
+        point_is_left = iseven(ints_next[(current_depth % N) + 1] - 1)
 
         
         node = tree.nodes[node_idx]
@@ -72,7 +102,7 @@ function tree_search(tree::TreePartition{N,T}, point) where {N,T}
         current_depth += 1
     end
 
-    key = (current_depth, sum(ints .* regular_partitions[current_depth+1].dimsprod) + 1)
+    key = (current_depth, ints_to_key(regular_partitions[current_depth+1], ints))
 
     return key, node_idx
 end
@@ -85,6 +115,13 @@ function point_to_key(partition::TreePartition, point)
     return tree_search(partition, point)[1]
 end
 
+"""
+    subdivide!(tree:TreePartition), key::NTuple{2,<:Integer}) -> TreePartition
+    subdivide!(boxset::BoxSet{<:Any,<:Any,<:TreePartition}, key::NTuple{2,<:Integer}) -> BoxSet
+
+Subdivide a `TreePartition` at the node `key`. Dimension along which 
+the node is subdivided depends on the depth of the node. 
+"""
 function subdivide!(tree::TreePartition{N, T}, key::Tuple{Int,Int}) where {N, T}
     search_key, node_idx = tree_search(tree, key_to_box(tree, key).center)
 

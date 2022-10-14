@@ -1,3 +1,4 @@
+using WGLMakie: plot
 using GAIO
 
 # the Lorenz system

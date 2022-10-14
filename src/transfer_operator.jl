@@ -11,6 +11,36 @@ BoxList(set::BoxSet) = BoxList(set.partition, collect(set.set))
 
 BoxSet(list::BoxList) = BoxSet(list.partition, Set(list.keylist))
 
+"""
+    TransferOperator(map::BoxMap, support::BoxSet, mat::SparseMatrixCSC)
+    TransferOperator(map::BoxMap, support::BoxSet)
+
+Discretization of the Perron-Frobenius operator, or transfer operator. 
+Implemented as a sparse matrix with the same linear indices as `support`,
+e.g. if 
+```julia
+julia> B = BoxSet(partition, [3,10,30])
+  Boxset over [...] partition
+
+julia> T = TransferOperator(boxmap, B)
+  TransferOperator over [...] BoxSet
+```
+for some `partition` and `boxmap`, then 
+```julia
+julia> axes(T)
+  ([3, 10, 30], [3, 10, 30])
+```
+
+It is important to note that `TranferOperator` is only supported over the 
+box set `B`, but if one lets a `TranferOperator` act on a `BoxFun`, then 
+the support `B` is extended "on the fly" to include the support of the `BoxFun`.
+
+Methods Implemented: 
+```julia
+:(==), axes, size, eltype, getindex, setindex!, SparseArrays.sparse, Arpack.eigs, LinearAlgebra.mul! #, etc ...
+```
+.
+"""
 struct TransferOperator{L<:BoxList,W}
     vertices::L
     edges::Dict{Tuple{Int,Int},W}
@@ -34,7 +64,7 @@ function invert_vector(x::AbstractVector{T}) where T
 end
 
 # TODO: this code is generally incorrect. only valid for BoxPartition and special choices of points
-function TransferOperator(g::SampledBoxMap, boxset::BoxSet)
+function TransferOperator(g::SampledBoxMap, boxset::BoxSet{BB,QQ,SS}) where {BB,QQ,SS}
     Q = g.domain    
     n = length(g.domain_points(Q.center, Q.radius))
     P = boxset.partition
@@ -104,6 +134,15 @@ function matrix(gstar::TransferOperator{L,W}) where {L,W}
     return sparse(I, J, V, n, n)
 end
 
+
+"""
+    eigs(gstar::TransferOperator [; kwargs...]) -> (d[, v], nconv)
+
+Compute a set of eigenvalues `d` and eigenmeasures `v` of `gstar`. 
+Works with the adjoint _Koopman operator_ as well. 
+All keyword arguments from `Arpack.eigs` can be passed. See the 
+documentation for `Arpack.eigs`. 
+"""
 function Arpack.eigs(gstar::TransferOperator{BoxList{P,L}}; nev::Int=1) where {P,L}
     G = matrix(gstar)
 

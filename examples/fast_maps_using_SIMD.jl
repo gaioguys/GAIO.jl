@@ -3,7 +3,6 @@ using GAIO
 # This example demonstrates how to get a ~2x speedup
 # in your code using your CPU's SIMD capabilities.
 
-N = 3
 const σ, ρ, β = 10.0, 28.0, 0.4
 
 # By default, GAIO is set up to accept functions of the form
@@ -35,6 +34,4 @@ P = BoxPartition(Box(center, radius), (128,128,128))
 G = BoxMap(F, P, :cpu)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
-W = unstable_set!(G, P[x])
-
-plot(W)
+@time W = unstable_set!(G, P[x])

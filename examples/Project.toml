@@ -1,0 +1,13 @@
+[deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
+GAIO = "33d280d1-ac47-4b0f-9c2e-fa6a385d0226"
+GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+ModernGL = "66fc600b-dfda-50eb-8b99-91cfa97b1301"
+QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"

@@ -44,6 +44,12 @@ using Test
             @test any(box -> p3 ∈ box, box_set)
             @test any(box -> p4 ∈ box, box_set)
         end
+        @testset "boxsets created on boxes" begin
+            boxes = [GAIO.point_to_box(partition, p) for p in (p1, p2, p3, p4)]
+            box_set = partition[boxes]
+            box_set_points = partition[(p1, p2, p3, p4)]
+            @test box_set == box_set_points
+        end
         @testset "set operations" begin
             p1_box_set = partition[p1]
             p1p2_box_set = partition[(p1, p2)]
@@ -75,7 +81,7 @@ end
 #=     @testset "tree partition" begin
         partition = TreePartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)))
         @testset "empty" begin
-            empty_boxset = boxset_empty(partition)
+            empty_boxset = empty(partition)
             @test isempty(empty_boxset)
             @test length(empty_boxset) == 0
 
