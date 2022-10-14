@@ -39,6 +39,27 @@ function Base.show(io::IO, g::SampledBoxMap)
     print(io, "BoxMap with $(n) sample points")
 end
 
+@inbounds @muladd function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
+    P = source.partition
+    @floop for box in source
+        c, r = box.center, box.radius
+        for p in g.domain_points(c, r)
+            fp = g.map(p)
+            hitbox = point_to_box(P, fp)
+            isnothing(hitbox) && continue
+            r = hitbox.radius
+            for ip in g.image_points(fp, r)
+                hit = point_to_key(P, ip)
+                isnothing(hit) && continue
+                @reduce(image = union!(S(), hit))
+            end
+        end
+    end
+    return BoxSet(P, image)
+end 
+
+(g::BoxMap)(source::BoxSet) = map_boxes(g, source)
+
 """
     PointDiscretizedMap(map, domain, points, accel=nothing) -> SampledBoxMap
 
@@ -73,7 +94,23 @@ function BoxMap(map, P::BoxPartition{N,T}, accel=nothing; no_of_points=4*N*pick_
 end
 
 """
-    sample_adaptive(Df, center::SVector, accel=nothing)
+    AdaptiveBoxMap(f, domain::Box, accel=nothing) -> SampledBoxMap
+
+Construct a `SampledBoxMap` which uses `sample_adaptive` to generate 
+test points. 
+"""
+function AdaptiveBoxMap(f, domain::Box, accel=nothing)
+    domain_points = sample_adaptive(f, accel)
+    image_points = vertices
+    return SampledBoxMap(f, domain, domain_points, image_points, nothing)
+end
+
+AdaptiveBoxMap(f, P::BoxPartition, accel=nothing) = AdaptiveBoxMap(f, P.domain, Val(accel))
+AdaptiveBoxMap(f, domain::Box, accel::Symbol) = AdaptiveBoxMap(f, domain, Val(accel))
+AdaptiveBoxMap(f, P::BoxPartition, accel::Symbol) = AdaptiveBoxMap(f, P.domain, Val(accel))
+
+"""
+    sample_adaptive(f, center::SVector, radius::SVector, accel=nothing)
 
 Create a grid of test points using the adaptive technique 
 described in 
@@ -82,62 +119,45 @@ Oliver Junge. “Rigorous discretization of subdivision techniques”. In:
 _International Conference on Differential Equations_. Ed. by B. Fiedler, K.
 Gröger, and J. Sprekels. 1999. 
 """
-function sample_adaptive(Df, center::SVector{N,T}, accel=nothing) where {N,T}  # how does this work?
-    D = Df(center)
-    _, σ, Vt = svd(D)
-    n = ceil.(Int, σ) 
-    h = 2.0./(n.-1)
-    points = Array{SVector{N,T}}(undef, ntuple(i->n[i], N))
-    for i in CartesianIndices(points)
-        points[i] = ntuple(k -> n[k]==1 ? 0.0 : (i[k]-1)*h[k]-1.0, N)
-        points[i] = Vt'*points[i]
+function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}, accel=nothing) where {N,T}
+    L, y = MMatrix{N,N,T}(zeros(T,N,N)), MVector{N,T}(zeros(T,N))
+    fc = f(center)
+    for dim in 1:N
+        y[dim] = radius[dim]
+        fr = f(center .+ y)
+        L[:, dim] .= abs.(fr .- fc) ./ radius[dim]
+        y[dim] = zero(T)
     end
-    @debug points
-    return points 
-end
-
-"""
-    AdaptiveBoxMap(f, domain::Box, accel=nothing) -> SampledBoxMap
-
-Construct a `SampledBoxMap` which uses `sample_adaptive` to generate 
-test points. 
-"""
-function AdaptiveBoxMap(f, domain::Box{N,T}, accel=nothing) where {N,T}
-    Df(x) = ForwardDiff.jacobian(f, x)
-    domain_points(center, radius) = rescale(center, radius, sample_adaptive(Df, center))
-    image_points = vertices
-    return SampledBoxMap(f, domain, domain_points, image_points, nothing)
-end
-
-function AdaptiveBoxMap(f, domain::BoxPartition{N,T}, accel=nothing) where {N,T}
-    AdaptiveBoxMap(f, domain, Val(accel))
-end
-
-function AdaptiveBoxMap(f, domain::Box{N,T}, accel::Symbol) where {N,T}
-    AdaptiveBoxMap(f, domain, Val(accel))
-end
-
-function AdaptiveBoxMap(f, P::BoxPartition{N,T}, accel::Symbol) where {N,T}
-    AdaptiveBoxMap(f, P.domain, Val(accel))
-end
-
-@inbounds @muladd function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
-    P = source.partition
-    @floop for box in source
-        c, r = box.center, box.radius
-        for p in g.domain_points(c, r)
-            fp = g.map(p)
-            hitbox = point_to_box(P, fp)
-            isnothing(hitbox) && continue
-            r = hitbox.radius
-            for ip in g.image_points(fp, r)
-                hit = point_to_key(P, ip)
-                isnothing(hit) && continue
-                @reduce(image = union!(S(), hit))
-            end
+    if any(!isfinite, L)
+        @warn(
+            """The dynamical system diverges within the box. 
+            Cannot calculate Lipschitz constant. 
+            Returning Monte-Carlo test points.""",
+            box=Box{N,T}(center, radius)
+        )
+        points = [ tuple(2f0*rand(T,N).-1f0 ...) for _ = 1:4*N*pick_vector_width(T) ]
+        return rescale(center, radius, points)
+    end
+    try
+        _, σ, Vt = svd(L)
+        n = ceil.(Int, σ[1:N])
+        h = 2.0 ./ (n .- 1)
+        points = Iterators.map(CartesianIndices(tuple(n...))) do i
+            p = SVector{N,T}(ntuple(k -> n[k] == 1 ? zero(T) : (i[k] - 1) * h[k] - 1, Val(N)))
+            lp = rescale(center, radius, Vt'p)
         end
+        return points
+    catch ex
+        @warn "$ex was thrown when calculating adaptive grid. Using fallback grid." maxlog=100
+        op = opnorm(L, Inf)
+        h = (2 * minimum(radius) / (isnan(op) ? 0.5f0 : op)) .* ones(T,N)
+        n = floor.(Int, radius ./ h)
+        points = Iterators.map(CartesianIndices(ntuple(k -> -n[k]:n[k], Val(N)))) do i
+            p = SVector{N,T}(Tuple(i))
+            lp = rescale(center, radius, p)
+        end
+        return points
     end
-    return BoxSet(P, image)
-end 
+end
 
-(g::BoxMap)(source::BoxSet) = map_boxes(g, source)
+sample_adaptive(f, accel=nothing) = (center, radius) -> sample_adaptive(f, center, radius, accel)

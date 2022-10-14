@@ -7,7 +7,6 @@ using StaticArrays
 # using ModernGL
 using GeometryBasics
 using Graphs
-using ForwardDiff
 using Arpack
 using Base.Threads
 using FLoops
