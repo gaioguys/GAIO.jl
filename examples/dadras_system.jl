@@ -1,4 +1,4 @@
-using LinearAlgebra, StaticArrays
+using LinearAlgebra, StaticArrays, MuladdMacro
 using WGLMakie: plot
 using GAIO
 
@@ -7,14 +7,14 @@ const a, b, c = 8.0, 40.0, 14.9
 v((x,y,z,w)) = (a*x-y*z+w, x*z-b*y, x*y-c*z+x*w, -y)
 function f(x)
     fx = rk4_flow_map(v, x)
-    fx ./= sqrt(norm(fx) + 1)
+    fx = fx ./ sqrt(norm(fx) + 1)
 end
 
 # The system is extremely expansive, so resolving the entire box image is 
 # difficult. Hence we try with an adaptive test point sampling approach 
 # that attempts to handle errors due to the map diverging. 
 
-const backup_points = [ tuple(2f0*rand(Float32,4).-1f0 ...) for _ = 1:4000 ]
+const montecarlo_points = [ tuple(2f0*rand(Float32,4).-1f0 ...) for _ = 1:4000 ]
 
 function domain_points(center::SVector{N,T}, radius::SVector{N,T}) where {N,T}
     L, y, n, h = zeros(T,N,N), MVector{N,T}(zeros(T,N)), MVector{N,Int}(undef), MVector{N,T}(undef)
@@ -32,11 +32,11 @@ function domain_points(center::SVector{N,T}, radius::SVector{N,T}) where {N,T}
             Returning Monte-Carlo test points.""",
             box=Box{N,T}(center, radius)
         )
-        return rescale(center, radius, backup_points)
+        return (@muladd(center .+ radius .* point) for point in montecarlo_points)
     end
     try
         _, σ, Vt = svd(L)
-        n .= ceil.(Int, σ[1:N])
+        n .= ceil.(Int, σ)
         h .= 2.0 ./ (n .- 1)
         points = Iterators.map(CartesianIndices(ntuple(k -> n[k], Val(N)))) do i
             p = [n[k] == 1 ? zero(T) : (i[k] - 1) * h[k] - 1 for k in 1:N]
@@ -52,7 +52,7 @@ function domain_points(center::SVector{N,T}, radius::SVector{N,T}) where {N,T}
         n .= floor.(Int, radius ./ h)
         points = Iterators.map(CartesianIndices(ntuple(k -> -n[k]:n[k], Val(N)))) do i
             p = SVector{N,T}(Tuple(i))
-            lp = rescale(center, radius, p)
+            @muladd sp = center .+ radius .* p
         end
         return points
     end
