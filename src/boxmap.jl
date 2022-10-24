@@ -99,15 +99,46 @@ end
 Construct a `SampledBoxMap` which uses `sample_adaptive` to generate 
 test points. 
 """
-function AdaptiveBoxMap(f, domain::Box, accel=nothing)
+function AdaptiveBoxMap(f, domain::Box{N,T}, accel=nothing) where {N,T}
     domain_points = sample_adaptive(f, accel)
     image_points = vertices
     return SampledBoxMap(f, domain, domain_points, image_points, nothing)
 end
 
-AdaptiveBoxMap(f, P::BoxPartition, accel=nothing) = AdaptiveBoxMap(f, P.domain, Val(accel))
-AdaptiveBoxMap(f, domain::Box, accel::Symbol) = AdaptiveBoxMap(f, domain, Val(accel))
-AdaptiveBoxMap(f, P::BoxPartition, accel::Symbol) = AdaptiveBoxMap(f, P.domain, Val(accel))
+AdaptiveBoxMap(f, P::BoxPartition{N,T}, accel=nothing) where {N,T} = AdaptiveBoxMap(f, P.domain, Val(accel))
+AdaptiveBoxMap(f, domain::Box{N,T}, accel::Symbol) where {N,T} = AdaptiveBoxMap(f, domain, Val(accel))
+AdaptiveBoxMap(f, P::BoxPartition{N,T}, accel::Symbol) where {N,T} = AdaptiveBoxMap(f, P.domain, Val(accel))
+
+Core.@doc raw"""
+    approx_lipschitz(f, center::SVector, radius::SVector, accel=nothing) -> Matrix
+
+Compute an approximation of the Lipschitz matrix, 
+i.e. the matrix that satisifies 
+
+```math
+| f(x) - f(y) | \leq L | x - y | \quad \forall \, x,y \in \text{Box(center, radius)}
+```
+
+componentwise. 
+"""
+function approx_lipschitz(f, center::SVNT{N,T}, radius::SVNT{N,T}, accel=nothing) where {N,T}
+    L, y = Matrix{T}(undef, N, N), MVector{N,T}(ntuple(_->zero(T),Val(N)))
+    fc = f(center)
+    for dim in 1:N
+        y[dim] = radius[dim]
+        fr = f(center .+ y)
+        L[:, dim] .= abs.(fr .- fc) ./ radius[dim]
+        y[dim] = zero(T)
+    end
+    if !all(isfinite, L)
+        @error(
+            """The dynamical system diverges within the box. 
+            Cannot calculate Lipschitz constant.""", 
+            box=Box{N,T}(center, radius)
+        )
+    end
+    return L
+end
 
 """
     sample_adaptive(f, center::SVector, radius::SVector, accel=nothing)
@@ -120,20 +151,12 @@ _International Conference on Differential Equations_. Ed. by B. Fiedler, K.
 Gröger, and J. Sprekels. 1999. 
 """
 function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}, accel=nothing) where {N,T}
-    L, y, n, h = zeros(T,N,N), MVector{N,T}(zeros(T,N)), MVector{N,Int}(undef), MVector{N,T}(undef)
-    fc = f(center)
-    for dim in 1:N
-        y[dim] = radius[dim]
-        fr = f(center .+ y)
-        L[:, dim] .= abs.(fr .- fc) ./ radius[dim]
-        y[dim] = zero(T)
-    end
-    all(isfinite, L) || @error "The dynamical system diverges within the box. Cannot calculate Lipschitz constant." box=Box{N,T}(center, radius)
+    L = approx_lipschitz(f, center, radius, accel)
     _, σ, Vt = svd(L)
-    n .= ceil.(Int, σ)
-    h .= 2.0 ./ (n .- 1)
+    n = ceil.(Int, σ)
+    h = 2.0 ./ (n .- 1)
     points = Iterators.map(CartesianIndices(ntuple(k -> n[k], Val(N)))) do i
-        p = [n[k] == 1 ? zero(T) : (i[k] - 1) * h[k] - 1 for k in 1:N]
+        p  = [n[k] == 1 ? zero(T) : (i[k] - 1) * h[k] - 1 for k in 1:N]
         p .= Vt'p
         @muladd p .= center .+ radius .* p
         sp = SVector{N,T}(p)
