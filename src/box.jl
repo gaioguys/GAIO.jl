@@ -81,7 +81,8 @@ center(box::Box) = (box.center,)
 Scale a `point` within the unit box ``[-1, 1]^N`` 
 to lie within `box = Box(center, radius)`. 
 """
-rescale(center, radius, point::SVNT{N,T}) where {N,T} = @muladd center .+ point .* radius
+rescale(center, radius, point::StaticVector{N,T}) where {N,T} = @muladd center .+ point .* radius
+rescale(center, radius, point::NTuple{N,T}) where {N,T} = rescale(center, radius, SVector{N,T}(point))
 rescale(box::Box, points) = rescale(box.center, box.radius, points)
 
 """

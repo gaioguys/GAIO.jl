@@ -70,6 +70,8 @@ function Base.getindex(partition::AbstractBoxPartition, points)
     return BoxSet(partition, Set(gen))
 end
 
+Base.getindex(partition::AbstractBoxPartition, box::Box) = getindex(partition, (box,))
+
 """
     cover_boxes(partition::BoxPartition, boxes)
 
