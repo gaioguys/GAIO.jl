@@ -1,35 +1,24 @@
 using LinearAlgebra, StaticArrays
-using WGLMakie: plot
+using GLMakie: plot
 using GAIO
-
-function Sdiagm(factor::T=1, size) where T
-    SMatrix{size,size,T}(
-        ntuple(
-            i -> (i - 1) % (size + 1) ? factor : zero(T),
-            size ^ 2
-        )
-    )
-end
 
 # (scaled) Dadras system
 # we use a coordinate transformation x̃ = μ(x)
 # with μ(x) = x * η(x), η(x) = 1 / (sqrt ∘ norm)(x)
-const ee = 2 * eps() ^ (1/3)
 const a, b, c = 8.0, 40.0, 14.9
-function v(q::SVector{4,T}) where {T}
-    #η = 1 / max((sqrt ∘ norm)(q), ee)   # to ensure we dont get Inf
-    η = 1 / (sqrt ∘ norm)(q)
-    ∇η = -q .* (η ^ 3) ./ 2
-    #Dμ = Sdiagm(η) .+ ∇η
+function v(q̃::SVector{4,T}) where {T}
+    η = norm(q̃)
+    q = q̃ * η
+    η = 1 / η
+    ∇η = -q̃ .* (η ^ 2) ./ 2
     vq = let x = q[1], y = q[2], z = q[3], w = q[4]
         SVector{4,T}(a*x-y*z+w, x*z-b*y, x*y-c*z+x*w, -y)
     end
-    #vq̃ = Dμ * vq
     vq̃ = η .* vq .+ q .* (∇η'vq)
 end
-f(x) = rk4_flow_map(v, x, 0.01, 1)
+f(x) = rk4_flow_map(v, x, 0.01, 10)
 
-# The system is extremely expansive, so resolving the entire box image is 
+# The system is expansive, so resolving the entire box image is 
 # difficult. Hence we try with an adaptive test point sampling approach 
 # that attempts to handle errors due to the map diverging. 
 
@@ -59,15 +48,14 @@ F = SampledBoxMap(
     image_points,
     nothing
 )
-#F = BoxMap(f, P, no_of_points=40)
 
-@profview W = unstable_set!(F, equillibrium)
-
-P = BoxPartition(domain)
-@profview W = relative_attractor(F, P[:], steps=20)
-
-
+W = unstable_set!(F, equillibrium)
 plot(W)
+
+
+#P = BoxPartition(domain)
+F = BoxMap(f, P, no_of_points=4000)
+#W = relative_attractor(F, P[:], steps=16)
 
 #T = TransferOperator(W)
 #(λ, ev) = eigs(T)
