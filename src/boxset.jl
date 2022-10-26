@@ -67,7 +67,7 @@ function Base.getindex(partition::AbstractBoxPartition, points)
     eltype(points) <: Number && ndims(partition) > 1 && return partition[(points,)]
     eltype(points) <: Box && return cover_boxes(partition, points)
     gen = (key for key in (point_to_key(partition, point) for point in points) if !isnothing(key))
-    return BoxSet(partition, Set(gen))
+    return BoxSet(partition, Set{keytype(partition)}(gen))
 end
 
 Base.getindex(partition::AbstractBoxPartition, box::Box) = getindex(partition, (box,))
@@ -83,15 +83,15 @@ function cover_boxes(partition::BoxPartition{N,T,I}, boxes) where {N,T,I}
     vertex_keys = Matrix{I}(undef, N, 2)
     for box_in in boxes
         box = Box{N,T}(box_in.center, box_in.radius .- 2*eps(T))
-        vertex_keys[:, 1] .= vertex_keys[:, 2] .= bounded_point_to_ints(partition, box.center)
+        vertex_keys[:, 1] .= vertex_keys[:, 2] .= bounded_point_to_cartesian(partition, box.center)
         for point in vertices(box)
-            ints = bounded_point_to_ints(partition, point)
+            ints = bounded_point_to_cartesian(partition, point)
             vertex_keys[:, 1] .= min.(vertex_keys[:, 1], ints)
             vertex_keys[:, 2] .= max.(vertex_keys[:, 2], ints)
         end
         C = CartesianIndices(ntuple(i -> vertex_keys[i, 1] : vertex_keys[i, 2], Val(N)))
         for ind in C
-            key = ints_to_key(partition, ind.I)
+            key = cartesian_to_key(partition, ind.I)
             isnothing(key) && @error "Indexing went wrong somehow. Please open an issue with an MWE" ind.I key
             union!(keys, key)
         end

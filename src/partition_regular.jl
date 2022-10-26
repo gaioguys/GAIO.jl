@@ -5,13 +5,16 @@ Data structure to partition a box into a
 `dims[1] x dims[2] x ... dims[N]` equidistant grid. 
 
 Fields:
-* `domain`:       box defining the entire domain
-* `left`:         leftmost / bottom edge of the domain
-* `scale`:        1 / diameter of each box in the new partition (componentwise)
-* `dims`:         tuple, number of boxes in each dimension
-* `dimsprod`:     for indexing the partition. `BoxPartition` uses linear indices, i.e.
-                  keys are counted up in first dimension first, 
-                  then second dimension, etc... 
+* `domain`:         box defining the entire domain
+* `left`:           leftmost / bottom edge of the domain
+* `scale`:          1 / diameter of each box in the new partition (componentwise)
+* `dims`:           tuple, number of boxes in each dimension
+* `dimsprod`:       for indexing the partition. `BoxPartition` uses linear indices, i.e.
+                    keys are counted up in first dimension first, 
+                    then second dimension, etc... 
+* `indextype`:      whether the partition will use cartesian or 
+                    linear indices by default. Values can be 
+                    `IndexLinear()`, `IndexCartesian()`
 
 ```julia
          1st dim →
@@ -28,15 +31,16 @@ Methods implemented:
 
 .
 """
-struct BoxPartition{N,T,I<:Integer} <: AbstractBoxPartition{Box{N,T}}
+struct BoxPartition{N,T,I<:Integer,A<:Union{IndexCartesian,IndexLinear}} <: AbstractBoxPartition{Box{N,T}}
     domain::Box{N,T}
     left::SVector{N,T}
     scale::SVector{N,T}
     dims::SVector{N,I}
     dimsprod::SVector{N,I}
+    indextype::A
 end
 
-function BoxPartition(domain::Box{N,T}, dims::NTuple{N,I}) where {N,T,I}
+function BoxPartition(domain::Box{N,T}, dims::NTuple{N,I}; indextype=(N < 10 ? IndexLinear() : IndexCartesian())) where {N,T,I}
     dims = SVector{N,I}(dims)
     left = domain.center .- domain.radius
     scale = dims ./ (I(2) .* domain.radius)
@@ -44,7 +48,7 @@ function BoxPartition(domain::Box{N,T}, dims::NTuple{N,I}) where {N,T,I}
     dimsprod_ = [SVector{1,I}(1); cumprod(dims)]
     dimsprod = dimsprod_[SOneTo(N)]
 
-    return BoxPartition{N,T,I}(domain, left, scale, dims, dimsprod)
+    return BoxPartition{N,T,I}(domain, left, scale, dims, dimsprod, indextype)
 end
 
 function BoxPartition(domain::Box{N,T}) where {N,T}
@@ -58,8 +62,11 @@ Base.:(==)(p1::BoxPartition, p2::BoxPartition) = p1.domain == p2.domain && p1.di
 Base.ndims(::BoxPartition{N}) where {N} = N
 Base.size(partition::BoxPartition) = partition.dims.data # .data returns as tuple
 Base.length(partition::BoxPartition) = partition.dimsprod[end] * partition.dims[end] # == prod(partition.dims)
-Base.keytype(::Type{<:BoxPartition{N,T,I}}) where {N,T,I} = I
-Base.keys(partition::BoxPartition) = 1 : length(partition)
+Base.keytype(::Type{<:BoxPartition{N,T,I,IndexLinear}}) where {N,T,I} = I
+Base.keytype(::Type{<:BoxPartition{N,T,I,IndexCartesian}}) where {N,T,I} = NTuple{N,I}
+Base.CartesianIndices(partition::BoxPartition) = CartesianIndices(size(partition))
+Base.keys(partition::BoxPartition{N,T,I,IndexLinear}) where {N,T,I} = one(I) : length(partition)
+Base.keys(partition::BoxPartition{N,T,I,IndexCartesian}) where {N,T,I} = (NTuple{N,I}(i) for i in CartesianIndices(partition))
 
 function Base.show(io::IO, partition::BoxPartition) 
     print(io, join(size(partition), " x "), "  BoxPartition")
@@ -75,45 +82,38 @@ double the amount of boxes.
 """
 function subdivide(P::BoxPartition{N,T,I}, dim) where {N,T,I}
     new_dims = ntuple(i -> P.dims[i] * I(i==dim ? 2 : 1), N)
-    return BoxPartition(P.domain, new_dims)
+    return BoxPartition(P.domain, new_dims; indextype=P.indextype)
 end
 
-"""
-    key_to_ints(P::BoxPartition, key)
-
-Convert an index (linear or cartesian) in a `BoxPartition` to 
-cartesian indices.
-"""
-function key_to_ints(partition::BoxPartition{N,T,I}, key::IndexTypes{N}) where {N,T,I}
-    return NTuple{N,I}(CartesianIndices(size(partition))[key].I)
+function linear_to_cartesian(partition::BoxPartition{N,T,I}, key) where {N,T,I}
+    return NTuple{N,I}(CartesianIndices(partition)[key])
 end
 
-"""
-    ints_to_box(P::BoxPartition, x_ints)
-
-Return the box associated with the cartesian index `x_ints` 
-within a `BoxPartition`.
-"""
-function ints_to_box(partition::BoxPartition{N,T}, x_ints::SVNT{N,I}) where {N,T,I<:Integer}
+function cartesian_to_box(partition::BoxPartition{N,T}, x_ints) where {N,T}
     radius = partition.domain.radius ./ partition.dims
     left = partition.domain.center .- partition.domain.radius
     center = @muladd left .+ radius .+ (2 .* radius) .* (x_ints .- 1)
     return Box{N,T}(center, radius)
 end 
 
+cartesian_to_key(partition::BoxPartition{N,T,I,IndexCartesian}, x_ints) where {N,T,I} = x_ints
+cartesian_to_key(partition::BoxPartition{N,T,I,IndexLinear}, x_ints) where {N,T,I} = cartesian_to_linear(partition, x_ints)
+
 """
     key_to_box(P::BoxPartition, key)
 
-Return the box associated with the index within a `BoxPartition`. 
+Return the box associated with the index 
+within a `BoxPartition`. 
 """
-function key_to_box(partition::BoxPartition{N,T,I}, key::IndexTypes{N}) where {N,T,I}
-    x_ints = key_to_ints(partition, key)
-    box = ints_to_box(partition, x_ints)
-    return box
+key_to_box(partition::BoxPartition{N,T,I,IndexCartesian}, key) where {N,T,I} = cartesian_to_box(partition, key)
+
+function key_to_box(partition::BoxPartition{N,T,I,IndexLinear}, key) where {N,T,I}
+    x_ints = linear_to_cartesian(partition, key)
+    return cartesian_to_box(partition, x_ints)
 end
 
 """
-    unsafe_point_to_ints(P::BoxPartiton, point)
+    unsafe_point_to_cartesian(P::BoxPartiton, point)
 
 Find the cartesian index for the box within a 
 `BoxPartition` containing a point.
@@ -123,54 +123,50 @@ Find the cartesian index for the box within a
     cartesian index will be out of bounds if the point does not lie in the 
     partition. 
 """
-function unsafe_point_to_ints(partition::BoxPartition{N,T,I}, point) where {N,T,I}
+function unsafe_point_to_cartesian(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     xi = (point .- partition.left) .* partition.scale
-    return unsafe_trunc.(I, xi) .+ oneunit(I)
+    return unsafe_trunc.(I, xi) .+ one(I)
 end
 
 """
-    bounded_point_to_ints(partition::BoxPartition, point)
+    bounded_point_to_cartesian(partition::BoxPartition, point)
 
 Find the cartesian index of the nearest box within a 
 `BoxPartition` to a point. Conicides with `unsafe_point_to_ints` 
 if the point lies in the partition. 
 """
-function bounded_point_to_ints(partition::BoxPartition{N,T,I}, point) where {N,T,I}
+function bounded_point_to_cartesian(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     xi = (point .- partition.left) .* partition.scale
     xi = max.(zero(I), xi)
-    xi = min.(size(partition) .- oneunit(I), xi)
-    return trunc.(I, xi) .+ oneunit(I)
+    xi = min.(size(partition) .- one(I), xi)
+    return trunc.(I, xi) .+ one(I)
 end
 
-"""
-    ints_to_key(P::BoxPartition, x_ints)
-
-Convert cartesian index to linear 
-index for a `BoxPartition`. 
-"""
-function ints_to_key(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I<:Integer}
-    if !all(oneunit(I) .<= x_ints .<= size(partition))
-        #@debug "point does not lie in the domain" point partition.domain
-        return nothing
-    end
-    key = sum((x_ints .- oneunit(I)) .* partition.dimsprod) + oneunit(I)
+function cartesian_to_linear(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I<:Integer}
+    key = sum((x_ints .- one(I)) .* partition.dimsprod) + one(I)
     return key
 end
 
 """
     point_to_key(P::BoxPartition, point)
 
-Find the linear index for the box within a `BoxPartition` 
+Find the index for the box within a `BoxPartition` 
 contatining a point. 
 
 !!! note "Bounds checking"
     unlike `unsafe_point_to_ints`, `point_to_key` will return 
     `nothing` if the point does not lie in the partition. 
 """
-function point_to_key(partition::BoxPartition{N,T,I}, point) where {N,T,I}
-    x_ints = unsafe_point_to_ints(partition, point)
-    key = ints_to_key(partition, x_ints)
-    return key
+function point_to_key(partition::BoxPartition{N,T,I,IndexCartesian}, point) where {N,T,I}
+    point in partition.domain || return nothing
+    x_ints = unsafe_point_to_cartesian(partition, point)
+    return x_ints
+end
+
+function point_to_key(partition::BoxPartition{N,T,I,IndexLinear}, point) where {N,T,I}
+    point in partition.domain || return nothing
+    x_ints = unsafe_point_to_cartesian(partition, point)
+    return cartesian_to_linear(partition, x_ints)
 end
 
 """
@@ -179,10 +175,7 @@ end
 Find the box within a `BoxPartition` containing a point. 
 """
 function point_to_box(partition::BoxPartition{N,T,I}, point) where {N,T,I}
-    x_ints = unsafe_point_to_ints(partition, point)
-    if !all(oneunit(I) .<= x_ints .<= size(partition))
-        return nothing
-    end
-    box = ints_to_box(partition, x_ints)
-    return box
+    point in partition.domain || return nothing
+    x_ints = unsafe_point_to_cartesian(partition, point)
+    return cartesian_to_box(partition, x_ints)
 end
