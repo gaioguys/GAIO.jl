@@ -3,7 +3,7 @@ using Test
 
 @testset "exported functionality" begin
     # the Lorenz system
-    const σ, ρ, β = 10.0, 28.0, 0.4
+    σ, ρ, β = 10.0, 28.0, 0.4
     v((x,y,z)) = (σ*(y-x), ρ*x-y-x*z, x*y-β*z)
     f(x) = rk4_flow_map(v, x)
 
