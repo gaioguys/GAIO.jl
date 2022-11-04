@@ -30,4 +30,7 @@ using SafeTestsets
     @safetestset "Algorithms" begin
         include("algorithms.jl")
     end
+    @safetestset "Lorenz system" begin
+        include("unstable_manifold.jl")
+    end
 end

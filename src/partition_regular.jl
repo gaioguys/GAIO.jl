@@ -1,8 +1,12 @@
 """
-    BoxPartition(domain::Box{N}, dims::NTuple{N,<:Integer} = ntuple(_->1, N))
+    BoxPartition(
+        domain::Box{N}, 
+        dims::NTuple{N,<:Integer} = ntuple(_->1, N)
+        ; indextype = (N < 9 : IndexLinear() : IndexCartesian())
+    ) 
 
-Data structure to partition a box into a 
-`dims[1] x dims[2] x ... dims[N]` equidistant grid. 
+Data structure to partition a domain into a 
+`dims[1] x dims[2] x ... dims[N]` equidistant box grid. 
 
 Fields:
 * `domain`:         box defining the entire domain
@@ -15,15 +19,6 @@ Fields:
 * `indextype`:      whether the partition will use cartesian or 
                     linear indices by default. Values can be 
                     `IndexLinear()`, `IndexCartesian()`
-
-```julia
-         1st dim →
-          * — * — * — *
-    2nd   | 1 | 2 | 3 |
-    dim   * — * — * — *
-    ↓     | 4 | 5 | 6 |
-          * — * — * — *
-```
 
 Methods implemented:
 
@@ -51,12 +46,14 @@ function BoxPartition(domain::Box{N,T}, dims::NTuple{N,I}; indextype=(N < 10 ? I
     return BoxPartition{N,T,I,typeof(indextype)}(domain, left, scale, dims, dimsprod, indextype)
 end
 
-function BoxPartition(domain::Box{N,T}) where {N,T}
+function BoxPartition(domain::Box{N,T}; indextype=(N < 10 ? IndexLinear() : IndexCartesian())) where {N,T}
     dims = tuple(ones(Int,N)...)
-    BoxPartition(domain, dims)
+    BoxPartition(domain, dims; indextype=indextype)
 end
 
-BoxPartition(domain::Box{1}, dims::Integer) = BoxPartition(domain, (dims,))
+function BoxPartition(domain::Box{1}, dims::Integer; indextype=IndexLinear())
+    BoxPartition(domain, (dims,); indextype=indextype)
+end
 
 Base.:(==)(p1::BoxPartition, p2::BoxPartition) = p1.domain == p2.domain && p1.dims == p2.dims
 Base.ndims(::BoxPartition{N}) where {N} = N
@@ -69,8 +66,8 @@ Base.LinearIndices(partition::BoxPartition) = LinearIndices(size(partition))
 Base.keys(partition::BoxPartition{N,T,I,IndexLinear}) where {N,T,I} = one(I) : length(partition)
 Base.keys(partition::BoxPartition{N,T,I,IndexCartesian}) where {N,T,I} = (NTuple{N,I}(i) for i in CartesianIndices(partition))
 
-function Base.show(io::IO, partition::BoxPartition) 
-    print(io, join(size(partition), " x "), "  BoxPartition")
+function Base.show(io::IO, partition::P) where {P<:BoxPartition}
+    print(io, join(size(partition), " x "), " - element $P")
 end
 
 """
@@ -126,7 +123,7 @@ Find the cartesian index for the box within a
 """
 function unsafe_point_to_cartesian(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     xi = (point .- partition.left) .* partition.scale
-    return unsafe_trunc.(I, xi) .+ one(I)
+    return ntuple( i -> unsafe_trunc(I, xi[i]) + one(I), Val(N) )
 end
 
 """
@@ -140,7 +137,7 @@ function bounded_point_to_cartesian(partition::BoxPartition{N,T,I}, point) where
     xi = (point .- partition.left) .* partition.scale
     xi = max.(zero(I), xi)
     xi = min.(size(partition) .- one(I), xi)
-    return trunc.(I, xi) .+ one(I)
+    return ntuple( i -> trunc(I, xi[i]) + one(I), Val(N) )
 end
 
 function cartesian_to_linear(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I<:Integer}
