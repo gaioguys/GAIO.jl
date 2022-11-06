@@ -8,8 +8,9 @@ as a piecewise constant function over the boxes of `partition`.
 Implemented as a sparse vector over the indices of `partition`. 
 
 Fields:
-* `partition`: An `AbstractBoxPartition` whose indices are used 
-for `vals`
+* `support`: `BoxSet{<:Any,<:Any,<:OrderedSet}` which covers all 
+nonzero values of `vals`. 
+* `vals`:    vector containing box values. 
 * `vals`: A sparse vector whose indices are the box indices from 
 `partition`, and whose values represent the values of the function. 
 
@@ -17,18 +18,38 @@ Methods implemented:
 
     length, LinearAlgebra.norm, LinearAlgebra.normalize!
 
+Implementation detail:
+
+The ith index of `vals` corresponds to the ith element of `support`, 
+i.e. `vals[i]` corresponds to `support.set.dict.keys[i]`. This is 
+a bit complicated, but is due to the lack of a direct constructor 
+for `OrderedSet`s. To change this, add a comment to the PR 
+`https://github.com/JuliaCollections/OrderedCollections.jl/pull/92`! 
+This will hopefully bring attention to merge the PR. 
+
 .
 """
-struct BoxFun{P<:AbstractBoxPartition,K,V}
-    partition::P
-    dict::Dict{K,V}
+struct BoxFun{B,W,S<:BoxSet{B},V<:Vector{W}} <: AbstractSparseVector{W,Int}
+    support::S
+    vals::V
 end
 
-Base.length(fun::BoxFun) = length(fun.dict)
+# ensure that `BoxFun` uses an `OrderedSet`
+function BoxFun(support::M, vals::V) where {B,P,S<:OrderedSet,M<:BoxSet{B,P,S},W,V<:AbstractSparseVector{W}}
+    BoxFun{B,W,S,V}(support, vals)
+end
+
+function BoxFun(support::M, vals::V) where {B,P,S,M<:BoxSet{B,P,S},W,V<:AbstractSparseVector{W}}
+    BoxFun{B,W,S,V}(BoxSet(support.partition, OrderedSet(support.set)), vals)
+end
+
+Base.length(fun::BoxFun) = length(fun.support)
 
 function Base.show(io::IO, g::BoxFun)
-    print(io, "BoxFun over $(g.partition)")
+    print(io, "BoxFun over $(g.support)")
 end
+
+Base.show(io::IO, ::MIME"text/plain", fun::BoxFun) = show(io, fun)
 
 Core.@doc raw"""
     sum(f, boxfun::BoxFun)
@@ -40,20 +61,42 @@ if `boxfun` is the discretization of a measure ``\mu`` over the domain
 \int_Q f \, d\mu .
 ```
 """
-function Base.sum(f, boxfun::BoxFun{K,V}) where {K,V}
-    sum(boxfun.dict) do pair
-        key, value = pair
-        box = key_to_box(boxfun.partition, key)
-        volume(box) * f(value)
+function Base.sum(f, boxfun::BoxFun, boxset=nothing)
+    sum(boxfun.support.set) do key
+        box = key_to_box(boxfun.support.partition, key)
+        i = getkeyindex(boxfun.support, key)
+        val = boxfun.vals[i]
+        volume(box) * f(val)
     end
 end
 
-LinearAlgebra.norm(boxfun::BoxFun) = sqrt(sum(abs2, boxfun))
+function Base.sum(f, boxfun::BoxFun{B,W,S}, boxset::BoxSet{D,P,R}) where {B,D,W,I,R<:AbstractSet{I},P,S<:Boxset{<:B,<:P,<:AbstractSet{I}}}
+    sum(boxfun.support.set ∩ boxset.set) do key
+        box = key_to_box(boxfun.support.partition, key)
+        i = getkeyindex(boxfun.support, key)
+        val = boxfun.vals[i]
+        volume(box) * f(val)
+    end
+end
+
+function Base.sum(f, boxfun::BoxFun{B,W,S}, boxset::BoxSet{D,P,R}) where {B,W,S,D,P,R}
+    support = boxfun.support.partition[boxset]
+    sum(f, boxfun, support)
+end
+
+(boxfun::BoxFun)(boxset::BoxSet) = sum(identity, boxfun, boxset)
+
+LinearAlgebra.norm(boxfun::BoxFun) = norm(boxfun.vals)
 
 function LinearAlgebra.normalize!(boxfun::BoxFun)
     λ = inv(norm(boxfun))
-    map!(x -> λ*x, values(boxfun.dict))
+    map!(x -> λ*x, boxfun.vals, boxfun.vals)
     return boxfun
+end
+
+function Base.getindex(boxfun::BoxFun{B,W}, key) where {B,W}
+    i = getkeyindex(boxfun.support, key)
+    isnothing(i) ? zero(W) : boxfun.vals[i]
 end
 
 import Base: ∘
@@ -63,15 +106,5 @@ import Base: ∘
 
 Compose the function `f` with the `boxfun`. 
 """
-function ∘(f, boxfun::BoxFun{P,K,V}) where {P,K,V}
-    fV = typeof(f(first(values(boxfun.dict))))
-    dict = Dict{K,fV}()
-    sizehint!(dict, length(boxfun.dict))
-
-    for (key, value) in boxfun.dict
-        dict[key] = f(value)
-    end
-
-    return BoxFun(boxfun.partition, dict)
-end
+∘(f, boxfun::BoxFun{P,K,V}) where {P,K,V} = BoxFun(boxfun.support, map(f, boxfun.vals))
 

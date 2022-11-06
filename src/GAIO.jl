@@ -3,6 +3,7 @@ module GAIO
 using LinearAlgebra
 using SparseArrays
 using StaticArrays
+using OrderedCollections
 # using GLFW
 # using ModernGL
 using GeometryBasics
@@ -10,6 +11,8 @@ using Graphs
 using Arpack
 using Base.Threads
 using FLoops
+using SplittablesBase
+using SplitOrderedCollections
 using Base: unsafe_trunc
 using MuladdMacro
 using HostCPUFeatures
@@ -17,7 +20,6 @@ using SIMD
 using Adapt
 using CUDA
 using Base.Iterators: Stateful, take
-using SplittablesBase
 
 # using GLMakie
 # using WGLMakie

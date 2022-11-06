@@ -35,7 +35,7 @@ end
 
 function Base.show(io::IO, boxset::BoxSet)
     size = length(boxset.set)
-    print(io, "$size-element BoxSet in ", boxset.partition)
+    print(io, "$size - element BoxSet in ", boxset.partition)
 end
 
 Base.show(io::IO, ::MIME"text/plain", boxset::BoxSet) = show(io, boxset)
@@ -78,8 +78,8 @@ Base.getindex(partition::P, box::Box) where P<:AbstractBoxPartition = getindex(p
 Return a covering of an iterator of `Box`es using `Box`es from `partition`. 
 Only covers the part of `boxes` which lies within `partition.domain`. 
 """
-function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
-    keys = Set{keytype(P)}()
+function cover_boxes(partition::P, boxes; input_set=Set{keytype(P)}()) where {N,T,I,P<:BoxPartition{N,T,I}}
+    keys = input_set
     vertex_keys = Matrix{I}(undef, N, 2)
     for box_in in boxes
         box = Box{N,T}(box_in.center, box_in.radius .- 2*eps(T))
@@ -103,14 +103,17 @@ function Base.getindex(partition::AbstractBoxPartition, key::Integer)
     BoxSet(partition, Set([key]))
 end
 
-function Base.getindex(B::BoxSet, points)
-    A = getindex(B.partition, points)
-    return B ∩ A
+function getkeyindex(boxset::BoxSet{B,P,S}, i) where {B,P,S<:OrderedSet}
+    j = OrderedCollections.ht_keyindex(boxset.set.dict, i, true)
+    j > 0 ? j : nothing
 end
 
-function Base.getindex(partition::AbstractBoxPartition, ::Colon)
-    return BoxSet(partition, Set(keys(partition)))
+function getkeyindex(boxset::BoxSet{B,P,S}, i) where {B,P,S<:Set}
+    j = Base.ht_keyindex(boxset.set.dict, i)
+    j > 0 ? j : nothing
 end
+
+getkeyindex(::BoxSet{B,P,S}, ::Nothing) where {B,P,S<:OrderedSet} = nothing
 
 for op in (:union, :intersect, :setdiff, :symdiff)
     op! = Symbol(op, :!) 
