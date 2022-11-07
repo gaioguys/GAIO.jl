@@ -103,18 +103,6 @@ function Base.getindex(partition::AbstractBoxPartition, key::Integer)
     BoxSet(partition, Set([key]))
 end
 
-function getkeyindex(boxset::BoxSet{B,P,S}, i) where {B,P,S<:OrderedSet}
-    j = OrderedCollections.ht_keyindex(boxset.set.dict, i, true)
-    j > 0 ? j : nothing
-end
-
-function getkeyindex(boxset::BoxSet{B,P,S}, i) where {B,P,S<:Set}
-    j = Base.ht_keyindex(boxset.set.dict, i)
-    j > 0 ? j : nothing
-end
-
-getkeyindex(::BoxSet{B,P,S}, ::Nothing) where {B,P,S<:OrderedSet} = nothing
-
 for op in (:union, :intersect, :setdiff, :symdiff)
     op! = Symbol(op, :!) 
     boundscheck = quote

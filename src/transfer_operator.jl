@@ -1,13 +1,9 @@
 mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMatrix{T,Int}
     F::M
     support::S
+    variant_set::S
     # it is more convenient to store the transposed matrix
     mat::SparseMatrixCSC{T,Int}
-end
-
-# ensure that `TransferOperator` uses an `OrderedSet`
-function TransferOperator(g::BoxMap, boxset::BoxSet{B,Q,S}) where {B,Q,S}
-    TransferOperator(g, BoxSet(boxset.partition, OrderedSet(boxset.set)))
 end
 
 # helper function so we aren't doing type piracy on `mergewith!`
@@ -19,14 +15,17 @@ function ⊔(d::AbstractDict, p::Pair)
     d
 end
 
-function TransferOperator(
-        g::BoxMap, boxset::BoxSet{B,Q,S}
-    ) where {N,T,B<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+# ensure that `TransferOperator` uses an `OrderedSet`
+function TransferOperator(g::BoxMap, boxset::BoxSet{B,Q,S}) where {B,Q,S}
+    TransferOperator(g, BoxSet(boxset.partition, OrderedSet(boxset.set)))
+end
 
-    OrderedCollections.rehash!(boxset.set.dict)
+function TransferOperator(
+        g::BoxMap, boxset::BoxSet{R,Q,S}
+    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+
     P, D = boxset.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
     @floop for key in boxset.set
-        i = getkeyindex(boxset, key)
         box = key_to_box(P, key)
         c, r = box.center, box.radius
         domain_points = g.domain_points(c, r)
@@ -38,13 +37,15 @@ function TransferOperator(
             r = hitbox.radius
             for ip in g.image_points(c, r)
                 hit = point_to_key(P, ip)
-                j = getkeyindex(boxset, hit)
-                isnothing(j) && continue
-                @reduce( dict = D() ⊔ ((i,j) => inv_n) )
+                isnothing(hit) && continue
+                hit in boxset || @reduce( out_of_bounds = S() ⊔ hit )
+                @reduce( dict = D() ⊔ ((key,hit) => inv_n) )
             end
         end
     end
-    return TransferOperator(g, boxset, sparse(dict, length(boxset), length(boxset)))
+    variant_set = BoxSet(P, out_of_bounds)
+    mat = sparse(dict, boxset, variant_set)
+    return TransferOperator(g, boxset, variant_set, mat)
 end
 
 function Base.show(io::IO, g::TransferOperator)
@@ -53,11 +54,17 @@ end
 
 Base.show(io::IO, ::MIME"text/plain", g::TransferOperator) = show(io, g)
 Base.:(==)(g1::TransferOperator, g2::TransferOperator) = g1.mat == g2.mat
-Base.axes(g::TransferOperator) = (v = collect(g.support); (v, v))
-Base.size(g::TransferOperator) = (length(g.support), length(g.support))
-Base.Matrix(g::TransferOperator) = copy(g.mat')
 Base.eltype(::Type{<:TransferOperator{B,T}}) where {B,T} = T
 Base.keytype(::Type{<:TransferOperator{B,T,I}}) where {B,T,I} = I
+Base.size(g::TransferOperator) = (length(g.support) + length(g.variant_set), length(g.support))
+Base.Matrix(g::TransferOperator) = copy(g.mat')
+
+function Base.axes(g::TransferOperator)
+    v = collect(g.support)
+    u = vcat(v, collect(g.variant_set))
+    return (u, v)
+end
+Base.setdiff!
 
 function Base.checkbounds(::Type{Bool}, g::TransferOperator, keys)
     all(x -> checkbounds(Bool, g.support.partition, x), keys) || return false
@@ -66,6 +73,7 @@ function Base.checkbounds(::Type{Bool}, g::TransferOperator, keys)
         union!(g.support.set, keys)
         g̃ = TransferOperator(g.F, g.support)
         g.mat = g̃.mat
+        g.variant_set = g̃.variant_set
     end
     return true
 end
@@ -75,7 +83,7 @@ Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, keys...) = checkbound
 function Base.getindex(g::TransferOperator{T,I}, u, v) where {T,I}
     checkbounds(Bool, g, u, v) || throw(BoundsError(g, (u,v)))
     i, j = getkeyindex(g.support, u), getkeyindex(g.support, v)
-    return g.mat[i, j]
+    return g.mat[j, i]
 end
 
 function Base.setindex!(g::TransferOperator, u...)
@@ -119,15 +127,22 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
     end
 end
 
-# convert DOK sparse matrix to CSC
-function SparseArrays.sparse(dict::Dict{Tuple{I,I},T}, m::Number, n::Number) where {I,T}
-    xs, ys, ws = I[], I[], T[]
+# convert DOK sparse matrix to CSC using indices from support / variant_set
+function SparseArrays.sparse(
+        dict::Dict{Tuple{I,I},T}, support::BoxSet, variant_set::BoxSet
+    ) where {I,T}
+
+    m = length(support)
+    n = m + length(variant_set)
+    xs, ys, ws = Int[], Int[], T[]
 
     sizehint!(xs, length(dict))
     sizehint!(ys, length(dict))
     sizehint!(ws, length(dict))
 
-    for ((x, y), w) in dict
+    for ((u, v), w) in dict
+        x = getkeyindex(support, u)
+        y = v in support ? getkeyindex(support, v) : m + getkeyindex(variant_set, v)
         push!(xs, x)
         push!(ys, y)
         push!(ws, w)
