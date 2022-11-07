@@ -64,7 +64,7 @@ Base.keytype(::Type{<:BoxPartition{N,T,I,L}}) where {N,T,I,L<:IndexCartesian} = 
 Base.CartesianIndices(partition::BoxPartition) = CartesianIndices(size(partition))
 Base.LinearIndices(partition::BoxPartition) = LinearIndices(size(partition))
 Base.keys(partition::BoxPartition{N,T,I,IndexLinear}) where {N,T,I} = one(I) : length(partition)
-Base.keys(partition::BoxPartition{N,T,I,IndexCartesian}) where {N,T,I} = (NTuple{N,I}(i) for i in CartesianIndices(partition))
+Base.keys(partition::BoxPartition{N,T,I,IndexCartesian}) where {N,T,I} = (NTuple{N,I}(i.I) for i in CartesianIndices(partition))
 
 function Base.show(io::IO, partition::P) where {P<:BoxPartition}
     print(io, join(size(partition), " x "), " - element $P")

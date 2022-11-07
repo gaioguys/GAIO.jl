@@ -99,8 +99,8 @@ function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
     return BoxSet(partition, keys)
 end
 
-function Base.getindex(partition::AbstractBoxPartition, key::Integer)
-    BoxSet(partition, Set([key]))
+function Base.getindex(partition::P, key::Integer) where {P<:AbstractBoxPartition}
+    BoxSet(partition, Set{keytype(P)}([key]))
 end
 
 function Base.getindex(B::BoxSet, points)
@@ -108,8 +108,8 @@ function Base.getindex(B::BoxSet, points)
     return B ∩ A
 end
 
-function Base.getindex(partition::AbstractBoxPartition, ::Colon)
-    return BoxSet(partition, Set(keys(partition)))
+function Base.getindex(partition::P, ::Colon) where {P<:AbstractBoxPartition}
+    return BoxSet(partition, Set{keytype(P)}(keys(partition)))
 end
 
 for op in (:union, :intersect, :setdiff, :symdiff)
