@@ -39,7 +39,7 @@ function TransferOperator(
                 hit = point_to_key(P, ip)
                 isnothing(hit) && continue
                 hit in boxset || @reduce( out_of_bounds = S() ⊔ hit )
-                @reduce( dict = D() ⊔ ((key,hit) => inv_n) )
+                @reduce( dict = D() ⊔ ((hit,key) => inv_n) )
             end
         end
     end
@@ -56,8 +56,8 @@ Base.show(io::IO, ::MIME"text/plain", g::TransferOperator) = show(io, g)
 Base.:(==)(g1::TransferOperator, g2::TransferOperator) = g1.mat == g2.mat
 Base.eltype(::Type{<:TransferOperator{B,T}}) where {B,T} = T
 Base.keytype(::Type{<:TransferOperator{B,T,I}}) where {B,T,I} = I
-Base.size(g::TransferOperator) = (length(g.support) + length(g.variant_set), length(g.support))
-Base.Matrix(g::TransferOperator) = copy(g.mat')
+Base.size(g::TransferOperator) = size(g.mat)
+Base.Matrix(g::TransferOperator) = copy(g.mat)
 
 function Base.axes(g::TransferOperator)
     v = collect(g.support)
@@ -70,10 +70,10 @@ function Base.checkbounds(::Type{Bool}, g::TransferOperator, keys)
     all(x -> checkbounds(Bool, g.support.partition, x), keys) || return false
     diff = setdiff(keys, g.support.set)
     if !isempty(diff)
-        union!(g.support.set, keys)
+        g.support = BoxSet(g.support.partition, g.support.set ∪ keys)
         g̃ = TransferOperator(g.F, g.support)
-        g.mat = g̃.mat
         g.variant_set = g̃.variant_set
+        g.mat = g̃.mat
     end
     return true
 end
@@ -83,7 +83,7 @@ Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, keys...) = checkbound
 function Base.getindex(g::TransferOperator{T,I}, u, v) where {T,I}
     checkbounds(Bool, g, u, v) || throw(BoundsError(g, (u,v)))
     i, j = getkeyindex(g.support, u), getkeyindex(g.support, v)
-    return g.mat[j, i]
+    return g.mat[i,j]
 end
 
 function Base.setindex!(g::TransferOperator, u...)
@@ -112,15 +112,28 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         LinearAlgebra.mul!(y::AbstractVector, g::$type, x::AbstractVector) = mul!(y, func($gmap.mat), x)
         
         function LinearAlgebra.mul!(y::BoxFun, g::$type, x::BoxFun)
-            checkbounds(Bool, g, x.support.set) || throw(BoundsError(g, x.support.set))
-            union!(y.support.set, g.support.set)
-            resize!(y.vals, length(y.support.set))
-            mul!(y.vals, g, x.vals)
+            fill!(y, zero(eltype(y)))
+            rows = rowvals($gmap.mat)
+            vals = nonzeros($gmap.mat)
+            m, n = size($gmap.mat)
+            for (col_j, j) in enumerate($gmap.support.set)
+                for k in nzrange($gmap.mat, col_j) # we can iterate over whole column because only rows in support are initialized
+                    row = rows[k] # potentially many slow operations, can this be avoided? 
+                    if row > n
+                        i = $gmap.variant_set.set.dict.keys[getkeyindex($gmap.variant_set, row)]
+                    else
+                        i = $gmap.support.set.dict.keys[getkeyindex($gmap.support, row)]
+                    end
+                    w = vals[k]
+                    y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
+                end
+            end
             return y
         end
 
         function Base.:(*)(g::$type, x::BoxFun)
-            y = BoxFun(x.support, similar(x.vals))
+            support = g.support ∪ g.variant_set ∪ x.support
+            y = BoxFun(support, Vector{promote_type(eltype(g), eltype(x))}(undef, length(support)))
             return mul!(y.vals, g, x.vals)
         end
 
@@ -132,8 +145,8 @@ function SparseArrays.sparse(
         dict::Dict{Tuple{I,I},T}, support::BoxSet, variant_set::BoxSet
     ) where {I,T}
 
-    m = length(support)
-    n = m + length(variant_set)
+    n = length(support)
+    m = n + length(variant_set)
     xs, ys, ws = Int[], Int[], T[]
 
     sizehint!(xs, length(dict))
@@ -141,8 +154,8 @@ function SparseArrays.sparse(
     sizehint!(ws, length(dict))
 
     for ((u, v), w) in dict
-        x = getkeyindex(support, u)
-        y = v in support ? getkeyindex(support, v) : m + getkeyindex(variant_set, v)
+        x = u in support ? getkeyindex(support, u) : n + getkeyindex(variant_set, u)
+        y = getkeyindex(support, v)
         push!(xs, x)
         push!(ys, y)
         push!(ws, w)

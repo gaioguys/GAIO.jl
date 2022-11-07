@@ -50,12 +50,13 @@ function BoxFun(support::M, vals::V) where {B,P,S,M<:BoxSet{B,P,S},W,V<:Abstract
 end
 
 Base.length(fun::BoxFun) = length(fun.support)
+Base.eltype(::BoxFun{B,W}) where {B,W} = W
+Base.show(io::IO, ::MIME"text/plain", fun::BoxFun) = show(io, fun)
 
 function Base.show(io::IO, g::BoxFun)
     print(io, "BoxFun over $(g.support)")
 end
 
-Base.show(io::IO, ::MIME"text/plain", fun::BoxFun) = show(io, fun)
 
 Core.@doc raw"""
     sum(f, boxfun::BoxFun)
@@ -102,7 +103,17 @@ end
 
 function Base.getindex(boxfun::BoxFun{B,W}, key) where {B,W}
     i = getkeyindex(boxfun.support, key)
-    isnothing(i) ? zero(W) : boxfun.vals[i]
+    return isnothing(i) ? zero(W) : boxfun.vals[i]
+end
+
+function Base.setindex(boxfun::BoxFun{B,W}, key) where {B,W}
+    i = getkeyindex(boxfun.support, key)
+    if isnothing(i)
+        union!(boxfun.support, i)
+        i = length(boxfun.vals)+1
+        resize!(boxfun.vals, i)
+    end
+    return boxfun.vals[i]
 end
 
 import Base: ∘
@@ -114,3 +125,12 @@ Compose the function `f` with the `boxfun`.
 """
 ∘(f, boxfun::BoxFun{P,K,V}) where {P,K,V} = BoxFun(boxfun.support, map(f, boxfun.vals))
 
+function Base.checkbounds(::Type{Bool}, boxfun::BoxFun, keys)
+    all(x -> checkbounds(Bool, boxfun.support.partition, x), keys) || return false
+    diff = setdiff(keys, boxfun.support.set)
+    if !isempty(diff)
+        union!(boxfun.support.set, keys)
+        resize!(boxfun.vals, length(boxfun.support))
+    end
+    return true
+end
