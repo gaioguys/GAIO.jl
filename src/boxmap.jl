@@ -39,6 +39,11 @@ function Base.show(io::IO, g::SampledBoxMap)
     print(io, "BoxMap with $(n) sample points")
 end
 
+# wee need a small helper function because of 
+# how julia dispatches on `union!`
+⊔(set1::AbstractSet, set2::AbstractSet) = union!(set1, set2)
+⊔(set1::AbstractSet, object) = union!(set1, (object,))
+
 @inbounds @muladd function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
     P = source.partition
     @floop for box in source
@@ -51,7 +56,7 @@ end
             for ip in g.image_points(fp, r)
                 hit = point_to_key(P, ip)
                 isnothing(hit) && continue
-                @reduce(image = union!(S(), hit))
+                @reduce(image = S() ⊔ hit)
             end
         end
     end
@@ -102,7 +107,7 @@ test points.
 function AdaptiveBoxMap(f, domain::Box{N,T}, accel=nothing) where {N,T}
     domain_points = sample_adaptive(f, accel)
     image_points = vertices
-    return SampledBoxMap(f, domain, domain_points, image_points, nothing)
+    return SampledBoxMap(f, domain, domain_points, image_points, accel)
 end
 
 AdaptiveBoxMap(f, P::BoxPartition{N,T}, accel=nothing) where {N,T} = AdaptiveBoxMap(f, P.domain, Val(accel))

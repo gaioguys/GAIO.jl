@@ -1,4 +1,4 @@
-const F = (Int == Int64) ? Float64 : Float32
+const F = (Int === Int64) ? Float64 : Float32
 
 Core.@doc raw"""
     Box{N,T}(center, radius)

@@ -25,7 +25,7 @@ function PointDiscretizedMap(map, domain::Box{N,T}, points, ::Val{:cpu}) where {
     return SampledBoxMap(map, domain, domain_points, image_points, BoxMapCPUCache(domain))
 end
 
-function sample_adaptive(f, center, radius, ::Val{simd}) where {simd}
+function sample_adaptive(f, center, radius, simd::Integer)
     @error "Adaptive sampling techniques not implemented for cpu acceleration. Please wait until next PR."
 end
 
@@ -54,7 +54,7 @@ end
                 for ip in g.image_points(q, r)
                     hit = point_to_key(P, ip)
                     isnothing(hit) && continue
-                    @reduce(image = union!(S(), hit))
+                    @reduce(image = S() ⊔ hit)
                 end
             end
         end

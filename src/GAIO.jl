@@ -25,7 +25,7 @@ using MakieCore
 using MakieCore: @recipe
 
 export Box
-export volume, center, vertices
+export volume, center, vertices, rescale
 
 export AbstractBoxPartition, BoxPartition, TreePartition
 export depth, key_to_box, point_to_key, tree_search
@@ -40,6 +40,7 @@ export strongly_connected_components, matrix, eigs
 
 export BoxMap, PointDiscretizedMap
 export SampledBoxMap, AdaptiveBoxMap
+export approx_lipschitz, sample_adaptive
 export boxmap
 
 export map_boxes, map_boxes_new

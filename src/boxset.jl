@@ -63,12 +63,14 @@ end
 
 Return a subset of the partition `P` based on the second argument. 
 """
-function Base.getindex(partition::AbstractBoxPartition, points)
+function Base.getindex(partition::P, points) where P<:AbstractBoxPartition
     eltype(points) <: Number && ndims(partition) > 1 && return partition[(points,)]
     eltype(points) <: Box && return cover_boxes(partition, points)
     gen = (key for key in (point_to_key(partition, point) for point in points) if !isnothing(key))
-    return BoxSet(partition, Set(gen))
+    return BoxSet(partition, Set{keytype(P)}(gen))
 end
+
+Base.getindex(partition::P, box::Box) where P<:AbstractBoxPartition = getindex(partition, (box,))
 
 """
     cover_boxes(partition::BoxPartition, boxes)
@@ -76,20 +78,20 @@ end
 Return a covering of an iterator of `Box`es using `Box`es from `partition`. 
 Only covers the part of `boxes` which lies within `partition.domain`. 
 """
-function cover_boxes(partition::BoxPartition{N,T,I}, boxes) where {N,T,I}
-    keys = Set{I}()
+function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
+    keys = Set{keytype(P)}()
     vertex_keys = Matrix{I}(undef, N, 2)
     for box_in in boxes
         box = Box{N,T}(box_in.center, box_in.radius .- 2*eps(T))
-        vertex_keys[:, 1] .= vertex_keys[:, 2] .= bounded_point_to_ints(partition, box.center)
+        vertex_keys[:, 1] .= vertex_keys[:, 2] .= bounded_point_to_cartesian(partition, box.center)
         for point in vertices(box)
-            ints = bounded_point_to_ints(partition, point)
+            ints = bounded_point_to_cartesian(partition, point)
             vertex_keys[:, 1] .= min.(vertex_keys[:, 1], ints)
             vertex_keys[:, 2] .= max.(vertex_keys[:, 2], ints)
         end
         C = CartesianIndices(ntuple(i -> vertex_keys[i, 1] : vertex_keys[i, 2], Val(N)))
         for ind in C
-            key = ints_to_key(partition, ind.I)
+            key = cartesian_to_key(partition, ind.I)
             isnothing(key) && @error "Indexing went wrong somehow. Please open an issue with an MWE" ind.I key
             union!(keys, key)
         end
@@ -97,8 +99,8 @@ function cover_boxes(partition::BoxPartition{N,T,I}, boxes) where {N,T,I}
     return BoxSet(partition, keys)
 end
 
-function Base.getindex(partition::AbstractBoxPartition, key::Integer)
-    BoxSet(partition, Set([key]))
+function Base.getindex(partition::P, key::Integer) where {P<:AbstractBoxPartition}
+    BoxSet(partition, Set{keytype(P)}([key]))
 end
 
 function Base.getindex(B::BoxSet, points)
@@ -106,9 +108,8 @@ function Base.getindex(B::BoxSet, points)
     return B ∩ A
 end
 
-
-function Base.getindex(partition::AbstractBoxPartition, ::Colon)
-    return BoxSet(partition, Set(keys(partition)))
+function Base.getindex(partition::P, ::Colon) where {P<:AbstractBoxPartition}
+    return BoxSet(partition, Set{keytype(P)}(keys(partition)))
 end
 
 for op in (:union, :intersect, :setdiff, :symdiff)
@@ -154,24 +155,38 @@ function SplittablesBase.halve(boxset::BoxSet)
     ((key_to_box(P, key) for key in left), (key_to_box(P, key) for key in right))
 end
 
-function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}
-    partition = boxset.partition
-    box_indices = CartesianIndices(size(partition))
-
+function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition{<:Any,<:Any,<:Any,<:IndexCartesian},S}
     partition_subdivided = subdivide(boxset.partition, dim)
-    linear_indices = LinearIndices(CartesianIndices(size(partition_subdivided)))
 
     set = S()
     sizehint!(set, 2*length(boxset.set))
 
     for key in boxset.set
-        box_index = box_indices[key].I
+        child1 = Base.setindex(key, 2 * key[dim] - 1, dim)
+        child2 = Base.setindex(key, 2 * key[dim], dim)
 
-        child1 = Base.setindex(box_index, 2*box_index[dim]-1, dim)
-        child2 = Base.setindex(box_index, 2*box_index[dim], dim)
+        push!(set, child1)
+        push!(set, child2)
+    end
 
-        push!(set, linear_indices[CartesianIndex(child1)])
-        push!(set, linear_indices[CartesianIndex(child2)])
+    return BoxSet(partition_subdivided, set)
+end
+
+function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition{<:Any,<:Any,<:Any,<:IndexLinear},S}
+    partition = boxset.partition
+    partition_subdivided = subdivide(partition, dim)
+    C, J = CartesianIndices(partition), LinearIndices(partition_subdivided)
+
+    set = S()
+    sizehint!(set, 2*length(boxset.set))
+
+    for key_linear in boxset.set
+        key = C[key_linear].I
+        child1 = Base.setindex(key, 2 * key[dim] - 1, dim)
+        child2 = Base.setindex(key, 2 * key[dim], dim)
+
+        push!(set, J[CartesianIndex(child1)])
+        push!(set, J[CartesianIndex(child2)])
     end
 
     return BoxSet(partition_subdivided, set)

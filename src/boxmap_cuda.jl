@@ -47,7 +47,7 @@ end
 
 function map_boxes(
         g::SampledBoxMap{C,N,T,F,D,typeof(center)}, source::BoxSet{B,Q,S}
-    ) where {C<:BoxMapGPUCache,N,T,F,D,B,Q,S}
+    ) where {C<:BoxMapGPUCache,N,T,F,D,B,Q<:BoxPartition{<:Any,<:Any,<:Any,<:IndexLinear},S}
 
     P, keys = source.partition, Stateful(source.set)
     p = ensure_implemented(g, P)
@@ -75,7 +75,7 @@ end
 
 function TransferOperator(
         g::SampledBoxMap{C,N,T,F,D,typeof(center)}, source::BoxSet{B,Q,S}
-    ) where {C<:BoxMapGPUCache,N,T,F,D,B,Q,S}
+    ) where {C<:BoxMapGPUCache,N,T,F,D,B<:BoxPartition{<:Any,<:Any,<:Any,<:IndexLinear},Q,S}
 
     P = source.partition
     points = ensure_implemented(g, P)
