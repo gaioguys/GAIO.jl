@@ -21,7 +21,7 @@ function TransferOperator(g::BoxMap, boxset::BoxSet{B,Q,S}) where {B,Q,S}
 end
 
 function TransferOperator(
-        g::BoxMap, boxset::BoxSet{R,Q,S}
+        g::BoxMap, boxset::BoxSet{R,Q,S}; target_support=boxset
     ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
 
     P, D = boxset.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
@@ -38,7 +38,7 @@ function TransferOperator(
             for ip in g.image_points(c, r)
                 hit = point_to_key(P, ip)
                 isnothing(hit) && continue
-                hit in boxset || @reduce( out_of_bounds = S() ⊔ hit )
+                hit in boxset.set || @reduce( out_of_bounds = S() ⊔ hit )
                 @reduce( dict = D() ⊔ ((hit,key) => inv_n) )
             end
         end
@@ -64,21 +64,6 @@ function Base.axes(g::TransferOperator)
     u = vcat(v, collect(g.variant_set))
     return (u, v)
 end
-Base.setdiff!
-
-function Base.checkbounds(::Type{Bool}, g::TransferOperator, keys)
-    all(x -> checkbounds(Bool, g.support.partition, x), keys) || return false
-    diff = setdiff(keys, g.support.set)
-    if !isempty(diff)
-        g.support = BoxSet(g.support.partition, g.support.set ∪ keys)
-        g̃ = TransferOperator(g.F, g.support)
-        g.variant_set = g̃.variant_set
-        g.mat = g̃.mat
-    end
-    return true
-end
-
-Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, keys...) = checkbounds(b, g, tuple(key1, keys...))
 
 function Base.getindex(g::TransferOperator{T,I}, u, v) where {T,I}
     checkbounds(Bool, g, u, v) || throw(BoundsError(g, (u,v)))
@@ -121,22 +106,38 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         LinearAlgebra.mul!(y::AbstractVector, g::$type, x::AbstractVector) = mul!(y, func($gmap.mat), x)
         
         function LinearAlgebra.mul!(y::BoxFun, g::$type, x::BoxFun)
+            checkbounds(Bool, g, x) || throw(BoundsError(g, x))
             fill!(y, zero(eltype(y)))
             rows = rowvals($gmap.mat)
             vals = nonzeros($gmap.mat)
             m, n = size($gmap)
-            # iterate over columns with the keys that the columns represent
-            for (col_j, j) in enumerate($gmap.support.set)
-                for k in nzrange($gmap.mat, col_j)
-                    w = vals[k]
-                    row_i = rows[k]
-                    # grab the key that this row represents
-                    if row_i > n
-                        i = $gmap.variant_set.set.dict.keys[row_i - n]
-                    else
+            # less overall checks need to be made with the square version
+            if m == n
+                # iterate over columns with the keys that the columns represent
+                for (col_j, j) in enumerate($gmap.support.set)
+                    for k in nzrange($gmap.mat, col_j)
+                        w = vals[k]
+                        row_i = rows[k]
+                        # grab the key that this row represents
                         i = $gmap.support.set.dict.keys[row_i]
+                        y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
                     end
-                    y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
+                end
+                
+            else
+                # iterate over columns with the keys that the columns represent
+                for (col_j, j) in enumerate($gmap.support.set)
+                    for k in nzrange($gmap.mat, col_j)
+                        w = vals[k]
+                        row_i = rows[k]
+                        # grab the key that this row represents
+                        if row_i > n
+                            i = $gmap.variant_set.set.dict.keys[row_i - n]
+                        else
+                            i = $gmap.support.set.dict.keys[row_i]
+                        end
+                        y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
+                    end
                 end
             end
             return y
@@ -174,3 +175,49 @@ function SparseArrays.sparse(
 
     return sparse(xs, ys, ws, m, n)
 end
+
+# add new entries to transferoperator
+function Base.checkbounds(::Type{Bool}, g::TransferOperator, keys)
+    all(x -> checkbounds(Bool, g.support.partition, x), keys) || return false
+    diff = setdiff(keys, g.support.set)
+    if !isempty(diff)
+        n = length(g.support)
+        m = n + length(g.variant_set)
+
+        now_invariant = g.variant_set.set ∩ diff
+        union!(g.support.set, now_invariant) # ensures that order of insertion is maintained
+        setdiff!(g.variant_set, now_invariant)
+        union!(g.support.set, diff)
+
+        # calculate transitions for the new keys
+        P = g.support.partition
+        D = Dict{Tuple{keytype(typeof(P)),keytype(typeof(P))},eltype(g)}
+        @floop for key in diff
+            box = key_to_box(P, key)
+            c, r = box.center, box.radius
+            domain_points = g.domain_points(c, r)
+            inv_n = 1. / length(domain_points)
+            for p in domain_points
+                c = g.map(p)
+                hitbox = point_to_box(P, c)
+                isnothing(hitbox) && continue
+                r = hitbox.radius
+                for ip in g.image_points(c, r)
+                    hit = point_to_key(P, ip)
+                    isnothing(hit) && continue
+                    hit in g.support.set || @reduce( out_of_bounds = S() ⊔ hit )
+                    @reduce( dict = D() ⊔ ((hit,key) => inv_n) )
+                end
+            end
+        end
+        union!(g.variant_set.set, out_of_bounds)
+        mat = sparse(dict, g.support, g.variant_set)
+
+        # add the new transitions to g.mat
+        mat[1:m, 1:n] .= g.mat
+        g.mat = mat
+    end
+    return true
+end
+
+Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, keys...) = checkbounds(b, g, tuple(key1, keys...))
