@@ -35,26 +35,26 @@ This will hopefully bring attention to merge the PR.
 
 .
 """
-struct BoxFun{B,W,S<:BoxSet{B},V<:Vector{W}} <: AbstractSparseVector{W,Int}
-    support::S
-    vals::V
-end
-
-# ensure that `BoxFun` uses an `OrderedSet`
-function BoxFun(support::M, vals::V) where {B,P,S<:OrderedSet,M<:BoxSet{B,P,S},W,V<:AbstractSparseVector{W}}
-    BoxFun{B,W,S,V}(support, vals)
-end
-
-function BoxFun(support::M, vals::V) where {B,P,S,M<:BoxSet{B,P,S},W,V<:AbstractSparseVector{W}}
-    BoxFun{B,W,S,V}(BoxSet(support.partition, OrderedSet(support.set)), vals)
+struct BoxFun{B,K,V,P<:AbstractBoxPartition{B},D<:AbstractDict{K,V}} <: AbstractVector{V}
+    partition::P
+    vals::D
 end
 
 Base.length(fun::BoxFun) = length(fun.support)
+
+function Base.show(io::IO, g::BoxFun)
+    print(io, "BoxFun over with $(length(g.vals)) stored entries $(g.partition)")
+end
+
+Base.length(fun::BoxFun) = length(fun.vals)
 Base.eltype(::BoxFun{B,W}) where {B,W} = W
 Base.show(io::IO, ::MIME"text/plain", fun::BoxFun) = show(io, fun)
 
-function Base.show(io::IO, g::BoxFun)
-    print(io, "BoxFun over $(g.support)")
+function Base.iterate(boxfun::BoxFun{B,K,V}, i...) where {B,K,V}
+    itr = iterate(boxfun.vals, i...)
+    isnothing(itr) && return itr
+    ((key, val), j) = itr
+    (Pair{B,V}(key_to_box(boxfun.partition, key), val), j)
 end
 
 
@@ -69,52 +69,29 @@ if `boxfun` is the discretization of a measure ``\mu`` over the domain
 ```
 """
 function Base.sum(f, boxfun::BoxFun, boxset=nothing)
-    sum(boxfun.support.set) do key
-        box = key_to_box(boxfun.support.partition, key)
-        i = getkeyindex(boxfun.support, key)
-        val = boxfun.vals[i]
-        volume(box) * f(val)
-    end
+    sum((box,val) -> volume(box)*f(val), boxfun)
 end
 
-function Base.sum(f, boxfun::BoxFun{B,W,S}, boxset::BoxSet{D,P,R}) where {B,D,W,I,R<:AbstractSet{I},P,S<:Boxset{<:B,<:P,<:AbstractSet{I}}}
-    sum(boxfun.support.set ∩ boxset.set) do key
-        box = key_to_box(boxfun.support.partition, key)
-        i = getkeyindex(boxfun.support, key)
-        val = boxfun.vals[i]
-        volume(box) * f(val)
-    end
+function Base.sum(f, boxfun::BoxFun{B,K,V}, boxset::Union{Box,BoxSet}) where {B,K,V}
+    support = boxfun.partition[boxset]
+    sum( 
+        volume(key_to_box(boxfun.partition, key)) * f(val) 
+        for (key,val) in boxfun.dict if key in support.set 
+    )
 end
 
-function Base.sum(f, boxfun::BoxFun{B,W,S}, boxset::BoxSet{D,P,R}) where {B,W,S,D,P,R}
-    support = boxfun.support.partition[boxset]
-    sum(f, boxfun, support)
-end
+(boxfun::BoxFun)(boxset::Union{Box,BoxSet}) = sum(identity, boxfun, boxset)
 
-(boxfun::BoxFun)(boxset::BoxSet) = sum(identity, boxfun, boxset)
-
-LinearAlgebra.norm(boxfun::BoxFun) = norm(boxfun.vals)
+LinearAlgebra.norm(boxfun::BoxFun) = sqrt(sum(abs2, boxfun))
 
 function LinearAlgebra.normalize!(boxfun::BoxFun)
     λ = inv(norm(boxfun))
-    map!(x -> λ*x, boxfun.vals, boxfun.vals)
+    map!(x -> λ*x, boxfun.vals)
     return boxfun
 end
 
-function Base.getindex(boxfun::BoxFun{B,W}, key) where {B,W}
-    i = getkeyindex(boxfun.support, key)
-    return isnothing(i) ? zero(W) : boxfun.vals[i]
-end
-
-function Base.setindex(boxfun::BoxFun{B,W}, key) where {B,W}
-    i = getkeyindex(boxfun.support, key)
-    if isnothing(i)
-        union!(boxfun.support, i)
-        i = length(boxfun.vals)+1
-        resize!(boxfun.vals, i)
-    end
-    return boxfun.vals[i]
-end
+Base.getindex(boxfun::BoxFun{B,K,V}, key) where {B,K,V} = get(boxfun.vals, key, zero(V))
+Base.setindex!(boxfun::BoxFun, val, key) = setindex!(boxfun.vals, val, key)
 
 import Base: ∘
 

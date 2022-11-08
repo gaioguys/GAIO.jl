@@ -1,8 +1,8 @@
 mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMatrix{T,Int}
     F::M
     support::S
+    # extra row pointers in case the set is not invariant
     variant_set::S
-    # it is more convenient to store the transposed matrix
     mat::SparseMatrixCSC{T,Int}
 end
 
@@ -91,9 +91,9 @@ function Base.setindex!(g::TransferOperator, u...)
 end
 
 for (type, (gmap, ind1, ind2, func)) in Dict(
-        TransferOperator                                    => (:(g),        :j, :i, identity),
-        LinearAlgebra.Transpose{<:Any,<:TransferOperator}   => (:(g.parent), :i, :j, transpose),
-        LinearAlgebra.Adjoint{<:Any,<:TransferOperator}     => (:(g.parent), :i, :j, adjoint)
+        TransferOperator                                    => (:(g),        :i, :j, identity),
+        LinearAlgebra.Transpose{<:Any,<:TransferOperator}   => (:(g.parent), :j, :i, transpose),
+        LinearAlgebra.Adjoint{<:Any,<:TransferOperator}     => (:(g.parent), :j, :i, adjoint)
     )
 
     @eval begin
@@ -102,7 +102,16 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
 
         function eigenfunctions(g::$type, B=I; nev=1, ritzvec=true, droptol=sqrt(eps(eltype($gmap))), kwargs...)
             λ, ϕ, nconv = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
-            b = [BoxFun($gmap.support, ϕ[:, i]) for i in 1:nev]
+            P = $gmap.support.partition
+            b = [
+                BoxFun(
+                    P, 
+                    OrderedDict{keytype(typeof(P)),eltype(ϕ)}(
+                        key => val for (key,val) in zip($gmap.support.set, ϕ[:, i])
+                    )
+                ) 
+                for i in 1:nev
+            ]
             return ritzvec ? (λ, b, nconv) : (λ, nconv)
         end
 
@@ -115,16 +124,18 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
             fill!(y, zero(eltype(y)))
             rows = rowvals($gmap.mat)
             vals = nonzeros($gmap.mat)
-            m, n = size($gmap.mat)
+            m, n = size($gmap)
+            # iterate over columns with the keys that the columns represent
             for (col_j, j) in enumerate($gmap.support.set)
-                for k in nzrange($gmap.mat, col_j) # we can iterate over whole column because only rows in support are initialized
-                    row = rows[k] # potentially many slow operations, can this be avoided? 
-                    if row > n
-                        i = $gmap.variant_set.set.dict.keys[getkeyindex($gmap.variant_set, row)]
-                    else
-                        i = $gmap.support.set.dict.keys[getkeyindex($gmap.support, row)]
-                    end
+                for k in nzrange($gmap.mat, col_j)
                     w = vals[k]
+                    row_i = rows[k]
+                    # grab the key that this row represents
+                    if row_i > n
+                        i = $gmap.variant_set.set.dict.keys[row_i - n]
+                    else
+                        i = $gmap.support.set.dict.keys[row_i]
+                    end
                     y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
                 end
             end
