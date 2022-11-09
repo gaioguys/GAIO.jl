@@ -6,13 +6,13 @@ end
 
 function TransferOperator(
         g::M, support::S, mat::D
-    ) where {B,T,I,Y<:OrderedSet,S<:BoxSet{B,Q,Y},M<:BoxMap,D<:AbstractDict{Tuple{I,I},T}}
+    ) where {B,T,I,Q,Y<:OrderedSet,S<:BoxSet{B,Q,Y},M<:BoxMap,D<:AbstractDict{Tuple{I,I},T}}
     TransferOperator{B,T,I,S,M,D}(g, support, mat)
 end
 
 function TransferOperator(
         g::M, support::S, mat::D
-    ) where {B,T,I,Y,S<:BoxSet{B,Q,Y},M<:BoxMap,D<:AbstractDict{Tuple{I,I},T}}
+    ) where {B,T,I,Q,Y,S<:BoxSet{B,Q,Y},M<:BoxMap,D<:AbstractDict{Tuple{I,I},T}}
     TransferOperator{B,T,I,S,M,D}(g, BoxSet(support.partition, OrderedSet(support.set)), mat)
 end
 
