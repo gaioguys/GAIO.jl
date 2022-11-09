@@ -35,7 +35,7 @@ end
 
 function Base.show(io::IO, boxset::BoxSet)
     size = length(boxset.set)
-    print(io, "$size - element BoxSet in ", boxset.partition)
+    print(io, "$size-element BoxSet in ", boxset.partition)
 end
 
 Base.show(io::IO, ::MIME"text/plain", boxset::BoxSet) = show(io, boxset)
@@ -99,21 +99,18 @@ function cover_boxes(partition::P, boxes; input_set=Set{keytype(P)}()) where {N,
     return BoxSet(partition, keys)
 end
 
-function Base.getindex(partition::AbstractBoxPartition, key::Integer)
-    BoxSet(partition, Set([key]))
+function Base.getindex(partition::P, key::Integer) where {P<:AbstractBoxPartition}
+    BoxSet(partition, Set{keytype(P)}([key]))
 end
 
-function getkeyindex(boxset::BoxSet{B,P,S}, i) where {B,P,S<:OrderedSet}
-    j = OrderedCollections.ht_keyindex(boxset.set.dict, i, true)
-    j > 0 ? j : nothing
+function Base.getindex(B::BoxSet, points)
+    A = getindex(B.partition, points)
+    return B ∩ A
 end
 
-function getkeyindex(boxset::BoxSet{B,P,S}, i) where {B,P,S<:Set}
-    j = Base.ht_keyindex(boxset.set.dict, i)
-    j > 0 ? j : nothing
+function Base.getindex(partition::P, ::Colon) where {P<:AbstractBoxPartition}
+    return BoxSet(partition, Set{keytype(P)}(keys(partition)))
 end
-
-getkeyindex(::BoxSet{B,P,S}, ::Nothing) where {B,P,S<:OrderedSet} = nothing
 
 for op in (:union, :intersect, :setdiff, :symdiff)
     op! = Symbol(op, :!) 

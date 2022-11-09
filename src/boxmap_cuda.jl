@@ -130,14 +130,15 @@ end
 
 for adaptor in (CUDA.CuArrayAdaptor, CUDA.Adaptor), T in (:Float64, :J), I in (:Int64, :Int128, :J)
     @eval function Adapt.adapt_structure(
-            a::$adaptor, b::BoxPartition{N,$T,$I}
-        ) where {N,J}
+            a::$adaptor, b::BoxPartition{N,$T,$I,A}
+        ) where {N,J,A}
 
         Adapt.adapt_storage(a,
-            BoxPartition{N,Float32,Int32}(
+            BoxPartition{N,Float32,Int32,A}(
                 Box{N,Float32}(b.domain.center, b.domain.radius),
                 SVector{N,Float32}(b.left), SVector{N,Float32}(b.scale),
-                SVector{N,Int32}(b.dims), SVector{N,Int32}(b.dimsprod)
+                SVector{N,Int32}(b.dims), SVector{N,Int32}(b.dimsprod),
+                b.indextype
             )
         )
     end
