@@ -1,19 +1,7 @@
-struct TransferOperator{B,T,I,S<:BoxSet{B},M<:BoxMap,D<:AbstractDict{Tuple{I,I},T}} <: AbstractMatrix{T}
+struct TransferOperator{B,T,I,Q,Y,S<:BoxSet{B,Q,Y},M<:BoxMap,D<:AbstractDict{Tuple{I,I},T}} <: AbstractMatrix{T}
     F::M
     support::S
     mat::D
-end
-
-function TransferOperator(
-        g::M, support::S, mat::D
-    ) where {B,T,I,Q,Y<:OrderedSet,S<:BoxSet{B,Q,Y},M<:BoxMap,D<:AbstractDict{Tuple{I,I},T}}
-    TransferOperator{B,T,I,S,M,D}(g, support, mat)
-end
-
-function TransferOperator(
-        g::M, support::S, mat::D
-    ) where {B,T,I,Q,Y,S<:BoxSet{B,Q,Y},M<:BoxMap,D<:AbstractDict{Tuple{I,I},T}}
-    TransferOperator{B,T,I,S,M,D}(g, BoxSet(support.partition, OrderedSet(support.set)), mat)
 end
 
 # helper function so we aren't doing type piracy on `mergewith!`
@@ -25,9 +13,13 @@ function ⊔(d::AbstractDict, p::Pair)
     d
 end
 
+function TransferOperator(g::BoxMap, boxset::BoxSet{B,Q,S}) where {N,T,B<:Box{N,T},Q<:BoxPartition,S}
+    TransferOperator(g, BoxSet(boxset.partition, OrderedSet(boxset.set)))
+end
+
 function TransferOperator(
         g::BoxMap, boxset::BoxSet{B,Q,S}
-    ) where {N,T,B<:Box{N,T},Q<:BoxPartition,S}
+    ) where {N,T,B<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
 
     P, D = boxset.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
     @floop for key in boxset.set
@@ -51,7 +43,7 @@ function TransferOperator(
 end
 
 function Base.show(io::IO, g::TransferOperator)
-    print(io, "TransferOperator with $(length(g.mat)) stored entries over $(g.partition)")
+    print(io, "TransferOperator with $(length(g.mat)) stored entries over $(g.support.partition)")
 end
 
 Base.show(io::IO, ::MIME"text/plain", g::TransferOperator) = show(io, g)
@@ -68,18 +60,6 @@ function Base.axes(g::TransferOperator{B,T,I}) where {B,T,I}
     end
     return collect(is), collect(js)
 end
-
-function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,I}, keys) where {B,T,I}
-    all(x -> checkbounds(Bool, g.partition, x), keys) || return false
-    diff = setdiff(keys, axes(g)[2])
-    if !isempty(diff)
-        g̃ = TransferOperator(g.F, BoxSet(g.partition, Set{I}(diff)))
-        g.mat = g.mat ⊔ g̃.mat
-    end
-    return true
-end
-
-Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, keys...) = checkbounds(b, g, tuple(key1, keys...))
 
 function Base.getindex(g::TransferOperator{T,I}, u, v) where {T,I}
     checkbounds(Bool, g, u, v) || throw(BoundsError(g, (u,v)))
@@ -111,8 +91,8 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
             D = OrderedDict{keytype($gmap.support.partition),eltype(ϕ)}
             b = [
                 BoxFun(
-                    $gmap.partition, 
-                    D(key => val for (key,val) in zip(g.support.set, ϕ[:, i]))
+                    $gmap.support.partition, 
+                    D(zip($gmap.support.set, ϕ[:, i]))
                 ) for i in 1:nev
             ]
             return ritzvec ? (λ, b, nconv) : (λ, nconv)
@@ -125,8 +105,8 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
             s = $gmap.support
             for ((u, v), w) in $gmap.mat
                 (u in s.set && v in s.set) || continue
-                $ind1, $ind2 = getkeyindex(s, u), getkeyindex(s, v)
-                y[j] = y[j] + w * $func(x[i])
+                i, j = getkeyindex(s, u), getkeyindex(s, v)
+                y[$ind2] = y[$ind2] + $func(w) * x[$ind1]
             end
             return y
         end
@@ -134,8 +114,8 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         @muladd function LinearAlgebra.mul!(y::BoxFun, g::$type, x::BoxFun)
             s = $gmap.support
             for ((u, v), w) in $gmap.mat
-                $ind1, $ind2 = u, v
-                y[j] = y[j] + w * $func(x[i])
+                i, j = u, v
+                y[$ind2] = y[$ind2] + $func(w) * x[$ind1]
             end
             return y
         end
@@ -145,8 +125,58 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
             vals = D()
             sizehint!(vals, length(x))
             y = BoxFun(x.partition, vals)
-            return mul!(y.vals, g, x.vals)
+            return mul!(y, g, x)
         end
 
     end
 end
+
+function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,I}, keys) where {B,T,I}
+    all(x -> checkbounds(Bool, g.partition, x), keys) || return false
+    diff = setdiff(keys, axes(g)[2])
+    if !isempty(diff)
+        @info(
+            """
+            Support of the BoxFun lies outside the already calculated
+            support of the TransferOperator. Computing new transfers.
+            """,
+            new_keys = diff
+        )
+        g̃ = TransferOperator(g.F, BoxSet(g.partition, Set{I}(diff)))
+        g.mat = g.mat ⊔ g̃.mat
+        @debug(
+            """
+            New TransferOperator:
+            """,
+            new_size=size(g),
+            new_operator=g
+        )
+    end
+    return true
+end
+
+function Base.checkbounds(
+        ::Type{Bool}, g::R, keys
+    ) where {R<:Union{<:LinearAlgebra.Transpose{<:Any,<:TransferOperator},<:LinearAlgebra.Adjoint{<:Any,<:TransferOperator}}}
+
+    all(x -> checkbounds(Bool, g.parent.support.partition, x), keys) || return false
+    diff = setdiff(keys, g.parent.support.set ∪ g.parent.variant_set.set)
+    if !isempty(diff)
+        @warn(
+            """
+            support of the BoxFun lies outside of the calculated support of 
+            the TransferOperator. Because the multiplication involves the 
+            adjoint or transpose of the TransferOperator, lazy evaluation 
+            is not possible. Consider (if possible) using the TransferOperator
+            of the inverse map. 
+            """, 
+            adjoint_TransferOperator=g,
+            invalid_keys=diff,
+            maxlog=10
+        )
+        #return false
+    end
+    return true
+end
+
+Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, key2, keys...) = checkbounds(b, g, tuple(key1, key2, keys...))
