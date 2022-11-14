@@ -69,7 +69,7 @@ Base.LinearIndices(partition::BoxPartition) = LinearIndices(size(partition))
 Base.keys(partition::BoxPartition{N,T,I,<:IndexLinear}) where {N,T,I} = one(I) : length(partition)
 Base.keys(partition::BoxPartition{N,T,I,<:IndexCartesian}) where {N,T,I} = (NTuple{N,I}(i.I) for i in CartesianIndices(partition))
 
-Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexLinear}, key::Integer) where {N,T,I} = one(I) ≤ key ≤ size(partition)
+Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexLinear}, key::Integer) where {N,T,I} = one(I) ≤ key ≤ length(partition)
 Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexLinear}, key) where {N,T,I} = checkbounds(Bool, partition, cartesian_to_linear(partition, key))
 Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexCartesian}, key) where {N,T,I} = all(i -> 1 ≤ key[i] ≤ size(partition)[i], 1:N)
 Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexCartesian}, key::Integer) where {N,T,I} = checkbounds(Bool, partition, linear_to_cartesian(partition, key))

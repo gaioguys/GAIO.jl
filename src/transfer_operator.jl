@@ -1,5 +1,5 @@
 mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMatrix{T,Int}
-    F::M
+    boxmap::M
     support::S
     # extra row pointers in case the set is not invariant
     variant_set::S
@@ -15,13 +15,8 @@ function ⊔(d::AbstractDict, p::Pair)
     d
 end
 
-# ensure that `TransferOperator` uses an `OrderedSet`
-function TransferOperator(g::BoxMap, boxset::BoxSet{B,Q,S}) where {B,Q,S}
-    TransferOperator(g, BoxSet(boxset.partition, OrderedSet(boxset.set)))
-end
-
-function TransferOperator(
-        g::BoxMap, boxset::BoxSet{R,Q,S}; target_support=boxset
+function construct_transfers(
+        g::BoxMap, boxset::BoxSet{R,Q,S}
     ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
 
     P, D = boxset.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
@@ -38,21 +33,40 @@ function TransferOperator(
             for ip in g.image_points(c, r)
                 hit = point_to_key(P, ip)
                 isnothing(hit) && continue
-                hit in boxset.set || @reduce( out_of_bounds = S() ⊔ hit )
-                @reduce( dict = D() ⊔ ((hit,key) => inv_n) )
+                hit in boxset.set || @reduce( variant_keys = S() ⊔ hit )
+                @reduce( mat = D() ⊔ ((hit,key) => inv_n) )
             end
         end
     end
-    variant_set = BoxSet(P, out_of_bounds)
+    return mat, variant_keys
+end
+
+construct_transfers(g::TransferOperator, boxset) = construct_transfers(g.boxmap, boxset)
+
+# ensure that `TransferOperator` uses an `OrderedSet`
+function TransferOperator(g::BoxMap, boxset::BoxSet{B,Q,S}) where {B,Q,S}
+    TransferOperator(g, BoxSet(boxset.partition, OrderedSet(boxset.set)))
+end
+
+function TransferOperator(
+        g::BoxMap, boxset::BoxSet{R,Q,S}
+    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+
+    dict, out_of_bounds = construct_transfers(g, boxset)
+    variant_set = BoxSet(boxset.partition, out_of_bounds)
     mat = sparse(dict, boxset, variant_set)
     return TransferOperator(g, boxset, variant_set, mat)
 end
 
 function Base.show(io::IO, g::TransferOperator)
-    print(io, "TransferOperator with $(length(nonzeros(g.mat))) stored entries over $(g.support.partition)")
+    print(io, "TransferOperator over $(g.support)")
 end
 
-Base.show(io::IO, ::MIME"text/plain", g::TransferOperator) = show(io, g)
+function Base.show(io::IO, ::MIME"text/plain", g::TransferOperator)
+    print(io, "TransferOperator over $(g.support) with $(length(nonzeros(g.mat))) stored entries:\n\n")
+    SparseArrays._show_with_braille_patterns(io, g.mat)
+end
+
 Base.:(==)(g1::TransferOperator, g2::TransferOperator) = g1.mat == g2.mat
 Base.eltype(::Type{<:TransferOperator{B,T}}) where {B,T} = T
 Base.keytype(::Type{<:TransferOperator{B,T,I}}) where {B,T,I} = I
@@ -68,7 +82,7 @@ end
 function Base.getindex(g::TransferOperator{T,I}, u, v) where {T,I}
     checkbounds(Bool, g, u, v) || throw(BoundsError(g, (u,v)))
     i, j = getkeyindex(g.support, u), getkeyindex(g.support, v)
-    return g.mat[i,j]
+    return g.mat[i, j]
 end
 
 function Base.setindex!(g::TransferOperator, u...)
@@ -85,14 +99,14 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
 
         LinearAlgebra.issymmetric(g::$type) = issymmetric($gmap.mat)
 
-        function eigenfunctions(g::$type, B=I; nev=1, ritzvec=true, droptol=sqrt(eps(eltype($gmap))), kwargs...)
+        function eigenfunctions(g::$type, B=I; nev=1, ritzvec=true, kwargs...)
             λ, ϕ, nconv = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
             P = $gmap.support.partition
             b = [
                 BoxFun(
                     P, 
                     OrderedDict{keytype(typeof(P)),eltype(ϕ)}(
-                        key => val for (key,val) in zip($gmap.support.set, ϕ[:, i])
+                        zip($gmap.support.set, ϕ[:, i])
                     )
                 ) 
                 for i in 1:nev
@@ -103,11 +117,12 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         Arpack.eigs(g::$type, B::UniformScaling=I; kwargs...) = eigenfunctions(g, B; kwargs...)
         Arpack.eigs(g::$type, B; kwargs...) = eigenfunctions(g, B; kwargs...)
     
-        LinearAlgebra.mul!(y::AbstractVector, g::$type, x::AbstractVector) = mul!(y, func($gmap.mat), x)
+        LinearAlgebra.mul!(y::AbstractVector, g::$type, x::AbstractVector) = mul!(y, $func($gmap.mat), x)
         
         function LinearAlgebra.mul!(y::BoxFun, g::$type, x::BoxFun)
-            checkbounds(Bool, g, x) || throw(BoundsError(g, x))
-            fill!(y, zero(eltype(y)))
+            checkbounds(Bool, g, keys(x.vals)) || throw(BoundsError(g, x))
+            zer = zero(eltype(y))
+            map!(x -> zer, values(y.vals))
             rows = rowvals($gmap.mat)
             vals = nonzeros($gmap.mat)
             m, n = size($gmap)
@@ -143,19 +158,30 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
             return y
         end
 
-        function Base.:(*)(g::$type, x::BoxFun)
-            support = g.support ∪ g.variant_set ∪ x.support
-            y = BoxFun(support, Vector{promote_type(eltype(g), eltype(x))}(undef, length(support)))
-            return mul!(y.vals, g, x.vals)
+        function Base.:(*)(g::$type, x::BoxFun{B,K,V}) where {B,K,V}
+            dict = OrderedDict{K, promote_type(eltype(g), V)}()
+            sizehint!(dict, length($gmap.support) + length($gmap.variant_set))
+            y = BoxFun($gmap.support.partition, dict)
+            return mul!(y, g, x)
         end
 
     end
 end
 
+_rehash!(dict::Dict) = Base.rehash!(dict)
+_rehash!(dict::OrderedDict) = OrderedCollections.rehash!(dict)
+_rehash!(dict::IdDict) = Base.rehash!(dict)
+_rehash!(set::Union{Set,OrderedSet}) = _rehash!(set.dict)
+_rehash!(d::Union{AbstractDict,AbstractSet}) = d
+_rehash!(boxset::BoxSet) = _rehash!(boxset.set)
+
 # convert DOK sparse matrix to CSC using indices from support / variant_set
 function SparseArrays.sparse(
         dict::Dict{Tuple{I,I},T}, support::BoxSet, variant_set::BoxSet
     ) where {I,T}
+
+    _rehash!(support)
+    _rehash!(variant_set)
 
     n = length(support)
     m = n + length(variant_set)
@@ -166,7 +192,7 @@ function SparseArrays.sparse(
     sizehint!(ws, length(dict))
 
     for ((u, v), w) in dict
-        x = u in support ? getkeyindex(support, u) : n + getkeyindex(variant_set, u)
+        x = u in support.set ? getkeyindex(support, u) : n + getkeyindex(variant_set, u)
         y = getkeyindex(support, v)
         push!(xs, x)
         push!(ys, y)
@@ -177,47 +203,68 @@ function SparseArrays.sparse(
 end
 
 # add new entries to transferoperator
-function Base.checkbounds(::Type{Bool}, g::TransferOperator, keys)
+function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,S}, keys) where {B,T,S}
     all(x -> checkbounds(Bool, g.support.partition, x), keys) || return false
+
     diff = setdiff(keys, g.support.set)
     if !isempty(diff)
-        n = length(g.support)
-        m = n + length(g.variant_set)
+        @info(
+            """
+            Support of the BoxFun lies outside the already calculated
+            support of the TransferOperator. Computing new transfers.
+            """,
+            new_keys = diff
+        )
 
+        # update the support and variant set
+        m, n = size(g)
         now_invariant = g.variant_set.set ∩ diff
         union!(g.support.set, now_invariant) # ensures that order of insertion is maintained
-        setdiff!(g.variant_set, now_invariant)
+        setdiff!(g.variant_set.set, now_invariant)
         union!(g.support.set, diff)
 
         # calculate transitions for the new keys
-        P = g.support.partition
-        D = Dict{Tuple{keytype(typeof(P)),keytype(typeof(P))},eltype(g)}
-        @floop for key in diff
-            box = key_to_box(P, key)
-            c, r = box.center, box.radius
-            domain_points = g.domain_points(c, r)
-            inv_n = 1. / length(domain_points)
-            for p in domain_points
-                c = g.map(p)
-                hitbox = point_to_box(P, c)
-                isnothing(hitbox) && continue
-                r = hitbox.radius
-                for ip in g.image_points(c, r)
-                    hit = point_to_key(P, ip)
-                    isnothing(hit) && continue
-                    hit in g.support.set || @reduce( out_of_bounds = S() ⊔ hit )
-                    @reduce( dict = D() ⊔ ((hit,key) => inv_n) )
-                end
-            end
-        end
+        dict, out_of_bounds = construct_transfers(g, BoxSet(g.support.partition, S(diff)))
         union!(g.variant_set.set, out_of_bounds)
         mat = sparse(dict, g.support, g.variant_set)
 
         # add the new transitions to g.mat
         mat[1:m, 1:n] .= g.mat
         g.mat = mat
+
+        @debug(
+            """
+            New TransferOperator:
+            """,
+            new_size=size(g),
+            new_operator=g
+        )
     end
     return true
 end
 
-Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, keys...) = checkbounds(b, g, tuple(key1, keys...))
+function Base.checkbounds(
+        ::Type{Bool}, g::R, keys
+    ) where {R<:Union{<:LinearAlgebra.Transpose{<:Any,<:TransferOperator},<:LinearAlgebra.Adjoint{<:Any,<:TransferOperator}}}
+
+    all(x -> checkbounds(Bool, g.parent.support.partition, x), keys) || return false
+    diff = setdiff(keys, g.parent.support.set ∪ g.parent.variant_set.set)
+    if !isempty(diff)
+        @warn(
+            """
+            support of the BoxFun lies outside of the calculated support of 
+            the TransferOperator. Because the multiplication involves the 
+            adjoint or transpose of the TransferOperator, lazy evaluation 
+            is not possible. Consider (if possible) using the TransferOperator
+            of the inverse map. 
+            """, 
+            adjoint_TransferOperator=g,
+            invalid_keys=diff,
+            maxlog=10
+        )
+        #return false
+    end
+    return true
+end
+
+Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, key2, keys...) = checkbounds(b, g, tuple(key1, key2, keys...))

@@ -35,7 +35,7 @@ end
 
 function Base.show(io::IO, boxset::BoxSet)
     size = length(boxset.set)
-    print(io, "$size-element BoxSet in ", boxset.partition)
+    print(io, "$size - element BoxSet in ", boxset.partition)
 end
 
 Base.show(io::IO, ::MIME"text/plain", boxset::BoxSet) = show(io, boxset)

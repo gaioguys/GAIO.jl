@@ -40,14 +40,14 @@ struct BoxFun{B,K,V,P<:AbstractBoxPartition{B},D<:AbstractDict{K,V}} <: Abstract
     vals::D
 end
 
-Base.length(fun::BoxFun) = length(fun.support)
-
 function Base.show(io::IO, g::BoxFun)
-    print(io, "BoxFun over with $(length(g.vals)) stored entries $(g.partition)")
+    print(io, "BoxFun in $(g.partition) with $(length(g.vals)) stored entries")
 end
 
 Base.length(fun::BoxFun) = length(fun.vals)
-Base.eltype(::BoxFun{B,W}) where {B,W} = W
+Base.keytype(::BoxFun{B,K,V}) where {B,K,V} = K
+Base.eltype(::BoxFun{B,K,V}) where {B,K,V} = V
+Base.values(fun::BoxFun) = values(fun.vals)
 Base.show(io::IO, ::MIME"text/plain", fun::BoxFun) = show(io, fun)
 
 function Base.iterate(boxfun::BoxFun{B,K,V}, i...) where {B,K,V}
@@ -86,12 +86,25 @@ LinearAlgebra.norm(boxfun::BoxFun) = sqrt(sum(abs2, boxfun))
 
 function LinearAlgebra.normalize!(boxfun::BoxFun)
     λ = inv(norm(boxfun))
-    map!(x -> λ*x, boxfun.vals)
+    map!(x -> λ*x, values(boxfun.vals))
     return boxfun
 end
 
+Base.:(==)(b1::BoxFun, b2::BoxFun) = b1.vals == b2.vals
 Base.getindex(boxfun::BoxFun{B,K,V}, key) where {B,K,V} = get(boxfun.vals, key, zero(V))
 Base.setindex!(boxfun::BoxFun, val, key) = setindex!(boxfun.vals, val, key)
+
+function Base.isapprox(
+        l::BoxFun, r::BoxFun; 
+        atol=sqrt(eps())*max(norm(values(l)), norm(values(r))), kwargs...
+    )
+    
+    l === r && return true
+    for key in (keys(l.vals) ∪ keys(r.vals))
+        isapprox(l[key], r[key]; atol=atol, kwargs...) || return false
+    end
+    return true
+end
 
 import Base: ∘
 
@@ -100,14 +113,4 @@ import Base: ∘
 
 Compose the function `f` with the `boxfun`. 
 """
-∘(f, boxfun::BoxFun{P,K,V}) where {P,K,V} = BoxFun(boxfun.support, map(f, boxfun.vals))
-
-function Base.checkbounds(::Type{Bool}, boxfun::BoxFun, keys)
-    all(x -> checkbounds(Bool, boxfun.support.partition, x), keys) || return false
-    diff = setdiff(keys, boxfun.support.set)
-    if !isempty(diff)
-        union!(boxfun.support.set, keys)
-        resize!(boxfun.vals, length(boxfun.support))
-    end
-    return true
-end
+∘(f, boxfun::BoxFun{B,K,V,P,D}) where {B,K,V,P,D} = BoxFun(boxfun.partition, D(key => f(val) for (key,val) in boxfun.vals))
