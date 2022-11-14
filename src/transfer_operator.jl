@@ -71,7 +71,7 @@ Base.:(==)(g1::TransferOperator, g2::TransferOperator) = g1.mat == g2.mat
 Base.eltype(::Type{<:TransferOperator{B,T}}) where {B,T} = T
 Base.keytype(::Type{<:TransferOperator{B,T,I}}) where {B,T,I} = I
 Base.size(g::TransferOperator) = size(g.mat)
-Base.Matrix(g::TransferOperator) = copy(g.mat)
+Base.Matrix(g::TransferOperator) = Matrix(g.mat)
 
 function Base.axes(g::TransferOperator)
     v = collect(g.support)
@@ -267,4 +267,6 @@ function Base.checkbounds(
     return true
 end
 
-Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, key2, keys...) = checkbounds(b, g, tuple(key1, key2, keys...))
+function Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, key2, keys...)
+    checkbounds(b, g, tuple(key1, key2, keys...))
+end
