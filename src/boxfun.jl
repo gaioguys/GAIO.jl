@@ -95,13 +95,14 @@ Base.getindex(boxfun::BoxFun{B,K,V}, key) where {B,K,V} = get(boxfun.vals, key, 
 Base.setindex!(boxfun::BoxFun, val, key) = setindex!(boxfun.vals, val, key)
 
 function Base.isapprox(
-        l::BoxFun, r::BoxFun; 
-        atol=sqrt(eps())*max(norm(values(l)), norm(values(r))), kwargs...
-    )
+        l::BoxFun{B,K,V}, r::BoxFun{R,J,W}; 
+        atol=0, rtol=Base.rtoldefault(V,W,atol), kwargs...
+    ) where {B,K,V,R,J,W}
     
     l === r && return true
+    atol_used = max(atol, rtol * max(norm(values(l)), norm(values(r))))
     for key in (keys(l.vals) ∪ keys(r.vals))
-        isapprox(l[key], r[key]; atol=atol, kwargs...) || return false
+        isapprox(l[key], r[key]; atol=atol_used, rtol=rtol, kwargs...) || return false
     end
     return true
 end
