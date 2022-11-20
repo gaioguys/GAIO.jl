@@ -202,6 +202,29 @@ function SparseArrays.sparse(
     return sparse(xs, ys, ws, m, n)
 end
 
+function Base.Dict(g::TransferOperator{B,T,S}) where {B,T,R,Q,G,S<:BoxSet{R,Q,G}}
+    rows = rowvals(g.mat)
+    vals = nonzeros(g.mat)
+    m, n = size(g)
+    dict = Dict{Tuple{keytype(Q),keytype(Q)},T}()
+    sizehint!(dict, length(vals))
+    # iterate over columns with the keys that the columns represent
+    for (col_j, j) in enumerate(g.support.set)
+        for k in nzrange(g.mat, col_j)
+            w = vals[k]
+            row_i = rows[k]
+            # grab the key that this row represents
+            if row_i > n
+                i = g.variant_set.set.dict.keys[row_i - n]
+            else
+                i = g.support.set.dict.keys[row_i]
+            end
+            dict[(i,j)] = w
+        end
+    end
+    return dict
+end
+
 # add new entries to transferoperator
 function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,S}, keys) where {B,T,S}
     all(x -> checkbounds(Bool, g.support.partition, x), keys) || return false
@@ -216,20 +239,22 @@ function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,S}, keys) where 
             new_keys = diff
         )
 
+        dict = Dict(g)
+
         # update the support and variant set
         m, n = size(g)
-        now_invariant = g.variant_set.set ∩ diff
-        union!(g.support.set, now_invariant) # ensures that order of insertion is maintained
+        now_invariant = intersect!(copy(g.variant_set.set), diff) # ensures that order of insertion is maintained
+        union!(g.support.set, now_invariant)
         setdiff!(g.variant_set.set, now_invariant)
         union!(g.support.set, diff)
 
         # calculate transitions for the new keys
-        dict, out_of_bounds = construct_transfers(g, BoxSet(g.support.partition, S(diff)))
+        new_dict, out_of_bounds = construct_transfers(g, BoxSet(g.support.partition, S(diff)))
         union!(g.variant_set.set, out_of_bounds)
+        
+        # construct the new matrix
+        dict = dict ⊔ new_dict
         mat = sparse(dict, g.support, g.variant_set)
-
-        # add the new transitions to g.mat
-        mat[1:m, 1:n] .= g.mat
         g.mat = mat
 
         @debug(
