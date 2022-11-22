@@ -1,16 +1,3 @@
-struct BoxList{P<:AbstractBoxPartition,L<:AbstractVector}
-    partition::P
-    keylist::L
-end
-
-Base.length(list::BoxList) = length(list.keylist)
-Base.getindex(list::BoxList, x::AbstractVector) = BoxList(list.partition, list.keylist[x])
-Base.getindex(list::BoxList, i::Int64) = list.keylist[i]
-
-BoxList(set::BoxSet) = BoxList(set.partition, collect(set.set))
-
-BoxSet(list::BoxList) = BoxSet(list.partition, Set(list.keylist))
-
 """
     TransferOperator(map::BoxMap, support::BoxSet, mat::SparseMatrixCSC)
     TransferOperator(map::BoxMap, support::BoxSet)
@@ -41,128 +28,307 @@ Methods Implemented:
 ```
 .
 """
-struct TransferOperator{L<:BoxList,W}
-    vertices::L
-    edges::Dict{Tuple{Int,Int},W}
+mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMatrix{T,Int}
+    boxmap::M
+    support::S
+    # extra row pointers in case the set is not invariant
+    variant_set::S
+    mat::SparseMatrixCSC{T,Int}
 end
 
-function Base.show(io::IO, T::TransferOperator)
-    n = length(T.vertices)
-    m = length(T.edges)
-    print(io, "TransferOperator on $(n) boxes with $(m) edges")
+# helper function so we aren't doing type piracy on `mergewith!`
+⊔(d::AbstractDict...) = mergewith!(+, d...)
+⊔(d::AbstractDict, p::Pair...) = foreach(q -> d ⊔ q, p)
+function ⊔(d::AbstractDict, p::Pair)
+    k, v = p
+    d[k] = haskey(d, k) ? d[k] + v : v
+    d
 end
 
-function invert_vector(x::AbstractVector{T}) where T
-    dict = Dict{T,Int}()
-    sizehint!(dict, length(x))
+function construct_transfers(
+        g::BoxMap, boxset::BoxSet{R,Q,S}
+    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
 
-    for i in 1:length(x)
-        dict[x[i]] = i
-    end
-
-    return dict
-end
-
-# TODO: this code is generally incorrect. only valid for BoxPartition and special choices of points
-function TransferOperator(g::SampledBoxMap, boxset::BoxSet{BB,QQ,SS}) where {BB,QQ,SS}
-    Q = g.domain    
-    n = length(g.domain_points(Q.center, Q.radius))
-    P = boxset.partition
-    edges = [ Dict{Tuple{Int64,Int64},Float64}() for k = 1:nthreads() ]
-    boxlist = BoxList(boxset)
-    key_to_index = invert_vector(boxlist.keylist)
-
-    @threads for i = 1:length(boxlist)
-        box = key_to_box(P, boxlist[i])
+    P, D = boxset.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
+    @floop for key in boxset.set
+        box = key_to_box(P, key)
         c, r = box.center, box.radius
-        points = g.domain_points(c, r)
-        for p in points
-            fp = g.map(@muladd p .* r .+ c)
-            hit = point_to_key(P, fp)
-            if !isnothing(hit)
-                if hit in boxset.set
-                    j = key_to_index[hit]
-                    e = (i,j)
-                    edges[threadid()][e] = get(edges[threadid()], e, 0) + 1.0/n
-                end
+        domain_points = g.domain_points(c, r)
+        inv_n = 1. / length(domain_points)
+        for p in domain_points
+            c = g.map(p)
+            hitbox = point_to_box(P, c)
+            isnothing(hitbox) && continue
+            r = hitbox.radius
+            for ip in g.image_points(c, r)
+                hit = point_to_key(P, ip)
+                isnothing(hit) && continue
+                hit in boxset.set || @reduce( variant_keys = S() ⊔ hit )
+                @reduce( mat = D() ⊔ ((hit,key) => inv_n) )
             end
         end
     end
-    edges = merge(edges...)
-
-    return TransferOperator(boxlist, edges)
+    return mat, variant_keys
 end
 
+construct_transfers(g::TransferOperator, boxset) = construct_transfers(g.boxmap, boxset)
 
-function Graphs.strongly_connected_components(gstar::TransferOperator)
-    graph = SimpleDiGraph(
-        [Edge(edge[1], edge[2]) for edge in keys(gstar.edges)]
+# ensure that `TransferOperator` uses an `OrderedSet`
+function TransferOperator(g::BoxMap, boxset::BoxSet{B,Q,S}) where {B,Q,S}
+    TransferOperator(g, BoxSet(boxset.partition, OrderedSet(boxset.set)))
+end
+
+function TransferOperator(
+        g::BoxMap, boxset::BoxSet{R,Q,S}
+    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+
+    dict, out_of_bounds = construct_transfers(g, boxset)
+    variant_set = BoxSet(boxset.partition, out_of_bounds)
+    mat = sparse(dict, boxset, variant_set)
+    return TransferOperator(g, boxset, variant_set, mat)
+end
+
+function Base.show(io::IO, g::TransferOperator)
+    print(io, "TransferOperator over $(g.support)")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", g::TransferOperator)
+    print(io, "TransferOperator over $(g.support) with $(length(nonzeros(g.mat))) stored entries:\n\n")
+    SparseArrays._show_with_braille_patterns(io, g.mat)
+end
+
+Base.:(==)(g1::TransferOperator, g2::TransferOperator) = g1.mat == g2.mat
+Base.eltype(::Type{<:TransferOperator{B,T}}) where {B,T} = T
+Base.keytype(::Type{<:TransferOperator{B,T,I}}) where {B,T,I} = I
+Base.size(g::TransferOperator) = size(g.mat)
+Base.Matrix(g::TransferOperator) = Matrix(g.mat)
+
+function Base.axes(g::TransferOperator)
+    v = collect(g.support)
+    u = vcat(v, collect(g.variant_set))
+    return (u, v)
+end
+
+function Base.getindex(g::TransferOperator{T,I}, u, v) where {T,I}
+    checkbounds(Bool, g, u, v) || throw(BoundsError(g, (u,v)))
+    i, j = getkeyindex(g.support, u), getkeyindex(g.support, v)
+    return g.mat[i, j]
+end
+
+function Base.setindex!(g::TransferOperator, u...)
+    @error "setindex! is deliberately not supported for TransferOperators. Use getindex to generate an index value. "
+end
+
+for (type, (gmap, ind1, ind2, func)) in Dict(
+        TransferOperator                                    => (:(g),        :i, :j, identity),
+        LinearAlgebra.Transpose{<:Any,<:TransferOperator}   => (:(g.parent), :j, :i, transpose),
+        LinearAlgebra.Adjoint{<:Any,<:TransferOperator}     => (:(g.parent), :j, :i, adjoint)
     )
 
-    sccs = Graphs.strongly_connected_components(graph)
+    @eval begin
 
-    connected_vertices = Int[]
+        LinearAlgebra.issymmetric(g::$type) = issymmetric($gmap.mat)
 
-    for scc in sccs
-        if length(scc) > 1 || has_edge(graph, scc[1], scc[1])
-            append!(connected_vertices, scc)
-        end
-    end
-
-    return BoxSet(gstar.vertices[connected_vertices])
-end
-
-function matrix(gstar::TransferOperator{L,W}) where {L,W}
-    num_edges = length(gstar.edges)
-
-    I = Vector{Int}()
-    sizehint!(I, num_edges)
-
-    J = Vector{Int}()
-    sizehint!(J, num_edges)
-
-    V = Vector{W}()
-    sizehint!(V, num_edges)
-
-    for (edge, weight) in gstar.edges
-        push!(I, edge[1])
-        push!(J, edge[2])
-        push!(V, weight)
-    end
-
-    n = length(gstar.vertices)
-    return sparse(I, J, V, n, n)
-end
-
-
-"""
-    eigs(gstar::TransferOperator [; kwargs...]) -> (d[, v], nconv)
-
-Compute a set of eigenvalues `d` and eigenmeasures `v` of `gstar`. 
-Works with the adjoint _Koopman operator_ as well. 
-All keyword arguments from `Arpack.eigs` can be passed. See the 
-documentation for `Arpack.eigs`. 
-"""
-function Arpack.eigs(gstar::TransferOperator{BoxList{P,L}}; nev::Int=1) where {P,L}
-    G = matrix(gstar)
-
-    λ, ϕ, nconv = eigs(G'; nev=nev)
-
-    ϕ_funs = BoxFun{P,keytype(P),ComplexF64}[]
-
-    for i in 1:nev
-        ϕi = ϕ[:,i]
-        dict = Dict{keytype(P),ComplexF64}()
-        sizehint!(dict, length(ϕi))
-
-        for j in 1:length(ϕi)
-            dict[gstar.vertices.keylist[j]] = ϕi[j]
+        function eigenfunctions(g::$type, B=I; nev=1, ritzvec=true, kwargs...)
+            λ, ϕ, nconv = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
+            P = $gmap.support.partition
+            b = [
+                BoxFun(
+                    P, 
+                    OrderedDict{keytype(typeof(P)),eltype(ϕ)}(
+                        zip($gmap.support.set, ϕ[:, i])
+                    )
+                ) 
+                for i in 1:nev
+            ]
+            return ritzvec ? (λ, b, nconv) : (λ, nconv)
         end
 
-        ϕ_fun = BoxFun{P,keytype(P),ComplexF64}(gstar.vertices.partition, dict)
-        normalize!(ϕ_fun)
-        push!(ϕ_funs, ϕ_fun)
+        """
+        eigs(gstar::TransferOperator [; kwargs...]) -> (d[, v], nconv)
+
+        Compute a set of eigenvalues `d` and eigenmeasures `v` of `gstar`. 
+        Works with the adjoint _Koopman operator_ as well. 
+        All keyword arguments from `Arpack.eigs` can be passed. See the 
+        documentation for `Arpack.eigs`. 
+        """
+        Arpack.eigs(g::$type, B::UniformScaling=I; kwargs...) = eigenfunctions(g, B; kwargs...)
+        Arpack.eigs(g::$type, B; kwargs...) = eigenfunctions(g, B; kwargs...)
+
+        LinearAlgebra.mul!(y::AbstractVector, g::$type, x::AbstractVector) = mul!(y, $func($gmap.mat), x)
+
+        function LinearAlgebra.mul!(y::BoxFun, g::$type, x::BoxFun)
+            checkbounds(Bool, g, keys(x.vals)) || throw(BoundsError(g, x))
+            zer = zero(eltype(y))
+            map!(x -> zer, values(y.vals))
+            rows = rowvals($gmap.mat)
+            vals = nonzeros($gmap.mat)
+            m, n = size($gmap)
+            # less overall checks need to be made with the square version
+            if m == n
+                # iterate over columns with the keys that the columns represent
+                for (col_j, j) in enumerate($gmap.support.set)
+                    for k in nzrange($gmap.mat, col_j)
+                        w = vals[k]
+                        row_i = rows[k]
+                        # grab the key that this row represents
+                        i = $gmap.support.set.dict.keys[row_i]
+                        y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
+                    end
+                end
+            else
+                # iterate over columns with the keys that the columns represent
+                for (col_j, j) in enumerate($gmap.support.set)
+                    for k in nzrange($gmap.mat, col_j)
+                        w = vals[k]
+                        row_i = rows[k]
+                        # grab the key that this row represents
+                        if row_i > n
+                            i = $gmap.variant_set.set.dict.keys[row_i - n]
+                        else
+                            i = $gmap.support.set.dict.keys[row_i]
+                        end
+                        y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
+                    end
+                end
+            end
+            return y
+        end
+
+        function Base.:(*)(g::$type, x::BoxFun{B,K,V}) where {B,K,V}
+            dict = OrderedDict{K, promote_type(eltype(g), V)}()
+            sizehint!(dict, length($gmap.support) + length($gmap.variant_set))
+            y = BoxFun($gmap.support.partition, dict)
+            return mul!(y, g, x)
+        end
+
+    end
+end
+
+_rehash!(dict::Dict) = Base.rehash!(dict)
+_rehash!(dict::OrderedDict) = OrderedCollections.rehash!(dict)
+_rehash!(dict::IdDict) = Base.rehash!(dict)
+_rehash!(set::Union{Set,OrderedSet}) = _rehash!(set.dict)
+_rehash!(d::Union{AbstractDict,AbstractSet}) = d
+_rehash!(boxset::BoxSet) = _rehash!(boxset.set)
+
+# convert DOK sparse matrix to CSC using indices from support / variant_set
+function SparseArrays.sparse(
+        dict::Dict{Tuple{I,I},T}, support::BoxSet, variant_set::BoxSet
+    ) where {I,T}
+
+    _rehash!(support)
+    _rehash!(variant_set)
+
+    n = length(support)
+    m = n + length(variant_set)
+    xs, ys, ws = Int[], Int[], T[]
+
+    sizehint!(xs, length(dict))
+    sizehint!(ys, length(dict))
+    sizehint!(ws, length(dict))
+
+    for ((u, v), w) in dict
+        x = u in support.set ? getkeyindex(support, u) : n + getkeyindex(variant_set, u)
+        y = getkeyindex(support, v)
+        push!(xs, x)
+        push!(ys, y)
+        push!(ws, w)
     end
 
-    return λ, ϕ_funs, nconv
+    return sparse(xs, ys, ws, m, n)
+end
+
+function Base.Dict(g::TransferOperator{B,T,S}) where {B,T,R,Q,G,S<:BoxSet{R,Q,G}}
+    rows = rowvals(g.mat)
+    vals = nonzeros(g.mat)
+    m, n = size(g)
+    dict = Dict{Tuple{keytype(Q),keytype(Q)},T}()
+    sizehint!(dict, length(vals))
+    # iterate over columns with the keys that the columns represent
+    for (col_j, j) in enumerate(g.support.set)
+        for k in nzrange(g.mat, col_j)
+            w = vals[k]
+            row_i = rows[k]
+            # grab the key that this row represents
+            if row_i > n
+                i = g.variant_set.set.dict.keys[row_i - n]
+            else
+                i = g.support.set.dict.keys[row_i]
+            end
+            dict[(i,j)] = w
+        end
+    end
+    return dict
+end
+
+# add new entries to transferoperator
+function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,S}, keys) where {B,T,S}
+    all(x -> checkbounds(Bool, g.support.partition, x), keys) || return false
+
+    diff = setdiff(keys, g.support.set)
+    if !isempty(diff)
+        @info(
+            """
+            Support of the BoxFun lies outside the already calculated
+            support of the TransferOperator. Computing new transfers.
+            """,
+            new_keys = diff
+        )
+
+        dict = Dict(g)
+
+        # update the support and variant set
+        m, n = size(g)
+        now_invariant = intersect!(copy(g.variant_set.set), diff) # ensures that order of insertion is maintained
+        union!(g.support.set, now_invariant)
+        setdiff!(g.variant_set.set, now_invariant)
+        union!(g.support.set, diff)
+
+        # calculate transitions for the new keys
+        new_dict, out_of_bounds = construct_transfers(g, BoxSet(g.support.partition, OrderedSet(diff)))
+        union!(g.variant_set.set, out_of_bounds)
+
+        # construct the new matrix
+        dict = dict ⊔ new_dict
+        mat = sparse(dict, g.support, g.variant_set)
+        g.mat = mat
+
+        @debug(
+            """
+            New TransferOperator:
+            """,
+            new_size=size(g),
+            new_operator=g
+        )
+    end
+    return true
+end
+
+function Base.checkbounds(
+        ::Type{Bool}, g::R, keys
+    ) where {R<:Union{<:LinearAlgebra.Transpose{<:Any,<:TransferOperator},<:LinearAlgebra.Adjoint{<:Any,<:TransferOperator}}}
+
+    all(x -> checkbounds(Bool, g.parent.support.partition, x), keys) || return false
+    diff = setdiff(keys, g.parent.support.set ∪ g.parent.variant_set.set)
+    if !isempty(diff)
+        @warn(
+            """
+            support of the BoxFun lies outside of the calculated support of 
+            the TransferOperator. Because the multiplication involves the 
+            adjoint or transpose of the TransferOperator, lazy evaluation 
+            is not possible. Consider (if possible) using the TransferOperator
+            of the inverse map. 
+            """, 
+            adjoint_TransferOperator=g,
+            invalid_keys=diff,
+            maxlog=10
+        )
+        #return false
+    end
+    return true
+end
+
+function Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, key2, keys...)
+    checkbounds(b, g, tuple(key1, key2, keys...))
 end
