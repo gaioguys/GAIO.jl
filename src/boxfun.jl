@@ -93,6 +93,8 @@ end
 Base.:(==)(b1::BoxFun, b2::BoxFun) = b1.vals == b2.vals
 Base.getindex(boxfun::BoxFun{B,K,V}, key) where {B,K,V} = get(boxfun.vals, key, zero(V))
 Base.setindex!(boxfun::BoxFun, val, key) = setindex!(boxfun.vals, val, key)
+Base.copy(boxfun::BoxFun) = BoxFun(boxfun.partition, copy(boxfun.vals))
+Base.deepcopy(boxfun::BoxFun) = BoxFun(boxfun.partition, deepcopy(boxfun.vals))
 
 function Base.isapprox(
         l::BoxFun{B,K,V}, r::BoxFun{R,J,W}; 

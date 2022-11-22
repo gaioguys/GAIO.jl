@@ -249,7 +249,7 @@ function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,S}, keys) where 
         union!(g.support.set, diff)
 
         # calculate transitions for the new keys
-        new_dict, out_of_bounds = construct_transfers(g, BoxSet(g.support.partition, S(diff)))
+        new_dict, out_of_bounds = construct_transfers(g, BoxSet(g.support.partition, OrderedSet(diff)))
         union!(g.variant_set.set, out_of_bounds)
         
         # construct the new matrix
