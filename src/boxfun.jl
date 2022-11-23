@@ -1,10 +1,3 @@
-# helper function to access `Set` / `OrderedSet` internals
-getkeyindex(dict::Dict, i) = (j = Base.ht_keyindex(dict, i); j > 0 ? j : nothing)
-getkeyindex(set::Set, i) = (j = Base.ht_keyindex(set.dict, i); j > 0 ? j : nothing)
-getkeyindex(dict::OrderedDict, i) = (j = OrderedCollections.ht_keyindex(dict, i, true); j > 0 ? j : nothing)
-getkeyindex(set::OrderedSet, i) = (j = OrderedCollections.ht_keyindex(set.dict, i, true); j > 0 ? j : nothing)
-getkeyindex(boxset::BoxSet, i) = getkeyindex(boxset.set, i)
-
 """
     BoxFun(partition, vals)
 
@@ -21,7 +14,7 @@ for `vals`
 
 Methods implemented:
 
-    length, LinearAlgebra.norm, LinearAlgebra.normalize!
+    length, sum, iterate, values, isapprox, ∘, LinearAlgebra.norm, LinearAlgebra.normalize!
 
 .
 """

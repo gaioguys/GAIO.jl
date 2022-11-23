@@ -1,5 +1,4 @@
 """
-    TransferOperator(map::BoxMap, support::BoxSet, mat::SparseMatrixCSC)
     TransferOperator(map::BoxMap, support::BoxSet)
 
 Discretization of the Perron-Frobenius operator, or transfer operator. 
@@ -18,6 +17,38 @@ julia> axes(T)
   ([3, 10, 30], [3, 10, 30])
 ```
 
+Fields:
+* `boxmap`:         `SampledBoxMap` map which relates to the transfers.
+* `support`:        `BoxSet` which contains keys for the already calculated transfers. 
+                    Effectively, these are row/column pointers, i.e. the 
+                    first column of `T.mat` contains transfer weights FROM 
+                    box B_1, where B_1 is the first box of `support`. 
+* `variant_set`:    `BoxSet` which contains keys for potential boxes lying 
+                    outside of `support`, i.e. it could be that `support` is 
+                    not an invariant set. In this case, `variant_set` contains 
+                    the boxes which were not in `support`, but whose preimage 
+                    lies in `support`. 
+* `mat`:            `SparseMatrixCSC` containing transfer weights. The index 
+                    `T.mat[i,j]` represents the transfer weight FROM the `j`'th
+                    box in `support` TO the `i`'th box in `support`. If `support` 
+                    is not invariant, then the matrix will be tall. In this case 
+                    the rows are counted in `support` and then in `variant_set`. 
+
+```julia
+support -->
+  |     .   .   .   .   .
+  |     .   .   .   .   .
+  v     .   .   .   .   .
+        .   .  mat  .   .
+        .   .   .   .   .
+ var-   .   .   .   .   .
+ ian-   .   .   .   .   .
+ t_set  .   .   .   .   .     
+  |     .   .   .   .   .
+  |     .   .   .   .   .
+  v     .   .   .   .   .
+```
+
 It is important to note that `TranferOperator` is only supported over the 
 box set `B`, but if one lets a `TranferOperator` act on a `BoxFun`, then 
 the support `B` is extended "on the fly" to include the support of the `BoxFun`.
@@ -26,6 +57,14 @@ Methods Implemented:
 ```julia
 :(==), axes, size, eltype, getindex, setindex!, SparseArrays.sparse, Arpack.eigs, LinearAlgebra.mul! #, etc ...
 ```
+
+Implementation detail:
+
+The reader may have noticed that the matrix representation 
+depends on the order of boxes in `support`. For this reason 
+an `OrderedSet` is used. `BoxSet`s using regular `Set`s 
+will be copied and converted to `OrderedSet`s. 
+
 .
 """
 mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMatrix{T,Int}
@@ -205,12 +244,20 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
     end
 end
 
+# helper function to force rehash `Set` / `OrderdSet` objects
 _rehash!(dict::Dict) = Base.rehash!(dict)
 _rehash!(dict::OrderedDict) = OrderedCollections.rehash!(dict)
 _rehash!(dict::IdDict) = Base.rehash!(dict)
 _rehash!(set::Union{Set,OrderedSet}) = _rehash!(set.dict)
 _rehash!(d::Union{AbstractDict,AbstractSet}) = d
 _rehash!(boxset::BoxSet) = _rehash!(boxset.set)
+
+# helper function to access `Set` / `OrderedSet` internals
+getkeyindex(dict::Dict, i) = (j = Base.ht_keyindex(dict, i); j > 0 ? j : nothing)
+getkeyindex(set::Set, i) = (j = Base.ht_keyindex(set.dict, i); j > 0 ? j : nothing)
+getkeyindex(dict::OrderedDict, i) = (j = OrderedCollections.ht_keyindex(dict, i, true); j > 0 ? j : nothing)
+getkeyindex(set::OrderedSet, i) = (j = OrderedCollections.ht_keyindex(set.dict, i, true); j > 0 ? j : nothing)
+getkeyindex(boxset::BoxSet, i) = getkeyindex(boxset.set, i)
 
 # convert DOK sparse matrix to CSC using indices from support / variant_set
 function SparseArrays.sparse(
@@ -293,14 +340,6 @@ function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,S}, keys) where 
         dict = dict ⊔ new_dict
         mat = sparse(dict, g.support, g.variant_set)
         g.mat = mat
-
-        @debug(
-            """
-            New TransferOperator:
-            """,
-            new_size=size(g),
-            new_operator=g
-        )
     end
     return true
 end
