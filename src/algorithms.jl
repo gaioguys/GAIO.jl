@@ -40,7 +40,8 @@ function chain_recurrent_set(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
         P = TransferOperator(F, B)
-        B = strongly_connected_components(P)
+        G = Graph(P)
+        B = strongly_connected_components(G)
     end
     return B
 end
