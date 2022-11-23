@@ -68,7 +68,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{Box{N,T}}}}) where {N
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{N,T}}}}}) where {N,T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{N,T}}}}) where {N,T}
 
     boxfun = boxes[1][]
     d = min(N, 3)
@@ -81,8 +81,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartitio
     radius = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxfun))
     colors = Vector{Float32}(undef, length(boxfun))
 
-    for (i, (key, value)) in enumerate(boxfun.dict)
-        box = GAIO.key_to_box(boxfun.partition, key)
+    for (i, (box, value)) in enumerate(boxfun)
         center[i] = q(box.center)
         radius[i] = q(box.radius) .* 1.9
         colors[i] = value
@@ -101,15 +100,14 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartitio
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{2,T}}}}}) where {T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{2,T}}}}) where {T}
 
     boxfun = boxes[1][]
 
     center = Vector{GeometryBasics.Vec{3, Float32}}(undef, 2*length(boxfun))
     radius = Vector{GeometryBasics.Vec{3, Float32}}(undef, 2*length(boxfun))
 
-    for (i, (key, value)) in enumerate(boxfun.dict)
-        box = GAIO.key_to_box(boxfun.partition, key)
+    for (i, (box, value)) in enumerate(boxfun)
         center[2*i-1] = SVector{3,Float32}(box.center..., 0.)
         center[2*i]   = SVector{3,Float32}(box.center..., value)
         radius[2*i-1] = SVector{3,Float32}(box.radius..., minimum(box.radius))
@@ -127,7 +125,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartitio
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartition{Box{1,T}}}}}) where {T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{1,T}}}}) where {T}
 
     boxfun = boxes[1][]
 
@@ -135,8 +133,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{<:AbstractBoxPartitio
     center = Vector{Float32}(undef, 2*length(boxfun))
     radius = Vector{Float32}(undef, 2*length(boxfun))
 
-    for (i, (key, value)) in enumerate(boxfun.dict)
-        box = key_to_box(boxfun.partition, key)
+    for (i, (box, value)) in enumerate(boxfun)
         height[2*i-1] = 0.
         height[2*i]   = value
         center[2*i-1] = box.center[1]

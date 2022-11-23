@@ -59,12 +59,20 @@ Base.:(==)(p1::BoxPartition, p2::BoxPartition) = p1.domain == p2.domain && p1.di
 Base.ndims(::BoxPartition{N}) where {N} = N
 Base.size(partition::BoxPartition) = partition.dims.data # .data returns as tuple
 Base.length(partition::BoxPartition) = partition.dimsprod[end] * partition.dims[end] # == prod(partition.dims)
+
 Base.keytype(::Type{<:BoxPartition{N,T,I,L}}) where {N,T,I,L<:IndexLinear} = I
 Base.keytype(::Type{<:BoxPartition{N,T,I,L}}) where {N,T,I,L<:IndexCartesian} = NTuple{N,I}
+
 Base.CartesianIndices(partition::BoxPartition) = CartesianIndices(size(partition))
 Base.LinearIndices(partition::BoxPartition) = LinearIndices(size(partition))
-Base.keys(partition::BoxPartition{N,T,I,IndexLinear}) where {N,T,I} = one(I) : length(partition)
-Base.keys(partition::BoxPartition{N,T,I,IndexCartesian}) where {N,T,I} = (NTuple{N,I}(i.I) for i in CartesianIndices(partition))
+
+Base.keys(partition::BoxPartition{N,T,I,<:IndexLinear}) where {N,T,I} = one(I) : length(partition)
+Base.keys(partition::BoxPartition{N,T,I,<:IndexCartesian}) where {N,T,I} = (NTuple{N,I}(i.I) for i in CartesianIndices(partition))
+
+Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexLinear}, key::Integer) where {N,T,I} = one(I) ≤ key ≤ length(partition)
+Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexLinear}, key) where {N,T,I} = checkbounds(Bool, partition, cartesian_to_linear(partition, key))
+Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexCartesian}, key) where {N,T,I} = all(i -> 1 ≤ key[i] ≤ size(partition)[i], 1:N)
+Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexCartesian}, key::Integer) where {N,T,I} = checkbounds(Bool, partition, linear_to_cartesian(partition, key))
 
 function Base.show(io::IO, partition::P) where {P<:BoxPartition}
     print(io, join(size(partition), " x "), " - element $P")
