@@ -202,33 +202,14 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
             map!(x -> zer, values(y.vals))
             rows = rowvals($gmap.mat)
             vals = nonzeros($gmap.mat)
-            m, n = size($gmap)
-            # less overall checks need to be made with the square version
-            if m == n
-                # iterate over columns with the keys that the columns represent
-                for (col_j, j) in enumerate($gmap.support.set)
-                    for k in nzrange($gmap.mat, col_j)
-                        w = vals[k]
-                        row_i = rows[k]
-                        # grab the key that this row represents
-                        i = $gmap.support.set.dict.keys[row_i]
-                        y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
-                    end
-                end
-            else
-                # iterate over columns with the keys that the columns represent
-                for (col_j, j) in enumerate($gmap.support.set)
-                    for k in nzrange($gmap.mat, col_j)
-                        w = vals[k]
-                        row_i = rows[k]
-                        # grab the key that this row represents
-                        if row_i > n
-                            i = $gmap.variant_set.set.dict.keys[row_i - n]
-                        else
-                            i = $gmap.support.set.dict.keys[row_i]
-                        end
-                        y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
-                    end
+            # iterate over columns with the keys that the columns represent
+            for (col_j, j) in enumerate($gmap.support.set)
+                for k in nzrange($gmap.mat, col_j)
+                    w = vals[k]
+                    row_i = rows[k]
+                    # grab the key that this row represents
+                    i = getindex_fromkeys($gmap, row_i)
+                    y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
                 end
             end
             return y
@@ -258,6 +239,21 @@ getkeyindex(set::Set, i) = (j = Base.ht_keyindex(set.dict, i); j > 0 ? j : nothi
 getkeyindex(dict::OrderedDict, i) = (j = OrderedCollections.ht_keyindex(dict, i, true); j > 0 ? j : nothing)
 getkeyindex(set::OrderedSet, i) = (j = OrderedCollections.ht_keyindex(set.dict, i, true); j > 0 ? j : nothing)
 getkeyindex(boxset::BoxSet, i) = getkeyindex(boxset.set, i)
+
+getindex_fromkeys(dict::Union{Dict,OrderedDict}, i) = dict.keys[i]
+getindex_fromkeys(set::Union{Set,OrderedSet}, i) = getindex_fromkeys(set.dict, i)
+getindex_fromkeys(boxset::BoxSet, i) = getindex_fromkeys(boxset.set, i)
+getindex_fromkeys(g::TransferOperator, i, j) = (getindex_fromkeys(g, i), getindex_fromkeys(g, j))
+
+function getindex_fromkeys(g::TransferOperator, i)
+    m, n = size(g)
+    if i > n 
+        k = getindex_fromkeys(g.variant_set, i - n) 
+    else
+        k = getindex_fromkeys(g.support, i)
+    end
+    return k
+end
 
 # convert DOK sparse matrix to CSC using indices from support / variant_set
 function SparseArrays.sparse(
@@ -298,11 +294,7 @@ function Base.Dict(g::TransferOperator{B,T,S}) where {B,T,R,Q,G,S<:BoxSet{R,Q,G}
             w = vals[k]
             row_i = rows[k]
             # grab the key that this row represents
-            if row_i > n
-                i = g.variant_set.set.dict.keys[row_i - n]
-            else
-                i = g.support.set.dict.keys[row_i]
-            end
+            i = getindex_fromkeys(g, row_i)
             dict[(i,j)] = w
         end
     end
