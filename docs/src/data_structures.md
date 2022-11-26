@@ -42,5 +42,4 @@ Base.sum(f, boxfun::BoxFun)
 
 ```@docs
 BoxGraph
-BoxSet(g::BoxGraph, inds)
 ```
