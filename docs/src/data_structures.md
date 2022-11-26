@@ -31,13 +31,16 @@ BoxSet
 ```
 
 ```@docs
+TransferOperator
+```
+
+```@docs
 BoxFun
 Base.sum(f, boxfun::BoxFun)
 ∘(f, boxfun::BoxFun)
 ```
 
 ```@docs
-TransferOperator
+BoxGraph
+BoxSet(g::BoxGraph, inds)
 ```
-
-Add `SparseArrays.sparse(g::TransferOperator)` once next PR is pushed

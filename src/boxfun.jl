@@ -1,7 +1,7 @@
 """
     BoxFun(partition, vals)
 
-Discretization of a function over the domain `partition.domain`,
+Discretization of a measure over the domain `partition.domain`,
 as a piecewise constant function over the boxes of `partition`. 
     
 Implemented as a sparse vector over the indices of `partition`. 
@@ -9,7 +9,7 @@ Implemented as a sparse vector over the indices of `partition`.
 Fields:
 * `partition`: An `AbstractBoxPartition` whose indices are used 
 for `vals`
-* `vals`: A dictionary whose leys are the box indices from 
+* `vals`: A dictionary whose keys are the box indices from 
 `partition`, and whose values represent the values of the function. 
 
 Methods implemented:
@@ -23,6 +23,43 @@ struct BoxFun{B,K,V,P<:AbstractBoxPartition{B},D<:AbstractDict{K,V}} <: Abstract
     vals::D
 end
 
+BoxSet(boxfun::BoxFun) = BoxSet(boxfun.partition, Set(keys(boxfun)))
+BoxFun(boxset::BoxSet, T=Float) = BoxFun(boxset.partition, Dict(key=>zero(T) for key in boxset.set))
+
+Core.@doc raw"""
+    sum(f, μ::BoxFun)
+    sum(f, μ::BoxFun, B::BoxSet)
+    μ(B) = sum(identity, μ, B)
+
+Integrate a function `f` using `μ` as a density, that is,
+if `boxfun` is the discretization of a measure ``\mu`` over the domain 
+``Q``, then approximate the value of 
+```math
+\int_Q f \, d\mu .
+```
+If a BoxSet `B` is passed as the third argument, then the 
+integration is restricted to the boxes in `B`
+```math
+\int_{Q \cap \bigcup_{b \in B} b} f \, d\mu .
+```
+The notation `μ(B)` is offered to compute 
+``\mu (\bigcup_{b \in B} b)``. 
+"""
+function Base.sum(f, boxfun::BoxFun, boxset=nothing)
+    sum((box,val) -> volume(box)*f(val), boxfun)
+end
+
+function Base.sum(f, boxfun::BoxFun{B,K,V}, boxset::Union{Box,BoxSet}) where {B,K,V}
+    support = boxfun.partition[boxset]
+    sum( 
+        (volume(key_to_box(boxfun.partition, key)) * f(val) 
+        for (key,val) in boxfun.vals if key in support.set);
+        init = zero(V)
+    )
+end
+
+(boxfun::BoxFun)(boxset::Union{Box,BoxSet}) = sum(identity, boxfun, boxset)
+
 function Base.show(io::IO, g::BoxFun)
     print(io, "BoxFun in $(g.partition) with $(length(g.vals)) stored entries")
 end
@@ -30,40 +67,17 @@ end
 Base.length(fun::BoxFun) = length(fun.vals)
 Base.keytype(::BoxFun{B,K,V}) where {B,K,V} = K
 Base.eltype(::BoxFun{B,K,V}) where {B,K,V} = V
+Base.keys(fun::BoxFun) = keys(fun.vals)
 Base.values(fun::BoxFun) = values(fun.vals)
 Base.show(io::IO, ::MIME"text/plain", fun::BoxFun) = show(io, fun)
 
-function Base.iterate(boxfun::BoxFun{B,K,V}, i...) where {B,K,V}
+function Base.iterate(boxfun::BoxFun, i...)
     itr = iterate(boxfun.vals, i...)
     isnothing(itr) && return itr
     ((key, val), j) = itr
-    (Pair{B,V}(key_to_box(boxfun.partition, key), val), j)
+    box = key_to_box(boxfun.partition, key)
+    ((box => val), j)
 end
-
-
-Core.@doc raw"""
-    sum(f, boxfun::BoxFun)
-
-Integrate a function `f` using `boxfun` as a density, that is,
-if `boxfun` is the discretization of a measure ``\mu`` over the domain 
-``Q``, then approximate the value of 
-```math
-\int_Q f \, d\mu .
-```
-"""
-function Base.sum(f, boxfun::BoxFun, boxset=nothing)
-    sum((box,val) -> volume(box)*f(val), boxfun)
-    end
-
-function Base.sum(f, boxfun::BoxFun{B,K,V}, boxset::Union{Box,BoxSet}) where {B,K,V}
-    support = boxfun.partition[boxset]
-    sum( 
-        volume(key_to_box(boxfun.partition, key)) * f(val) 
-        for (key,val) in boxfun.dict if key in support.set 
-    )
-end
-
-(boxfun::BoxFun)(boxset::Union{Box,BoxSet}) = sum(identity, boxfun, boxset)
 
 LinearAlgebra.norm(boxfun::BoxFun) = sqrt(sum(abs2, boxfun))
 
@@ -78,6 +92,7 @@ Base.getindex(boxfun::BoxFun{B,K,V}, key) where {B,K,V} = get(boxfun.vals, key, 
 Base.setindex!(boxfun::BoxFun, val, key) = setindex!(boxfun.vals, val, key)
 Base.copy(boxfun::BoxFun) = BoxFun(boxfun.partition, copy(boxfun.vals))
 Base.deepcopy(boxfun::BoxFun) = BoxFun(boxfun.partition, deepcopy(boxfun.vals))
+SparseArrays.findnz(boxfun::BoxFun) = (collect(keys(boxfun)), collect(values(boxfun)))
 
 function Base.isapprox(
         l::BoxFun{B,K,V}, r::BoxFun{R,J,W}; 
@@ -92,11 +107,25 @@ function Base.isapprox(
     return true
 end
 
-import Base: ∘
+gen_type(d::AbstractDict{K,V}, f) where {K,V} = Dict{K,(typeof ∘ f ∘ first ∘ values)(d)}
+gen_type(d::OrderedDict{K,V}, f) where {K,V} = OrderedDict{K,(typeof ∘ f ∘ first ∘ values)(d)}
 
 """
     ∘(f, boxfun::BoxFun) -> BoxFun
+    ∘(boxfun::BoxFun, F::BoxMap) -> BoxFun
 
-Compose the function `f` with the `boxfun`. 
+Postcompose the function `f` with the `boxfun`,
+or precompose a BoxMap `F` with the `boxfun`. 
 """
-∘(f, boxfun::BoxFun{B,K,V,P,D}) where {B,K,V,P,D} = BoxFun(boxfun.partition, D(key => f(val) for (key,val) in boxfun.vals))
+function ∘(f, boxfun::BoxFun)
+    D = gen_type(boxfun.vals, f)
+    BoxFun(
+        boxfun.partition, 
+        D(key => f(val) for (key,val) in boxfun.vals)
+    )
+end
+
+function ∘(boxfun::BoxFun, F::BoxMap)
+    T = TransferOperator(F, BoxSet(boxfun))
+    T * boxfun
+end

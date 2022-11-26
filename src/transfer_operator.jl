@@ -70,7 +70,6 @@ will be copied and converted to `OrderedSet`s.
 mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMatrix{T,Int}
     boxmap::M
     support::S
-    # extra row pointers in case the set is not invariant
     variant_set::S
     mat::SparseMatrixCSC{T,Int}
 end
@@ -141,6 +140,7 @@ Base.eltype(::Type{<:TransferOperator{B,T}}) where {B,T} = T
 Base.keytype(::Type{<:TransferOperator{B,T,I}}) where {B,T,I} = I
 Base.size(g::TransferOperator) = size(g.mat)
 Base.Matrix(g::TransferOperator) = Matrix(g.mat)
+SparseArrays.sparse(g::TransferOperator) = copy(g.mat)
 
 function Base.axes(g::TransferOperator)
     v = collect(g.support)
@@ -184,7 +184,7 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         end
 
         """
-        eigs(gstar::TransferOperator [; kwargs...]) -> (d[, v], nconv)
+            eigs(gstar::TransferOperator [; kwargs...]) -> (d[, v], nconv)
 
         Compute a set of eigenvalues `d` and eigenmeasures `v` of `gstar`. 
         Works with the adjoint _Koopman operator_ as well. 
@@ -196,8 +196,8 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
 
         LinearAlgebra.mul!(y::AbstractVector, g::$type, x::AbstractVector) = mul!(y, $func($gmap.mat), x)
 
-        function LinearAlgebra.mul!(y::BoxFun, g::$type, x::BoxFun)
-            checkbounds(Bool, g, keys(x.vals)) || throw(BoundsError(g, x))
+        @inline function LinearAlgebra.mul!(y::BoxFun, g::$type, x::BoxFun)
+            @boundscheck(checkbounds(Bool, g, keys(x.vals)) || throw(BoundsError(g, x)))
             zer = zero(eltype(y))
             map!(x -> zer, values(y.vals))
             rows = rowvals($gmap.mat)
@@ -245,12 +245,13 @@ getindex_fromkeys(set::Union{Set,OrderedSet}, i) = getindex_fromkeys(set.dict, i
 getindex_fromkeys(boxset::BoxSet, i) = getindex_fromkeys(boxset.set, i)
 getindex_fromkeys(g::TransferOperator, i, j) = (getindex_fromkeys(g, i), getindex_fromkeys(g, j))
 
-function getindex_fromkeys(g::TransferOperator, i)
+@inline function getindex_fromkeys(g::TransferOperator, i)
     m, n = size(g)
-    if i > n 
-        k = getindex_fromkeys(g.variant_set, i - n) 
-    else
+    @boundscheck checkbounds(Base.OneTo{Int}(m), i)
+    if i ≤ n 
         k = getindex_fromkeys(g.support, i)
+    else
+        k = getindex_fromkeys(g.variant_set, i - n) 
     end
     return k
 end

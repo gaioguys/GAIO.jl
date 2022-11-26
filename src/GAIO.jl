@@ -26,6 +26,8 @@ using Base.Iterators: Stateful, take
 using MakieCore
 using MakieCore: @recipe
 
+import Base: ∘
+
 export Box
 export volume, center, vertices, rescale
 
