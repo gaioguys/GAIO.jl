@@ -115,7 +115,8 @@ gen_type(d::OrderedDict{K,V}, f) where {K,V} = OrderedDict{K,(typeof ∘ f ∘ f
     ∘(boxfun::BoxFun, F::BoxMap) -> BoxFun
 
 Postcompose the function `f` with the `boxfun`,
-or precompose a BoxMap `F` with the `boxfun`. 
+or precompose a BoxMap `F` with the `boxfun` 
+(by applying the Koopman operator). 
 """
 function ∘(f, boxfun::BoxFun)
     D = gen_type(boxfun.vals, f)
@@ -127,5 +128,5 @@ end
 
 function ∘(boxfun::BoxFun, F::BoxMap)
     T = TransferOperator(F, BoxSet(boxfun))
-    T * boxfun
+    T' * boxfun
 end
