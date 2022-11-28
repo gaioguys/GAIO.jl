@@ -45,17 +45,17 @@ integration is restricted to the boxes in `B`
 The notation `μ(B)` is offered to compute 
 ``\mu (\bigcup_{b \in B} b)``. 
 """
-function Base.sum(f, boxfun::BoxFun, boxset=nothing)
-    sum((box,val) -> volume(box)*f(val), boxfun)
+function Base.sum(f, boxfun::BoxFun{B,K,V}, boxset=nothing) where {B,K,V}
+    sum((box,val) -> volume(box)*f(box.center)*val, boxfun; init=zero(V))
 end
 
-function Base.sum(f, boxfun::BoxFun{B,K,V}, boxset::Union{Box,BoxSet}) where {B,K,V}
+function Base.sum(f, boxfun::BoxFun{B,K,V,P,D}, boxset::Union{Box,BoxSet}) where {B,K,V,P,D}
     support = boxfun.partition[boxset]
-    sum( 
-        (volume(key_to_box(boxfun.partition, key)) * f(val) 
-        for (key,val) in boxfun.vals if key in support.set);
-        init = zero(V)
+    boxfun_new = BoxFun(
+        boxfun.partition, 
+        D((key=>val) for (key,val) in boxfun.vals if key in support.set)
     )
+    sum(f, boxfun_new)
 end
 
 (boxfun::BoxFun)(boxset::Union{Box,BoxSet}) = sum(identity, boxfun, boxset)
@@ -79,12 +79,12 @@ function Base.iterate(boxfun::BoxFun, i...)
     ((box => val), j)
 end
 
-LinearAlgebra.norm(boxfun::BoxFun) = sqrt(sum(abs2, boxfun))
+LinearAlgebra.norm(boxfun::BoxFun) = (sqrt ∘ sum)((volume(box)*abs2(val) for (box,val) in boxfun))
 
 function LinearAlgebra.normalize!(boxfun::BoxFun)
     λ = inv(norm(boxfun))
     map!(x -> λ*x, values(boxfun.vals))
-    return boxfun
+    boxfun
 end
 
 Base.:(==)(b1::BoxFun, b2::BoxFun) = b1.vals == b2.vals
