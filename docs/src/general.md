@@ -26,11 +26,11 @@ P = TreePartition(Q)
 ```
 
 !!! warning "Using `TreePartition`"
-    `TreePartition` is an area of active development, and an overhaul is potentially planned in the future. Please keep this in mind when using `TreePartition`s. 
+    `TreePartition` is an area of active development, and an overhaul is potentially planned in the future. Please do not use `TreePartition` yet. 
 
 ## BoxSet
 
-The core ideabehind GAIO.jl is to approximate an subset of the domain via a collection of small boxes. To construct `BoxSet`s, there are two main options: getting all boxes in the partition, or locating a box surrounding a point ``x \in Q``
+The core idea behind GAIO.jl is to approximate an subset of the domain via a collection of small boxes. To construct `BoxSet`s, there are two main options: getting all boxes in the partition, or locating a box surrounding a point ``x \in Q``
 ```julia
 B = P[:]    # set of all boxes in P
 
@@ -42,6 +42,23 @@ One can also create a `Boxset` from an iterable of `Box`es. This will cover ever
 S = [Box(center_1, radius_1), Box(center_2, radius_2), Box(center_3, radius_3)] # etc... 
 
 B = P[S]
+```
+
+`BoxSet` is a highly memory-efficient way of storing boxes. However, should you want to access the boxes or their internal data, this can be done via iteration:
+```julia
+for box in B
+    c, r = box.center, box.radius
+    # do something
+end
+
+# get an array of boxes
+arr_of_boxes = collect(B)
+
+# get an array of box centers
+arr_of_centers = collect(box.center for box in B)
+
+# (memory-efficiently) create a view where each center is a column
+mat_of_centers = reinterpret(reshape, eltype(arr_of_centers[1]), arr_of_centers)
 ```
 
 ## BoxMap
@@ -96,15 +113,27 @@ The return type of `eigs(T)` is a stepwise constant function over the boxes in `
 ```
 Of course, the same holds for the the Koopman operator as well. 
 
+## BoxGraph
+
+One could equivalently view the transfer operator as a weighted directed graph. That is, a transfer operator in GAIO.jl is the (transposed) weighted adjacency matrix for a graph. This graph can be constructed using
+```julia
+G = Graph(T)    # T is a transfer operator
+```
+The return type is a `BoxGraph`. `Boxgraph` is hooked into the `Graphs.jl` interface, which means all algorithms or etc. from Graphs.jl should work "out of the box". To construct a BoxSet from some index / indices of vertices in a BoxGraph, call
+```julia
+BoxSet(G, vertex_index_or_indices)
+``` 
+See the docstring for `BoxGraph` for details on how to translate between GAIO.jl and Graphs.jl. 
+
 ## Plotting
 
-GAIO.jl uses `Makie` to plot boxes. To plot a box set, simply choose a Makie backend, eg. `GLMakie`, and call `plot`
+GAIO.jl uses `Makie` for plotting. To plot a `BoxSet` or a `BoxFun`, simply choose a Makie backend, eg. `GLMakie`, and call `plot`
 ```julia
 using GLMakie: plot
 
 plot(B)
 ```
-Plotting works with all the functionality of `Makie`. This means you can set box plots as subplots, add colorbars, etc., using the Makie commands. For an example, see `examples/invariant_measure_2d.jl`. 
+Plotting works with all the functionality of `Makie`. This means you can set box plots as subplots, add colorbars, etc., using the Makie interface. For an example, see `examples/invariant_measure_2d.jl`. 
 
 ## References
 

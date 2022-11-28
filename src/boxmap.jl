@@ -33,12 +33,6 @@ struct SampledBoxMap{A,N,T,F,D,I} <: BoxMap
     acceleration::A
 end
 
-function Base.show(io::IO, g::SampledBoxMap)
-    center, radius = g.domain.center, g.domain.radius
-    n = length(g.domain_points(center, radius))
-    print(io, "BoxMap with $(n) sample points")
-end
-
 # wee need a small helper function because of 
 # how julia dispatches on `union!`
 ⊔(set1::AbstractSet, set2::AbstractSet) = union!(set1, set2)
@@ -64,6 +58,12 @@ end
 end 
 
 (g::BoxMap)(source::BoxSet) = map_boxes(g, source)
+
+function Base.show(io::IO, g::SampledBoxMap)
+    center, radius = g.domain.center, g.domain.radius
+    n = length(g.domain_points(center, radius))
+    print(io, "BoxMap with $(n) sample points")
+end
 
 """
     PointDiscretizedMap(map, domain, points, accel=nothing) -> SampledBoxMap

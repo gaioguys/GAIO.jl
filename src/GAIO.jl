@@ -26,6 +26,8 @@ using Base.Iterators: Stateful, take
 using MakieCore
 using MakieCore: @recipe
 
+import Base: ∘
+
 export Box
 export volume, center, vertices, rescale
 
@@ -38,14 +40,13 @@ export boxset_empty, subdivide, subdivide!
 export BoxFun
 
 export TransferOperator
-export strongly_connected_components, matrix, eigs
+export eigs
+
+export BoxGraph
 
 export BoxMap, PointDiscretizedMap
 export SampledBoxMap, AdaptiveBoxMap
 export approx_lipschitz, sample_adaptive
-export boxmap
-
-export map_boxes, map_boxes_new
 
 export rk4, rk4_flow_map
 

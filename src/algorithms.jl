@@ -96,38 +96,31 @@ function cover_roots(g, Dg, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
 end
 
 """
-    finite_time_lyapunov_exponents(boxset::BoxSet, g; T, num_points=20, ϵ=1e-6) -> BoxFun
+    finite_time_lyapunov_exponents(F::BoxMap, boxset::BoxSet) -> BoxFun
 
-Compute the Finite Time Lyapunov Exponent for every box in boxset.
-
-Arguments:
-* `boxset` is the starting BoxSet.
-* `g` is a point map (not a BoxMap) describing the dynamics.
-* `T` is the length of the time interval under consideration.
-* `num_points` is the number of points used in each box
-* `ϵ` is the maximum size of a perturbation in each coordinate
+Compute the Finite Time Lyapunov Exponent for 
+every box in `boxset`, where `F` represents a time-`T` 
+integration of some continuous dynamical system. 
+It is assumed that all boxes in `boxset` have radii 
+of some fixed order ϵ. 
 """
-function finite_time_lyapunov_exponents(boxset::BoxSet, g; T, num_points=20, ϵ=1e-6)
-    # TODO with some refactoring, this could maybe also use (some form of)
-    # ParallelBoxIterator to implement parallelisation
-    d = size(boxset.partition.domain.center)[1]
-    dict = Dict{keytype(typeof(boxset.partition)),Float64}()
-    sizehint!(dict,length(boxset))
-
-    for box in boxset
-        g_center = g(box.center)
-
-        perturbations = ϵ * (2 * rand(Float64,(d,num_points)) .- 1)
-        sample_points = box.center .+ perturbations
-
-        distances = [norm(perturbations[:,i]) for i in 1:num_points]
-        g_distances = [norm(g_center .- g(sample_points[:,i])) for i in 1:num_points]
-        maximal_ftle = log(maximum(g_distances ./ distances)) / abs(T)
-        # calculating the minimal ftle would also be straightforward (TODO?)
-        dict[point_to_key(boxset.partition,box.center)] = maximal_ftle  # pretty sure this could be more efficient/idiomatic
+function finite_time_lyapunov_exponents(F::BoxMap, B::BoxSet{R,Q,S}; T) where {N,V,R<:Box{N,V},Q,S}
+    P, D = B.partition, Dict{keytype(Q),Float}
+    @floop for key in B.set
+        box = key_to_box(P, key)
+        c, r = box.center, box.radius
+        fc = F.map(box.center)
+        ftle = -Inf
+        for p in F.domain_points(c, r)
+            ϵ = norm(c .- p)
+            ϵ == 0 && continue
+            fp = F.map(p)
+            ftle_pot = log( norm(fc .- fp) / ϵ ) / abs(T)
+            ftle = max(ftle, ftle_pot)
+        end
+        @reduce( vals = D() ⊔ (key => ftle) )
     end
-    
-    return BoxFun(boxset.partition,dict)
+    return BoxFun(B.partition, vals)
 end
 
 # Runge-Kutta scheme of 4th order

@@ -12,7 +12,7 @@ partition[:]
 ```julia
 partition[x]
 ```
-* For a covering of a set `S = [Box(c_1, r_1), Box(c_2, r_r)] # etc...`: 
+* For a covering of an iterable `S = [Box(c_1, r_1), Box(c_2, r_r)] # etc...`: 
 ```julia
 partition[S]
 ```
