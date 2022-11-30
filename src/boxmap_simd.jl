@@ -62,35 +62,37 @@ end
     return BoxSet(P, image)
 end
 
-@inbounds function TransferOperator(g::SampledBoxMap{<:BoxMapCPUCache{simd},N}, source::BoxSet{<:BoxPartition}) where {simd,N}
-    P = source.partition
-    edges = [ Dict{Tuple{Int64,Int64},Float64}() for _ in 1:nthreads() ]
-    boxlist = BoxList(source)
-    key_to_index = invert_vector(boxlist.keylist)
+@inbounds @muladd function construct_transfers(
+        g::SampledBoxMap{<:BoxMapCPUCache{simd}}, source::BoxSet{R,Q,S}
+    ) where {simd,N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+    
+    P, D = source.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
     idx_base, temp_vec, temp_points = g.acceleration
-    @threads for i in 1:length(boxlist)#key in keys
-        tid  = (threadid() - 1) * simd
-        idx  = idx_base + tid * N
+    @floop for key in source.set
+        tid = (threadid() - 1) * simd
+        idx = idx_base + tid * N
         mapped_points = @view temp_points[tid+1:tid+simd]
-        t_edges = edges[threadid()]
-        box  = key_to_box(P, boxlist[i])
+        box = key_to_box(P, key)
         c, r = box.center, box.radius
-        points = g.domain_points(c, r)
-        inv_n = 1. / (length(points) * simd)
-        for p in points
+        domain_points = g.domain_points(c, r)
+        inv_n = 1 / (simd * length(domain_points))
+        for p in domain_points
             fp = g.map(p)
             tuple_vscatter!(temp_vec, fp, idx)
             for q in mapped_points
-                hit = point_to_key(P, q)
-                if !isnothing(hit) && hit in source.set
-                    j = key_to_index[hit]
-                    e = (i,j)
-                    t_edges[e] = get(t_edges, e, 0.) + inv_n
+                hitbox = point_to_box(P, q)
+                isnothing(hitbox) && continue
+                r = hitbox.radius
+                for ip in g.image_points(q, r)
+                    hit = point_to_key(P, ip)
+                    isnothing(hit) && continue
+                    hit in source.set || @reduce( variant_keys = S() ⊔ hit )
+                    @reduce( mat = D() ⊔ ((hit,key) => inv_n) )
                 end
             end
         end
     end
-    return TransferOperator(boxlist, merge(edges...))
+    return mat, variant_keys
 end
 
 # helper + compatibility functions
