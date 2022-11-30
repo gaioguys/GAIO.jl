@@ -84,7 +84,7 @@ function ⊔(d::AbstractDict, p::Pair)
 end
 
 function construct_transfers(
-        g::BoxMap, boxset::BoxSet{R,Q,S}
+        g::SampledBoxMap, boxset::BoxSet{R,Q,S}
     ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
 
     P, D = boxset.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}

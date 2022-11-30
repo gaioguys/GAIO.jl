@@ -24,87 +24,76 @@ function map_boxes_kernel!(g, P, domain_points, in_keys, out_keys)
         c, r = box.center, box.radius
         fp   = g(@muladd p .* r .+ c)
         hit  = point_to_key(P, fp)
-        out_keys[i] = isnothing(hit) ? 0i32 : hit
-    end
-end
-
-function TransferOperator_kernel!(g, P, domain_points, in_keys, out_keys)
-    nk, np = Int32.((length(in_keys), length(domain_points)))
-    ind = (blockIdx().x - 1i32) * blockDim().x + threadIdx().x #- 1i32
-    stride = gridDim().x * blockDim().x
-    len = nk * np #- 1i32
-    for i in ind : stride : len
-        m, n = Int32.(CartesianIndices((np, nk))[i].I)
-        p    = domain_points[m]
-        key  = in_keys[n]
-        box  = key_to_box(P, key)
-        c, r = box.center, box.radius
-        fp   = g(@muladd p .* r .+ c)
-        hit  = point_to_key(P, fp)
-        out_keys[i] = isnothing(hit) ? (0i32, 0i32) : (key, hit)
+        out_keys[i] = isnothing(hit) ? cu_zero(P) : hit
     end
 end
 
 function map_boxes(
         g::SampledBoxMap{C,N,T,F,D,typeof(center)}, source::BoxSet{B,Q,S}
-    ) where {C<:BoxMapGPUCache,N,T,F,D,B,Q<:BoxPartition{<:Any,<:Any,<:Any,<:IndexLinear},S}
+    ) where {C<:BoxMapGPUCache,N,T,F,D,B,Q<:BoxPartition,S}
 
     P, keys = source.partition, Stateful(source.set)
     p = ensure_implemented(g, P)
     np = length(p)
+    K = cu_keytype(P)
     image = S()
     while !isnothing(keys.nextvalstate)
         stride = min(
             length(keys),
-            available_array_memory() ÷ (sizeof(Int32) * 10 * (N + 1) * np)
+            available_array_memory() ÷ (sizeof(K) * 10 * (N + 1) * np)
         )
-        in_keys = CuArray{Int32,1}(collect(take(keys, stride)))
+        in_keys = CuArray{K,1}(collect(take(keys, stride)))
         nk = length(in_keys)
-        out_keys = CuArray{Int32,1}(undef, nk * np)
+        out_keys = CuArray{K,1}(undef, nk * np)
         launch_kernel_then_sync!(
             nk * np, map_boxes_kernel!, 
             g.map, P, p, in_keys, out_keys
         )
-        out_cpu = Array{Int32,1}(out_keys)
+        out_cpu = Array{K,1}(out_keys)
         union!(image, out_cpu)
         CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
     end
-    delete!(image, 0i32)
+    delete!(image, cu_zero(P))
     return BoxSet(P, image)
 end
 
-function TransferOperator(
-        g::SampledBoxMap{C,N,T,F,D,typeof(center)}, source::BoxSet{B,Q,S}
-    ) where {C<:BoxMapGPUCache,N,T,F,D,B<:BoxPartition{<:Any,<:Any,<:Any,<:IndexLinear},Q,S}
+function construct_transfers(
+        g::SampledBoxMap{C,M,V,F,L,typeof(center)}, source::BoxSet{R,Q,S}
+    ) where {C<:BoxMapGPUCache,M,V,N,T,F,L,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
 
-    P = source.partition
-    points = ensure_implemented(g, P)
-    np = length(points)
-    inv_n = 1. / np
-    edges = Dict{Tuple{Int,Int},Float64}()
-    boxlist = BoxList(P, collect(Int32, source.set))
-    key_to_index = invert_vector(boxlist.keylist)
-    key_to_index[0i32] = 0
-    SZ2 = min(
-        length(boxlist),
-        available_array_memory() ÷ (sizeof(Int32) * 10 * (N + 1) * np)
-    ) ÷ 2
-    for i in 0:SZ2:max(0, length(boxlist)-SZ2)
-        in_keys = CuArray{Int32,1}(boxlist.keylist[i+1:i+SZ2])
-        nk = Int32(length(in_keys))
-        out_keys = CuArray{Tuple{Int32,Int32},1}(undef, nk * np)
-        launch_kernel_then_sync!(nk * np, TransferOperator_kernel!, g.map, P, points, in_keys, out_keys)
-        out_cpu = Array{Tuple{Int32,Int32},1}(out_keys)
-        for (key, hit) in out_cpu
-            if hit in source.set
-                e = (key_to_index[key], key_to_index[hit])
-                edges[e] = get(edges, e, 0.) + inv_n
-            end
+    P, keys = source.partition, Stateful(source.set)
+    p = ensure_implemented(g, P)
+    np = length(p)
+    inv_n = 1 / np
+    K = cu_keytype(P)
+    D = Dict{Tuple{K,K},Float32}
+    mat = D()
+    variant_keys = S()
+    while !isnothing(keys.nextvalstate)
+        stride = min(
+            length(keys),
+            available_array_memory() ÷ (sizeof(K) * 10 * (N + 1) * np)
+        )
+        in_cpu = Array{K,1}(collect(take(keys, stride)))
+        in_keys = CuArray{K,1}(in_cpu)
+        nk = length(in_keys)
+        out_keys = CuArray{K,1}(undef, nk * np)
+        launch_kernel_then_sync!(
+            nk * np, map_boxes_kernel!, 
+            g.map, P, p, in_keys, out_keys
+        )
+        out_cpu = Array{K,1}(out_keys)
+        Cart = CartesianIndices((np, nk))
+        for i in 1:nk*np
+            _, n = Cart[i].I
+            key, hit = in_cpu[n], out_cpu[i]
+            mat = mat ⊔ ((hit,key) => inv_n)
         end
+        union!(variant_keys, setdiff(out_cpu, source.set))
         CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
     end
-    delete!(edges, (0.,0.))
-    return TransferOperator(boxlist, edges)
+    delete!(variant_keys, cu_zero(P))
+    return mat, variant_keys
 end
 
 # helper + compatibility functions
@@ -127,6 +116,16 @@ function available_array_memory()
     m = CUDA.MemoryInfo()
     return m.free_bytes + m.pool_reserved_bytes
 end
+
+cu_reduce(::Type{I}) where {I<:Integer} = Int32
+cu_reduce(::Type{Int16}) = Int16
+cu_reduce(::Type{Int8}) = Int8
+
+cu_keytype(::BoxPartition{N,T,I,<:IndexLinear}) where {N,T,I} = cu_reduce(I)
+cu_keytype(::BoxPartition{N,T,I,<:IndexCartesian}) where {N,T,I} = NTuple{N,cu_reduce(I)}
+
+cu_zero(::BoxPartition{N,T,I,<:IndexLinear}) where {N,T,I} = zero(cu_reduce(I))
+cu_zero(::BoxPartition{N,T,I,<:IndexCartesian}) where {N,T,I} = ntuple(_->zero(cu_reduce(I)), Val(N))
 
 for adaptor in (CUDA.CuArrayAdaptor, CUDA.Adaptor), T in (:Float64, :J), I in (:Int64, :Int128, :J)
     @eval function Adapt.adapt_structure(
