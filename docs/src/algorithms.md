@@ -89,14 +89,15 @@ The idea behind the algorithm to compute the unstable manifold can be explained 
 
 ### Implementation
 ```julia
-function unstable_set!(F::BoxMap, B::BoxSet)
-    B_new = B
-    while !isempty(B_new)
-        B_new = F(B_new)
-        setdiff!(B_new, B)
-        union!(B, B_new)
+function unstable_set(F::BoxMap, B::BoxSet)
+    B₀ = B
+    B₁ = B
+    while !isempty(B₁)
+        B₁ = F(B₁)
+        setdiff!(B₁, B₀)
+        union!(B₀, B₁)
     end
-    return B
+    return B₀
 end
 ```
 The input argument `B` includes two things:
@@ -219,7 +220,7 @@ where ``Dh (x)`` is the Jacobi matrix of ``h`` at ``x``.
 
 The local Newton algorithm is not guaranteed to converge to a global solution to ``h(x) = 0``. To rectify this, the step size ``\| d \|`` and direction ``d / \| d \|`` need to be modified. There are multiple heuristics to do this, and GAIO.jl uses the "Armijo rule": fix some ``\sigma < 1`` and find the largest ``\alpha \leq 1`` such that 
 ```math
-h(x + \alpha d) - h(x) \leq \alpha \sigma \, J_h (x)^T d.
+h(x + \alpha d) - h(x) \leq \alpha \sigma \, Dh (x)^T d.
 ```
 This is done by initializing ``\alpha = 1`` and testing the above condition. If it is not satisfied, scale ``\alpha`` by some constant ``\rho``, ie set ``\alpha = \rho \cdot \alpha``, and test the condition again. GAIO.jl uses ``\sigma = 10^{-4}`` and ``\rho = 4 / 5``. 
 

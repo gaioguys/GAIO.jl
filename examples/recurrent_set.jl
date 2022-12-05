@@ -1,4 +1,3 @@
-using WGLMakie: plot
 using GAIO
 using Interpolations
 using QuadGK
@@ -88,6 +87,9 @@ P = BoxPartition(Box(center, radius))
 F = BoxMap(f, P, no_of_points = 200)
 
 C = chain_recurrent_set(F, P[:], steps = 18)
+
+#using Plots: plot     # plot a 2D projection
+using WGLMakie: plot
 
 plot(C)
 

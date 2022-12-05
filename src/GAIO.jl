@@ -25,6 +25,7 @@ using Base.Iterators: Stateful, take
 # using WGLMakie
 using MakieCore
 using MakieCore: @recipe
+using RecipesBase: RecipesBase
 
 import Base: ∘
 
@@ -50,7 +51,7 @@ export approx_lipschitz, sample_adaptive
 
 export rk4, rk4_flow_map
 
-export relative_attractor, unstable_set!, chain_recurrent_set
+export relative_attractor, unstable_set, chain_recurrent_set
 export cover_roots, finite_time_lyapunov_exponents
 
 export plotboxes, plotboxes!

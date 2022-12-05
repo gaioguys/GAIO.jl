@@ -49,7 +49,7 @@ F = SampledBoxMap(
     nothing
 )
 
-W = unstable_set!(F, equillibrium)
+W = unstable_set(F, equillibrium)
 plot(W)
 
 

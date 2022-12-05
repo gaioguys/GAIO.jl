@@ -13,20 +13,21 @@ function relative_attractor(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T
 end
 
 """
-    unstable_set!(F::BoxMap, B::BoxSet) -> BoxSet
+    unstable_set(F::BoxMap, B::BoxSet) -> BoxSet
 
 Compute the unstable set for a box set `B`. Generally, `B` should be 
 a small box surrounding a fixed point of `F`. The partition should 
 be fine enough, since no subdivision occurs in this algorithm. 
 """
-function unstable_set!(F::BoxMap, B::BoxSet)
-    B_new = B
-    while !isempty(B_new)
-        B_new = F(B_new)
-        setdiff!(B_new, B)
-        union!(B, B_new)
+function unstable_set(F::BoxMap, B::BoxSet)
+    B₀ = copy(B)
+    B₁ = copy(B)
+    while !isempty(B₁)
+        B₁ = F(B₁)
+        setdiff!(B₁, B₀)
+        union!(B₀, B₁)
     end
-    return B
+    return B₀
 end
 
 """

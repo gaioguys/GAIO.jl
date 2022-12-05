@@ -35,7 +35,7 @@ P = BoxPartition(Box(center, radius), (128,128,128))
 F = BoxMap(f, P, :cpu)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
-@time W = unstable_set!(F, P[x])
+@time W = unstable_set(F, P[x])
 ```
 
 Using SIMD vectorization, one can roughly double the effective floating point operations per second. For more detail, see [1]. 

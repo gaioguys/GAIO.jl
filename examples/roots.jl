@@ -1,4 +1,3 @@
-using WGLMakie: plot
 using GAIO
 using ForwardDiff
 
@@ -11,5 +10,8 @@ center, radius = zeros(dim), 40*ones(dim)
 P = BoxPartition(Box(center, radius))
 
 R = cover_roots(g, Dg, P[:], steps=dim*8)
+
+#using Plots: plot       # plot a 2D projection
+using WGLMakie: plot    # plot a 3D projection
 
 plot(R)

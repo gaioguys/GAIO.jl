@@ -11,7 +11,7 @@ P = BoxPartition(Box(center, radius), (128,128,128))
 F = BoxMap(f, P, no_of_points=200)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
-W = unstable_set!(F, P[x])
+W = unstable_set(F, P[x])
 
 T = TransferOperator(F, W)
 (λ, ev) = eigs(T)

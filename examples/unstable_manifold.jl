@@ -11,6 +11,6 @@ P = BoxPartition(Box(center, radius), (128,128,128); indextype=IndexCartesian())
 F = AdaptiveBoxMap(f, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
-W = unstable_set!(F, P[x])
+W = unstable_set(F, P[x])
 
 plot(W)

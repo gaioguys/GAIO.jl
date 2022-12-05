@@ -42,7 +42,7 @@ P = BoxPartition(Box(center, radius), (128,128,128))
 F = BoxMap(f, P, :gpu)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
-@time W = unstable_set!(F, P[x])
+@time W = unstable_set(F, P[x])
 ```
 
 Using CUDA, one can achieve a more than 100-fold increase in performance. However, the performance increase is dependent on the complexity of the map `f`. For "simple" maps (eg. `f` from above with 20 steps), the GPU accelerated version will actually perform _worse_ because computation time is dominated by the time required to transfer data across the (comparatively slow) PCIe bus. The GPU accelerated version only beats the CPU accelerated version if `f` is set to use more than 40 steps. Hence it is highly recommended to use the GPU if the map `f` is not dominated by memory transfer speed, but not recommended otherwise. For more detail, see [1]. 

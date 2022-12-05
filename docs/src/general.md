@@ -127,13 +127,13 @@ See the docstring for `BoxGraph` for details on how to translate between GAIO.jl
 
 ## Plotting
 
-GAIO.jl uses `Makie` for plotting. To plot a `BoxSet` or a `BoxFun`, simply choose a Makie backend, eg. `GLMakie`, and call `plot`
+GAIO.jl offers both `Plots` or `Makie` for plotting. To plot a `BoxSet` or a `BoxFun`, simply choose either Plots or a Makie backend, eg. `GLMakie`, and call `plot` on a `BoxSet` or `BoxFun`
 ```julia
 using GLMakie: plot
 
 plot(B)
 ```
-Plotting works with all the functionality of `Makie`. This means you can set box plots as subplots, add colorbars, etc., using the Makie interface. For an example, see `examples/invariant_measure_2d.jl`. 
+Plotting works with all the functionality of either package. This means you can set box plots as subplots, add colorbars, etc., using the Plots or Makie interface. For an example, see `examples/invariant_measure_2d.jl`. 
 
 ## References
 
