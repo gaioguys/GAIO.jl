@@ -20,8 +20,8 @@ a small box surrounding a fixed point of `F`. The partition should
 be fine enough, since no subdivision occurs in this algorithm. 
 """
 function unstable_set(F::BoxMap, B::BoxSet)
-    B₀ = B
-    B₁ = B
+    B₀ = copy(B)
+    B₁ = copy(B)
     while !isempty(B₁)
         B₁ = F(B₁)
         setdiff!(B₁, B₀)
