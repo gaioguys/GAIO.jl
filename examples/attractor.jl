@@ -1,4 +1,3 @@
-using WGLMakie: plot
 using GAIO
 
 # the Henon map
@@ -9,5 +8,8 @@ center, radius = [0, 0], (3, 3)
 P = BoxPartition(Box(center, radius))
 F = BoxMap(f, P)
 A = relative_attractor(F, P[:], steps = 16)
+
+using Plots: plot
+#using WGLMakie: plot    # same result, just interactive
 
 plot(A)

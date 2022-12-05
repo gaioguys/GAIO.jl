@@ -2,8 +2,7 @@
 # include("plot/camera.jl")
 # include("plot/plot.jl")
 
-const default_box_color = :firebrick1
-const default_box_colormap = :jet
+const default_box_color = :red
 
 """
     plot(boxset::BoxSet)
@@ -15,17 +14,17 @@ Plot a `BoxSet` or `BoxFun`.
 
 ## Special Attributes:
 
-`projection_func = x -> x[1:3]`
+`projection = x -> x[1:3]`
 If the dimension of the system is larger than 3, use this function to project to 3-d space.
 
-`color = :firebrick1`
+`color = :red`
 Color used for the boxes.
 
-`colormap = :jet`
+`colormap = :default`
 Colormap used for plotting `BoxFun`s values.
 
 `marker = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1))`
-The marker for an individual box.
+The marker for an individual box. Only works if using Makie for plotting. 
 
 All other attributes are taken from MeshScatter.
 
@@ -33,10 +32,9 @@ All other attributes are taken from MeshScatter.
 @recipe(PlotBoxes) do scene
     MakieCore.merge!(
         MakieCore.Attributes(
-            marker          = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1)),
-            projection_func = nothing,
-            color           = default_box_color,
-            colormap        = default_box_colormap
+            marker     = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1)),
+            projection = nothing,
+            color      = default_box_color
         ),
         MakieCore.default_theme(scene, MakieCore.MeshScatter)
     )
@@ -46,10 +44,10 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{Box{N,T}}}}) where {N
 
     boxset = boxes[1][]
     d = min(N, 3)
-    if isnothing(boxes.projection_func[])
-        boxes.projection_func[] = x -> x[1:d]
+    if isnothing(boxes.projection[])
+        boxes.projection[] = x -> x[1:d]
     end
-    q = boxes.projection_func[]
+    q = boxes.projection[]
 
     center = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxset))
     radius = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxset))
@@ -72,10 +70,10 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{N,T}}}}) where {N
 
     boxfun = boxes[1][]
     d = min(N, 3)
-    if isnothing(boxes.projection_func[])
-        boxes.projection_func[] = x -> x[1:d]
+    if isnothing(boxes.projection[])
+        boxes.projection[] = x -> x[1:d]
     end
-    q = boxes.projection_func[]
+    q = boxes.projection[]
 
     center = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxfun))
     radius = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxfun))
@@ -154,3 +152,78 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{1,T}}}}) where {T
 end
 
 MakieCore.plottype(::Union{BoxSet,BoxFun}) = PlotBoxes
+
+RecipesBase.@recipe function plot!(boxset::BoxSet{Box{N,T}}; projection=x->x[1:2]) where {N,T}
+    xs = Vector{Float32}(undef, 5*length(boxset))
+    ys = Vector{Float32}(undef, 5*length(boxset))
+    q = projection
+    
+    for (i, box) in enumerate(boxset)
+        c, r = q(box.center), q(box.radius)
+        lo, hi = c .- r, c .+ r
+        xs[5*(i-1)+1:5*i] .= (lo[1], hi[1], hi[1], lo[1], NaN)
+        ys[5*(i-1)+1:5*i] .= (lo[2], lo[2], hi[2], hi[2], NaN)
+    end
+    
+    seriestype := :shape
+    color --> default_box_color
+    linecolor --> default_box_color
+    
+    xs, ys
+end
+
+RecipesBase.@recipe function plot!(boxset::BoxFun{Box{N,T}}; projection=x->x[1:2]) where {N,T}
+    xs = Vector{Float32}(undef, 5*length(boxset))
+    ys = Vector{Float32}(undef, 5*length(boxset))
+    cs = Vector{Float32}(undef, 5*length(boxset))
+    q = projection
+    
+    for (i, (box, val)) in enumerate(boxset)
+        c, r = q(box.center), q(box.radius)
+        lo, hi = c .- r, c .+ r
+        xs[5*(i-1)+1:5*i] .= (lo[1], hi[1], hi[1], lo[1], NaN)
+        ys[5*(i-1)+1:5*i] .= (lo[2], lo[2], hi[2], hi[2], NaN)
+        cs[5*(i-1)+1:5*i] .= (val, val, val, val, NaN)
+    end
+    
+    seriestype := :shape
+    fill_z := cs
+    line_z := cs
+
+    xs, ys
+end
+
+RecipesBase.@recipe function plot!(boxset::BoxSet{Box{1,T}}) where {T}
+    xs = Vector{Float32}(undef, 3*length(boxset))
+    ys = zeros(3*length(boxset))
+    
+    for (i, box) in enumerate(boxset)
+        c, r = box.center, box.radius
+        lo, hi = c .- r, c .+ r
+        xs[3*(i-1)+1:3*i] .= (lo[1], hi[1], NaN)
+    end
+    
+    seriestype := :shape
+    color --> default_box_color
+    linecolor --> default_box_color
+    
+    xs, ys
+end
+
+RecipesBase.@recipe function plot!(boxset::BoxFun{Box{1,T}}) where {T}
+    xs = Vector{Float32}(undef, 5*length(boxset))
+    ys = Vector{Float32}(undef, 5*length(boxset))
+    
+    for (i, (box, val)) in enumerate(boxset)
+        c, r = box.center, box.radius
+        lo, hi = c .- r, c .+ r
+        xs[5*(i-1)+1:5*i] .= (lo[1], hi[1], hi[1], lo[1], NaN)
+        ys[5*(i-1)+1:5*i] .= (0, 0, val, val, NaN)
+    end
+    
+    seriestype := :shape
+    color --> default_box_color
+    linecolor --> default_box_color
+
+    xs, ys
+end

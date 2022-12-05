@@ -74,8 +74,22 @@ Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexLinear}, key
 Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexCartesian}, key) where {N,T,I} = all(i -> 1 ≤ key[i] ≤ size(partition)[i], 1:N)
 Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I,<:IndexCartesian}, key::Integer) where {N,T,I} = checkbounds(Bool, partition, linear_to_cartesian(partition, key))
 
-function Base.show(io::IO, partition::P) where {P<:BoxPartition}
-    print(io, join(size(partition), " x "), " - element $P")
+function Base.show(io::IO, partition::P) where {N,P<:BoxPartition{N}}
+    if N ≤ 5
+        print(io, join(size(partition), " x "), " - element $P")
+    else
+        sz = size(partition)
+        print(io, sz[1], " x ", sz[2], " ... ", sz[N-1], " x ", sz[N], " - element $P")
+    end
+end
+
+function Base.show(io::IO, ::MIME"text/plain", partition::P) where {N,P<:BoxPartition{N}}
+    if N ≤ 5
+        print(io, join(size(partition), " x "), " - element BoxPartition")
+    else
+        sz = size(partition)
+        print(io, sz[1], " x ", sz[2], " ... ", sz[N-1], " x ", sz[N], " - element BoxPartition")
+    end
 end
 
 """

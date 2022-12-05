@@ -1,4 +1,3 @@
-using WGLMakie: plot
 using GAIO
 
 # logistic map
@@ -11,5 +10,8 @@ F = BoxMap(f, P; no_of_points=400)
 
 T = TransferOperator(F, P[:])
 (λ, ev) = eigs(T)
+
+using Plots: plot
+#using WGLMakie: plot   # same result, just interactive
 
 plot(abs ∘ ev[1])
