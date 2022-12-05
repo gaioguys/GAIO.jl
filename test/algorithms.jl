@@ -16,7 +16,7 @@ using Test
     dims = (32, 32)
     partition_at_depth_n = BoxPartition(domain, dims)
     rga = relative_attractor(g, partition[:], steps = n)
-    unstable = unstable_set!(g, partition_at_depth_n[:])
+    unstable = unstable_set(g, partition_at_depth_n[:])
     # ground truths attractor and unstable set
     x_axis = [SVector(0, x) for x in range(-1, 1, length=100)]
     y_axis = [SVector(x, 0) for x in range(-1, 1, length=100)]
