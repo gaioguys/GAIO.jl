@@ -3,7 +3,7 @@
 
 Internal data structure to hold boxes within a partition. 
 
-Constructors:
+Constructors (all constructors work with box sets as well):
 * For all boxes in a partition: 
 ```julia
 partition[:]
@@ -47,7 +47,7 @@ end
 
 """
 * getindex constructors:
-    * set of all boxes in `P`:
+    * set of all boxes in partition / box set `P`:
     ```julia
     B = P[:]    
     ```
@@ -61,7 +61,7 @@ end
     B = P[S]    
     ```
 
-Return a subset of the partition `P` based on the second argument. 
+Return a subset of the partition or box set `P` based on the second argument. 
 """
 function Base.getindex(partition::P, points) where P<:AbstractBoxPartition
     eltype(points) <: Number && ndims(partition) > 1 && return partition[(points,)]
@@ -83,24 +83,16 @@ function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
     vertex_keys = Matrix{I}(undef, N, 2)
     for box_in in boxes
         box = Box{N,T}(box_in.center, box_in.radius .- 2*eps(T))
-        vertex_keys[:, 1] .= vertex_keys[:, 2] .= bounded_point_to_cartesian(partition, box.center)
+        vertex_keys[:, 1] .= vertex_keys[:, 2] .= bounded_point_to_key(partition, box.center)
         for point in vertices(box)
-            ints = bounded_point_to_cartesian(partition, point)
+            ints = bounded_point_to_key(partition, point)
             vertex_keys[:, 1] .= min.(vertex_keys[:, 1], ints)
             vertex_keys[:, 2] .= max.(vertex_keys[:, 2], ints)
         end
         C = CartesianIndices(ntuple(i -> vertex_keys[i, 1] : vertex_keys[i, 2], Val(N)))
-        for ind in C
-            key = cartesian_to_key(partition, ind.I)
-            isnothing(key) && @error "Indexing went wrong somehow. Please open an issue with an MWE" ind.I key
-            union!(keys, key)
-        end
+        union!(keys, C)
     end
     return BoxSet(partition, keys)
-end
-
-function Base.getindex(partition::P, key::Integer) where {P<:AbstractBoxPartition}
-    BoxSet(partition, Set{keytype(P)}([key]))
 end
 
 function Base.getindex(B::BoxSet, points)
@@ -146,8 +138,15 @@ Base.length(boxset::BoxSet) = length(boxset.set)
 Base.push!(boxset::BoxSet, key) = push!(boxset.set, key)
 Base.sizehint!(boxset::BoxSet, size) = sizehint!(boxset.set, size)
 Base.eltype(::Type{<:BoxSet{B}}) where B = B
-Base.iterate(boxset::BoxSet, state...) = iterate((key_to_box(boxset.partition, key) for key in boxset.set), state...)
 SplittablesBase.amount(boxset::BoxSet) = SplittablesBase.amount(boxset.set)
+
+function Base.iterate(boxset::BoxSet, state...)
+    itr = iterate(boxset.set, state...)
+    isnothing(itr) && return itr
+    (key, j) = itr
+    box = key_to_box(boxset.partition, key)
+    return (box, j)
+end
 
 function SplittablesBase.halve(boxset::BoxSet)
     P = boxset.partition
@@ -155,9 +154,7 @@ function SplittablesBase.halve(boxset::BoxSet)
     ((key_to_box(P, key) for key in left), (key_to_box(P, key) for key in right))
 end
 
-function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition{<:Any,<:Any,<:Any,<:IndexCartesian},S}
-    partition_subdivided = subdivide(boxset.partition, dim)
-
+function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}
     set = S()
     sizehint!(set, 2*length(boxset.set))
 
@@ -169,27 +166,7 @@ function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition{<:Any,<:
         push!(set, child2)
     end
 
-    return BoxSet(partition_subdivided, set)
-end
-
-function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition{<:Any,<:Any,<:Any,<:IndexLinear},S}
-    partition = boxset.partition
-    partition_subdivided = subdivide(partition, dim)
-    C, J = CartesianIndices(partition), LinearIndices(partition_subdivided)
-
-    set = S()
-    sizehint!(set, 2*length(boxset.set))
-
-    for key_linear in boxset.set
-        key = C[key_linear].I
-        child1 = Base.setindex(key, 2 * key[dim] - 1, dim)
-        child2 = Base.setindex(key, 2 * key[dim], dim)
-
-        push!(set, J[CartesianIndex(child1)])
-        push!(set, J[CartesianIndex(child2)])
-    end
-
-    return BoxSet(partition_subdivided, set)
+    return BoxSet(subdivide(boxset.partition, dim), set)
 end
 
 function subdivide!(boxset::BoxSet{B,P,S}, key::NTuple{2,<:Integer}) where {B,P<:TreePartition,S}

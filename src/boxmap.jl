@@ -41,12 +41,12 @@ end
 @inbounds @muladd function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
     P = source.partition
     @floop for box in source
-        c, r = box.center, box.radius
+        c, r = box
         for p in g.domain_points(c, r)
             fp = g.map(p)
             hitbox = point_to_box(P, fp)
             isnothing(hitbox) && continue
-            r = hitbox.radius
+            _, r = hitbox
             for ip in g.image_points(fp, r)
                 hit = point_to_key(P, ip)
                 isnothing(hit) && continue
@@ -60,7 +60,7 @@ end
 (g::BoxMap)(source::BoxSet) = map_boxes(g, source)
 
 function Base.show(io::IO, g::SampledBoxMap)
-    center, radius = g.domain.center, g.domain.radius
+    center, radius = g.domain
     n = length(g.domain_points(center, radius))
     print(io, "BoxMap with $(n) sample points")
 end

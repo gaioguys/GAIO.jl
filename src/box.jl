@@ -47,6 +47,10 @@ end
 Base.in(point, box::Box) = all(box.center .- box.radius  .<=  point  .<  box.center .+ box.radius)
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
 
+Base.iterate(b::Box, i...) = (b.center, Val(:radius))
+Base.iterate(b::Box, ::Val{:radius}) = (b.radius, Val(:done))
+Base.iterate(b::Box, ::Val{:done}) = nothing
+
 """
 Computes the volume of a box. 
 """
