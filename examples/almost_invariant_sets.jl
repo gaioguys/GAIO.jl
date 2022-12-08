@@ -1,5 +1,4 @@
 using GAIO
-using WGLMakie: plot
 
 # Chua's circuit
 const a, b, m0, m1 = 16.0, 33.0, -0.2, 0.01
@@ -14,7 +13,7 @@ F = BoxMap(f, P, no_of_points=200)
 # computing the attractor by covering the 2d unstable manifold
 # of two equilibria
 x = [sqrt(-3*m0/m1), 0.0, -sqrt(-3*m0/m1)]     # equilibrium
-W = unstable_set!(F, P[[x, -x]])
+W = unstable_set(F, P[[x, -x]])
 
 # computing the eigenmeasures at the eigenvalues of largest real part
 T = TransferOperator(F, W)
@@ -22,4 +21,8 @@ T = TransferOperator(F, W)
 
 # plot the second eigenmeasure according to its sign, revealing 
 # the two almost invariant sets
-plot(sign ∘ ev[2])
+using WGLMakie: plot!, Figure, Axis3
+fig = Figure()
+ax = Axis3(fig[1,1], aspect=(1,1.2,1))
+plot!(ax, sign ∘ ev[2])
+fig
