@@ -45,6 +45,7 @@ using Test
             @test any(box -> p4 ∈ box, box_set)
         end
         @testset "boxsets created on boxes" begin
+            @test partition[GAIO.point_to_box(partition, p1)] == partition[p1]
             boxes = [GAIO.point_to_box(partition, p) for p in (p1, p2, p3, p4)]
             box_set = partition[boxes]
             box_set_points = partition[(p1, p2, p3, p4)]
