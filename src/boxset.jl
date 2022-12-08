@@ -72,6 +72,15 @@ end
 
 Base.getindex(partition::P, box::Box) where P<:AbstractBoxPartition = getindex(partition, (box,))
 
+function Base.getindex(partition::P, ::Colon) where {P<:AbstractBoxPartition}
+    return BoxSet(partition, Set{keytype(P)}(keys(partition)))
+end
+
+function Base.getindex(B::BoxSet, points)
+    A = getindex(B.partition, points)
+    return B ∩ A
+end
+
 """
     cover_boxes(partition::BoxPartition, boxes)
 
@@ -79,7 +88,8 @@ Return a covering of an iterator of `Box`es using `Box`es from `partition`.
 Only covers the part of `boxes` which lies within `partition.domain`. 
 """
 function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
-    keys = Set{keytype(P)}()
+    K = keytype(P)
+    keys = Set{K}()
     vertex_keys = Matrix{I}(undef, N, 2)
     for box_in in boxes
         box = Box{N,T}(box_in.center, box_in.radius .- 2*eps(T))
@@ -90,18 +100,9 @@ function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
             vertex_keys[:, 2] .= max.(vertex_keys[:, 2], ints)
         end
         C = CartesianIndices(ntuple(i -> vertex_keys[i, 1] : vertex_keys[i, 2], Val(N)))
-        union!(keys, C)
+        union!(keys, (K(i.I) for i in C))
     end
     return BoxSet(partition, keys)
-end
-
-function Base.getindex(B::BoxSet, points)
-    A = getindex(B.partition, points)
-    return B ∩ A
-end
-
-function Base.getindex(partition::P, ::Colon) where {P<:AbstractBoxPartition}
-    return BoxSet(partition, Set{keytype(P)}(keys(partition)))
 end
 
 for op in (:union, :intersect, :setdiff, :symdiff)

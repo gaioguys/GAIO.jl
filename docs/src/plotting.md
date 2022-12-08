@@ -2,7 +2,7 @@
 
 GAIO.jl offers plotting recipes for both Plots.jl and Makie.jl. This means that one can use all the surrounding functionality of Plots.jl or makie.jl, e.g. creating multiple subplots, animations, colorbars, etc. simply by loading either Plots.jl or Makie.jl. 
 
-!!! note "Why offer bot Plots and Makie recipes?"
+!!! note "Why offer both Plots and Makie recipes?"
     Makie.jl offers much more funcitonality and performance in interactive plots, but suffers much more greatly from the well known [time to fist plot problem](https://discourse.julialang.org/t/roadmap-for-a-faster-time-to-first-plot/22956). Hence GAIO.jl offers Plots.jl recipes for fast, 2-dimensional, non-interactive plotting, and Makie.jl recipes for interactive, 2- and 3-dimensional, or publication-quality visualizations. To see a difference in the plotting capability, see [the Hénon map example](https://github.com/gaioguys/GAIO.jl/blob/master/examples/invariant_measure_2d.jl). 
 
 ## Using Plots

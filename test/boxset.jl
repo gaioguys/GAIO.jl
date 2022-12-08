@@ -75,6 +75,18 @@ using Test
             @test length(p2p3_box_set) == 1
             @test length(p1p2_box_set) == 1
         end
+        @testset "accessing boxes" begin
+            B = partition[(p1, p2, p3, p4)]
+            boxes = collect(B)
+            @test boxes isa Vector{Box{3,Float64}}
+            @test length(boxes) == 3
+
+            centers = collect(box.center for box in B)
+            @test centers isa Vector{SVector{3,Float64}}
+
+            mat = reinterpret(reshape, Float64, centers)
+            @test size(mat) == (3,3)
+        end
     end
 end
 
