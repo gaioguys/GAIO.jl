@@ -1,4 +1,5 @@
 abstract type BoxMap end
+
 """
     SampledBoxMap(map, domain::Box, domain_points, image_points, acceleration)
 
@@ -19,18 +20,14 @@ Fields:
 * `image_points`:     the spread of test points for comparison in intersection algorithms.
                       Must have the signature `domain_points(center, radius)` and return 
                       an iterator of points within `Box(center, radius)`. 
-* `acceleration`:     Whether to use optimized functions in intersection algorithms.
-                      Accepted values: `nothing`, `BoxMapCPUCache`, `BoxMapGPUCache`.
-                      `BoxMapGPUCache` does nothing unless you have a CUDA capable gpu.
 
 .
 """
-struct SampledBoxMap{A,N,T,F,D,I} <: BoxMap
+struct SampledBoxMap{N,T,F,D,I} <: BoxMap
     map::F
     domain::Box{N,T}
     domain_points::D
     image_points::I
-    acceleration::A
 end
 
 # wee need a small helper function because of 
@@ -72,29 +69,40 @@ Construct a `SampledBoxMap` that uses the iterator `points` as test points.
 `points` must be an array or iterator of test points within the unit cube 
 ``[-1,1]^N``. 
 """
-function PointDiscretizedMap(map, domain, points, accel=nothing)
+function PointDiscretizedMap(map, domain, points)
     domain_points = rescale(points)
     image_points = center
-    return SampledBoxMap(map, domain, domain_points, image_points, accel)
+    return SampledBoxMap(map, domain, domain_points, image_points)
 end
 
-function PointDiscretizedMap(map, domain, points, accel::Symbol)
-    return PointDiscretizedMap(map, domain, points, Val(accel))
+function GridMap(map, domain::Box{N,T}; no_of_points::NTuple{N}=ntuple(_->4*pick_vector_width(T),N)) where {N,T}
+    Δp = 2 ./ no_of_points
+    points = NTuple{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(no_of_points) ]
+    return PointDiscretizedMap(map, domain, points)
+end
+
+function GridMap(map, P::BoxPartition{N,T}; no_of_points=ntuple(_->4*pick_vector_width(T),N)) where {N,T}
+    GridMap(map, P.domain; no_of_points=no_of_points)
+end
+
+function GridMap(map, domain::Box{N,T}; no_of_points::Integer) where {N,T}
+    n = ceil(Int, no_of_points ^ 1/n)
+    GridMap(map, domain; no_of_points=ntuple(_->n, N))
 end
 
 """
-    BoxMap(map, domain::Box{N,T}, accel=nothing; no_of_points=4*N*pick_vector_width(T)) -> SampledBoxMap
-    BoxMap(map, P::BoxPartition{N,T}, accel=nothing; no_of_points=4*N*pick_vector_width(T)) -> SampledBoxMap
+    MonteCarloMap(map, domain::Box{N,T}, accel=nothing; no_of_points=4*N*pick_vector_width(T)) -> SampledBoxMap
+    MonteCarloMap(map, P::BoxPartition{N,T}, accel=nothing; no_of_points=4*N*pick_vector_width(T)) -> SampledBoxMap
 
 Construct a `SampledBoxMap` which uses `no_of_points` Monte-Carlo 
 test points. 
 """
-function BoxMap(map, domain::Box{N,T}, accel=nothing; no_of_points=4*N*pick_vector_width(T)) where {N,T}
-    points = [ tuple(2f0*rand(T,N).-1f0 ...) for _ = 1:no_of_points ] 
-    return PointDiscretizedMap(map, domain, points, accel) 
+function MonteCarloMap(map, domain::Box{N,T}; no_of_points=4*N*pick_vector_width(T)) where {N,T}
+    points = NTuple{N,T}[ 2*rand(T,N).-1 for _ = 1:no_of_points ] 
+    return PointDiscretizedMap(map, domain, points) 
 end 
 
-function BoxMap(map, P::BoxPartition{N,T}, accel=nothing; no_of_points=4*N*pick_vector_width(T)) where {N,T}
+function MonteCarloMap(map, P::BoxPartition{N,T}; no_of_points=4*N*pick_vector_width(T)) where {N,T}
     BoxMap(map, P.domain, accel; no_of_points=no_of_points)
 end
 
@@ -104,15 +112,13 @@ end
 Construct a `SampledBoxMap` which uses `sample_adaptive` to generate 
 test points. 
 """
-function AdaptiveBoxMap(f, domain::Box{N,T}, accel=nothing) where {N,T}
+function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     domain_points = sample_adaptive(f, accel)
     image_points = vertices
     return SampledBoxMap(f, domain, domain_points, image_points, accel)
 end
 
-AdaptiveBoxMap(f, P::BoxPartition{N,T}, accel=nothing) where {N,T} = AdaptiveBoxMap(f, P.domain, Val(accel))
-AdaptiveBoxMap(f, domain::Box{N,T}, accel::Symbol) where {N,T} = AdaptiveBoxMap(f, domain, Val(accel))
-AdaptiveBoxMap(f, P::BoxPartition{N,T}, accel::Symbol) where {N,T} = AdaptiveBoxMap(f, P.domain, Val(accel))
+AdaptiveBoxMap(f, P::BoxPartition) = AdaptiveBoxMap(f, P.domain)
 
 Core.@doc raw"""
     approx_lipschitz(f, center::SVector, radius::SVector, accel=nothing) -> Matrix
@@ -126,7 +132,7 @@ i.e. the matrix that satisifies
 
 componentwise. 
 """
-function approx_lipschitz(f, center::SVNT{N,T}, radius::SVNT{N,T}, accel=nothing) where {N,T}
+function approx_lipschitz(f, center::SVNT{N,T}, radius::SVNT{N,T}) where {N,T}
     L, y = Matrix{T}(undef, N, N), MVector{N,T}(ntuple(_->zero(T),Val(N)))
     fc = f(center)
     for dim in 1:N
@@ -155,7 +161,7 @@ Oliver Junge. “Rigorous discretization of subdivision techniques”. In:
 _International Conference on Differential Equations_. Ed. by B. Fiedler, K.
 Gröger, and J. Sprekels. 1999. 
 """
-function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}, accel=nothing) where {N,T}
+function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}) where {N,T}
     L = approx_lipschitz(f, center, radius, accel)
     _, σ, Vt = svd(L)
     n = ceil.(Int, σ)
@@ -169,4 +175,4 @@ function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}, accel=nothing)
     return points
 end
 
-sample_adaptive(f, accel=nothing) = (center, radius) -> sample_adaptive(f, center, radius, accel)
+sample_adaptive(f, accel=nothing) = (center, radius) -> sample_adaptive(f, center, radius)
