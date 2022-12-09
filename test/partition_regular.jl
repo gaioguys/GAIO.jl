@@ -28,7 +28,7 @@ end
 @testset "internal functionality" begin
     partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), (4,2,2))
     @testset "keys all" begin
-        @test size(keys(partition)) == (4*2*2,)
+        @test length(keys(partition)) == length(partition)
     end
     inside = SVector(0.5, 0.5, 0.5)
     left = SVector(-1.0, -1.0, -1.0)
@@ -69,7 +69,11 @@ end
         @test_throws Exception GAIO.point_to_key(partition, point_4d)
     end
     @testset "non existing keys" begin
-        @test_throws Exception GAIO.key_to_box(partition, -1)
-        @test_throws Exception GAIO.key_to_box(partition, 2^partiton.depth + 1)
+        @test_throws BoundsError GAIO.key_to_box(partition, (-1,1,1))
+        @test_throws BoundsError GAIO.key_to_box(partition, (1,-1,1))
+        @test_throws BoundsError GAIO.key_to_box(partition, (1,1,-1))
+        @test_throws BoundsError GAIO.key_to_box(partition, (5,2,2))
+        @test_throws BoundsError GAIO.key_to_box(partition, (4,3,2))
+        @test_throws BoundsError GAIO.key_to_box(partition, (4,2,3))
     end
 end

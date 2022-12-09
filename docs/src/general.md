@@ -9,13 +9,25 @@ using GAIO
 Q = Box(c, r)
 ```
 
-This creates a set ``Q = [c_1 - r_1, c_1 + r_1), \times \ldots \times [c_d - r_d, c_d + r_d)``. 
+This creates a set ``Q = [c_1 - r_1, c_1 + r_1), \times \ldots \times [c_d - r_d, c_d + r_d)``. Conversely, one can get back the vectors `c` and `r` by calling
+```julia
+c, r = Q
+```
 
 ## BoxPartition
 
 Most algorithms in GAIO.jl revolve around a partition of the domain ``Q`` into small boxes. To create an ``n_1 \times \ldots \times n_d`` - element equidistant grid of boxes, we can pass the tuple ``n = (n_1, \ldots, n_d)`` into the function `BoxPartition`
 ```julia
 P = BoxPartition(Q, n)
+```
+
+`BoxPartition`s use a cartesian indexing structure to be memory-efficient. These indices are accessed and used through the API:
+```julia
+key = point_to_key(P, x)    # x is some point in the domain Q
+
+box = key_to_box(P, key)    # cover the point x with a box from P
+
+box = point_to_box(P, x)    # performs both above functions
 ```
 
 ## TreePartition
@@ -47,7 +59,7 @@ B = P[S]
 `BoxSet` is a highly memory-efficient way of storing boxes. However, should you want to access the boxes or their internal data, this can be done via iteration:
 ```julia
 for box in B
-    c, r = box.center, box.radius
+    center, radius = box
     # do something
 end
 
@@ -57,7 +69,10 @@ arr_of_boxes = collect(B)
 # get an array of box centers
 arr_of_centers = collect(box.center for box in B)
 
-# (memory-efficiently) create a view where each center is a column
+# get an array of box radii
+arr_of_radii = collect(box.radius for box in B)
+
+# (memory-efficiently) create a matrix where each center is a column
 mat_of_centers = reinterpret(reshape, eltype(arr_of_centers[1]), arr_of_centers)
 ```
 

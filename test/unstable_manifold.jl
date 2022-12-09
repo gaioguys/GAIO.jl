@@ -11,28 +11,12 @@ using Test
     domain = Box(center, radius)
     x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
 
-    @testset "BoxMap with linear indices" begin 
-        P = BoxPartition(domain, (128,128,128); indextype=IndexLinear())
-        F = BoxMap(f, domain)
-        W = unstable_set(F, P[x])
-        @test W isa BoxSet  # passes if no error is thrown
-    end
-    @testset "BoxMap with cartesian indices" begin 
-        P = BoxPartition(domain, (128,128,128); indextype=IndexCartesian())
-        F = BoxMap(f, domain)
-        W = unstable_set(F, P[x])
-        @test W isa BoxSet
-    end
-    @testset "AdaptiveBoxMap with linear indices" begin 
-        P = BoxPartition(domain, (128,128,128); indextype=IndexLinear())
-        F = AdaptiveBoxMap(f, domain)
-        W = unstable_set(F, P[x])
-        @test W isa BoxSet
-    end
-    @testset "AdaptiveBoxMap with cartesian indices" begin 
-        P = BoxPartition(domain, (128,128,128); indextype=IndexCartesian())
-        F = AdaptiveBoxMap(f, domain)
-        W = unstable_set(F, P[x])
-        @test W isa BoxSet
-    end
+    P = BoxPartition(domain, (128,128,128))
+    F = BoxMap(f, domain)
+    W = unstable_set(F, P[x])
+    @test W isa BoxSet  # passes if no error is thrown
+
+    T = TransferOperator(F, W)
+    λ, ev, nconv = eigs(T)
+    @test ev[1] isa BoxFun  # passes if no error is thrown
 end

@@ -1,4 +1,3 @@
-using WGLMakie: plot, Colorbar
 using GAIO
 
 # the Lorenz system
@@ -15,8 +14,23 @@ W = unstable_set(F, P[x])
 
 T = TransferOperator(F, W)
 (λ, ev) = eigs(T)
+μ = log ∘ abs ∘ ev[1]
 
-fig, ax, ms = plot(log ∘ abs ∘ ev[1])
+# --- choose either Plots or Makie ---
+
+using Plots: plot
+# Plot some 2D projections
+p1 = plot(μ, projection = x->x[1:2])
+p2 = plot(μ, projection = x->x[2:3])
+plot(p1, p2, size = (1200,600))
+
+# ------------------------------------
+
+using WGLMakie: plot, Colorbar
+# Plot an interactive 3D heatmap
+fig, ax, ms = plot(μ)
 Colorbar(fig[1,2], ms)
-
 fig
+
+# ------------------------------------
+
