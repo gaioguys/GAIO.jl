@@ -64,7 +64,6 @@ export plotboxes, plotboxes!
 # ENV["JULIA_DEBUG"] = all
 
 const SVNT{N,T} = Union{<:NTuple{N,T}, <:StaticVector{N,T}}
-const IndexTypes{N} = Union{<:Integer,<:NTuple{N,<:Integer},<:CartesianIndex{N}}
 
 include("box.jl")
 
@@ -81,7 +80,7 @@ abstract type BoxMap end
 include("boxmap_sampled.jl")
 include("boxmap_simd.jl")
 include("boxmap_intervals.jl")
-include("boxmap_smart.jl")
+include("boxmap.jl")
 
 include("boxfun.jl")  
 include("transfer_operator.jl")

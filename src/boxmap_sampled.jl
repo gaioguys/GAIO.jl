@@ -41,7 +41,7 @@ function ⊔(d::AbstractDict, p::Pair)
     d
 end
 
-@inbounds @muladd function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
+function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
     P = source.partition
     @floop for box in source
         c, r = box
@@ -113,13 +113,13 @@ Construct a `SampledBoxMap` that uses a grid of test points.
 The size of the grid is defined by `no_of_points`, which is 
 a tuple of length equal to the dimension of the domain. 
 """
-function GridBoxMap(map, domain::Box{N,T}; no_of_points::NTuple{N}=ntuple(_->4*pick_vector_width(T),N)) where {N,T}
+function GridBoxMap(map, domain::Box{N,T}; no_of_points::NTuple{N}=ntuple(_->no_default(T),N)) where {N,T}
     Δp = 2 ./ no_of_points
     points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(no_of_points) ]
     return PointDiscretizedBoxMap(map, domain, points)
 end
 
-function GridBoxMap(map, P::BoxPartition{N,T}; no_of_points=ntuple(_->4*pick_vector_width(T),N)) where {N,T}
+function GridBoxMap(map, P::BoxPartition{N,T}; no_of_points=ntuple(_->no_default(T),N)) where {N,T}
     GridBoxMap(map, P.domain; no_of_points=no_of_points)
 end
 
@@ -130,12 +130,12 @@ end
 Construct a `SampledBoxMap` that uses `no_of_points` 
 Monte-Carlo test points. 
 """
-function MonteCarloBoxMap(map, domain::Box{N,T}; no_of_points=4*N*pick_vector_width(T)) where {N,T}
+function MonteCarloBoxMap(map, domain::Box{N,T}; no_of_points=no_default(N,T)) where {N,T}
     points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:no_of_points ] 
     return PointDiscretizedBoxMap(map, domain, points) 
 end 
 
-function MonteCarloBoxMap(map, P::BoxPartition{N,T}; no_of_points=4*N*pick_vector_width(T)) where {N,T}
+function MonteCarloBoxMap(map, P::BoxPartition{N,T}; no_of_points=no_default(N,T)) where {N,T}
     MonteCarloBoxMap(map, P.domain; no_of_points=no_of_points)
 end
 
@@ -211,3 +211,6 @@ function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}, alg=LinearAlge
 end
 
 sample_adaptive(f) = (center, radius) -> sample_adaptive(f, center, radius)
+
+no_default(T) = Int(pick_vector_width(T))
+no_default(N, T) = 4 * N * no_default(T)

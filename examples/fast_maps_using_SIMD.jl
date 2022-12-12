@@ -31,7 +31,7 @@ F(x) = rk4_flow_map(f, x)
 # All we need to do is pass Val(:cpu) to the BoxMap command.
 center, radius = (0,0,25), (30,30,30)
 P = BoxPartition(Box(center, radius), (128,128,128))
-G = MonteCarloBoxMap(F, P, Val(:cpu))
+G = MonteCarloBoxMap(Val(:cpu), F, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
 @time W = unstable_set(G, P[x])

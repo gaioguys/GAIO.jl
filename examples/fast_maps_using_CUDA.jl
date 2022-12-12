@@ -31,7 +31,7 @@ center, radius = (0,0,25), (30,30,30)
 P = BoxPartition(Box(center, radius), (128,128,128))
 
 # All we need to do now is pass val(:gpu) to the BoxMap command.
-G = MonteCarloBoxMap(F, P, Val(:gpu))
+G = MonteCarloBoxMap(Val(:gpu), F, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
 @time W = unstable_set(G, P[x])

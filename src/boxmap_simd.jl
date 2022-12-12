@@ -39,7 +39,7 @@ struct CPUSampledBoxMap{simd,N,T,F<:SampledBoxMap{N,T},V} <: BoxMap
     temp_points::V
 end
 
-#= @inbounds =# @muladd function map_boxes(G::CPUSampledBoxMap{simd,N}, source::BoxSet{B,Q,S}) where {simd,N,B,Q,S}
+@inbounds @muladd function map_boxes(G::CPUSampledBoxMap{simd,N}, source::BoxSet{B,Q,S}) where {simd,N,B,Q,S}
     P = source.partition
     g, idx_base, temp_points = G
     @floop for box in source
@@ -65,7 +65,7 @@ end
     return BoxSet(P, image)
 end
 
-#= @inbounds =# @muladd function construct_transfers(
+@inbounds @muladd function construct_transfers(
         G::CPUSampledBoxMap{simd}, source::BoxSet{R,Q,S}
     ) where {simd,N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
     
@@ -98,7 +98,7 @@ end
 
 # constuctors
 function CPUSampledBoxMap(boxmap::SampledBoxMap{N,T}) where {N,T}
-    simd = Int(pick_vector_width(T))
+    simd = no_default(T)
     idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
     temp_vec = Vector{T}(undef, N*simd*nthreads())
     temp_points = reinterpret(SVector{N,T}, temp_vec)
@@ -106,15 +106,15 @@ function CPUSampledBoxMap(boxmap::SampledBoxMap{N,T}) where {N,T}
 end
 
 """
-    PointDiscretizedBoxMap(map, domain, points, Val(:cpu)) -> CPUSampledBoxMap
+    PointDiscretizedBoxMap(Val(:cpu), map, domain, points) -> CPUSampledBoxMap
 
 Construct a `CPUSampledBoxMap` that uses the iterator 
 `points` as test points. `points` must have eltype 
 `SVector{N, SIMD.Vec{S,T}}` and be within the unit 
 cube `[-1,1]^N`. 
 """
-function PointDiscretizedBoxMap(map, domain::Box{N,T}, points, ::Val{:cpu}) where {N,T}
-    n, simd = length(points), Int(pick_vector_width(T))
+function PointDiscretizedBoxMap(::Val{:cpu}, map, domain::Box{N,T}, points) where {N,T}
+    n, simd = length(points), no_default(T)
     if n % simd != 0
         throw(DimensionMismatch("Number of test points $n is not divisible by $T SIMD capability $simd"))
     end
@@ -126,7 +126,7 @@ function PointDiscretizedBoxMap(map, domain::Box{N,T}, points, ::Val{:cpu}) wher
 end
 
 """
-    GridBoxMap(map, domain, Val(:cpu); no_of_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
+    GridBoxMap(Val(:cpu), map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
 
 Construct a `CPUSampledBoxMap` that uses a grid of test points. 
 The size of the grid is defined by `no_of_points`, which is 
@@ -134,38 +134,38 @@ a tuple of length equal to the dimension of the domain.
 The number of points is rounded up to the nearest mutiple 
 of the cpu's SIMD capacity. 
 """
-function GridBoxMap(map, domain::Box{N,T}, c::Val{:cpu}; no_of_points=ntuple(_->4*pick_vector_width(T),N)) where {N,T}
-    simd = Int(pick_vector_width(T))
+function GridBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points=ntuple(_->no_default(T),N)) where {N,T}
+    simd = no_default(T)
     no_of_points = ntuple(N) do i
         rem = no_of_points[i] % simd
         no_of_points[i] + (rem == 0 ? rem : simd - rem)
     end
     Δp = 2 ./ no_of_points
     points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(no_of_points) ]
-    PointDiscretizedBoxMap(map, domain, points, c)
+    PointDiscretizedBoxMap(c, map, domain, points)
 end
 
-function GridBoxMap(map, P::BoxPartition{N,T}, c::Val{:cpu}; no_of_points=ntuple(_->4*pick_vector_width(T),N)) where {N,T}
-    GridBoxMap(map, P.domain, c; no_of_points=no_of_points)
+function GridBoxMap(c::Val{:cpu}, map, P::BoxPartition{N,T}; no_of_points=ntuple(_->no_default(T),N)) where {N,T}
+    GridBoxMap(c, map, P.domain; no_of_points=no_of_points)
 end
 
 """
-    MonteCarloBoxMap(map, domain, Val(:cpu); no_of_points=16*N) -> SampledBoxMap
+    MonteCarloBoxMap(Val(:cpu), map, domain; no_of_points=16*N) -> SampledBoxMap
 
 Construct a `CPUSampledBoxMap` that uses `no_of_points` 
 Monte-Carlo test points. The number of points is rounded 
 up to the nearest multiple of the cpu's SIMD capacity. 
 """
-function MonteCarloBoxMap(map, domain::Box{N,T}, c::Val{:cpu}; no_of_points=4*N*pick_vector_width(T)) where {N,T}
-    simd = Int(pick_vector_width(T))
+function MonteCarloBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points=no_default(N,T)) where {N,T}
+    simd = no_default(T)
     rem = no_of_points % simd
     no_of_points = no_of_points + (rem == 0 ? rem : simd - rem)
     points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:no_of_points ] 
-    PointDiscretizedBoxMap(map, domain, points, c)
+    PointDiscretizedBoxMap(c, map, domain, points)
 end 
 
-function MonteCarloBoxMap(map, P::BoxPartition{N,T}, c::Val{:cpu}; no_of_points=4*N*pick_vector_width(T)) where {N,T}
-    MonteCarloBoxMap(map, P.domain, c; no_of_points=no_of_points)
+function MonteCarloBoxMap(c::Val{:cpu}, map, P::BoxPartition{N,T}; no_of_points=no_default(N,T)) where {N,T}
+    MonteCarloBoxMap(c, map, P.domain; no_of_points=no_of_points)
 end
 
 # helper + compatibility functions
