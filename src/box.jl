@@ -24,21 +24,37 @@ struct Box{N,T <: AbstractFloat}
     center::SVector{N,T}
     radius::SVector{N,T}
 
-    function Box{N,T}(center, radius) where {N,T}
+    @inline function Box{N,T}(center, radius) where {N,T}
 
-        if !( N == length(radius) == length(center) )
-            throw(DimensionMismatch("Center vector and radius vector must have same length ($N)"))
-        end
+        @boundscheck begin
+            if !( N == length(radius) == length(center) )
+                throw(DimensionMismatch("Center vector and radius vector must have same length ($N)"))
+            end
 
-        if any(≤(0), radius)
-            throw(DomainError(radius, "radius must be positive in every component"))
+            if any(≤(0), radius)
+                throw(DomainError(radius, "radius must be positive in every component"))
+            end
         end
 
         return new{N,T}(SVector{N,T}(center), SVector{N,T}(radius))
     end
 end
 
+function Box{N,T}(int::IntervalBox{N}) where {N,T}
+    mat = reinterpret(reshape, T, collect(int))
+    c = (mat[1, :] .+ mat[2, :]) ./ 2
+    r = (mat[2, :] .- mat[1, :]) ./ 2
+    all(>(0), r) || return nothing
+    @inbounds Box{N,T}(c, r)
+end
+
 Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype(radius))}(center, radius)
+Box(int::IntervalBox{N,T}) where {N,T} = Box{N,T}(int)
+
+function IntervalArithmetic.IntervalBox(box::Box{N,T}) where {N,T}
+    c, r = box
+    IntervalBox{N,T}(c .± r ...)
+end
 
 function Base.show(io::IO, box::B) where {B<:Box} 
     print(io, "$(B):\n    center = $(box.center),\n    radii = $(box.radius)")
@@ -67,6 +83,19 @@ function vertices(center::SVNT{N,T}, radius::SVNT{N,T}) where {N,T}
     (@muladd(center .+ radius .* Tuple(i)) for i in I)
 end
 vertices(box::Box) = vertices(box.center, box.radius)
+
+function subdivide(box::Box{N,T}, dim) where {N,T} 
+    c, r = box
+    b1 = Box{N,T}(
+        setindex(c, c[dim] - r[dim] / 2, dim),
+        setindex(r, r[dim] / 2, dim)
+    )
+    b2 = Box{N,T}(
+        setindex(c, c[dim] + r[dim] / 2, dim),
+        setindex(r, r[dim] / 2, dim)
+    )
+    b1, b2
+end
 
 """
     center(b::Box)

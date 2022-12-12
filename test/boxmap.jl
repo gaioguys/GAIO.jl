@@ -11,7 +11,7 @@ using Test
     center = SVector(0.0, 0.0)
     radius = SVector(1.0, 1.0)
     domain = Box(center, radius)
-    g = PointDiscretizedMap(f, domain, test_points)
+    g = PointDiscretizedBoxMap(f, domain, test_points)
     @testset "basics" begin
         @test typeof(g) <: SampledBoxMap
         partition = BoxPartition(domain, (32,32))

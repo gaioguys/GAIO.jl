@@ -74,41 +74,6 @@ mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMat
     mat::SparseMatrixCSC{T,Int}
 end
 
-# helper function so we aren't doing type piracy on `mergewith!`
-⊔(d::AbstractDict...) = mergewith!(+, d...)
-⊔(d::AbstractDict, p::Pair...) = foreach(q -> d ⊔ q, p)
-function ⊔(d::AbstractDict, p::Pair)
-    k, v = p
-    d[k] = haskey(d, k) ? d[k] + v : v
-    d
-end
-
-function construct_transfers(
-        g::SampledBoxMap, boxset::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
-
-    P, D = boxset.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
-    @floop for key in boxset.set
-        box = key_to_box(P, key)
-        c, r = box.center, box.radius
-        domain_points = g.domain_points(c, r)
-        inv_n = 1. / length(domain_points)
-        for p in domain_points
-            c = g.map(p)
-            hitbox = point_to_box(P, c)
-            isnothing(hitbox) && continue
-            r = hitbox.radius
-            for ip in g.image_points(c, r)
-                hit = point_to_key(P, ip)
-                isnothing(hit) && continue
-                hit in boxset.set || @reduce( variant_keys = S() ⊔ hit )
-                @reduce( mat = D() ⊔ ((hit,key) => inv_n) )
-            end
-        end
-    end
-    return mat, variant_keys
-end
-
 construct_transfers(g::TransferOperator, boxset) = construct_transfers(g.boxmap, boxset)
 
 # ensure that `TransferOperator` uses an `OrderedSet`
@@ -123,6 +88,9 @@ function TransferOperator(
     dict, out_of_bounds = construct_transfers(g, boxset)
     variant_set = BoxSet(boxset.partition, out_of_bounds)
     mat = sparse(dict, boxset, variant_set)
+    for i in 1:size(mat, 2)
+        mat[:, i] ./= sum(mat[:, i])
+    end
     return TransferOperator(g, boxset, variant_set, mat)
 end
 

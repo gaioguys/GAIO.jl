@@ -71,6 +71,7 @@ function Base.getindex(partition::P, points) where P<:AbstractBoxPartition
 end
 
 Base.getindex(partition::P, box::Box) where P<:AbstractBoxPartition = getindex(partition, (box,))
+Base.getindex(partition::P, int::IntervalBox) where P<:AbstractBoxPartition = getindex(partition, Box(int))
 
 function Base.getindex(partition::P, ::Colon) where {P<:AbstractBoxPartition}
     return BoxSet(partition, Set{keytype(P)}(keys(partition)))

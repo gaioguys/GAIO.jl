@@ -12,9 +12,9 @@ using Test
     center = SVector(0.0, 0.0)
     radius = SVector(1.0, 1.0)
     domain = Box(center, radius)
-    g = PointDiscretizedMap(f, domain, test_points, Val(:cpu))
+    g = PointDiscretizedBoxMap(f, domain, test_points, Val(:cpu))
     @testset "basics with :cpu" begin
-        @test typeof(g) <: SampledBoxMap
+        @test typeof(g) <: CPUSampledBoxMap
         partition = BoxPartition(domain, (32,32))
         p1 = SVector(0.0, 0.0)
         p2 = SVector(0.5, 0.0)

@@ -82,23 +82,12 @@ A BoxMap is a function which maps boxes to boxes. Given a pointmap `f`, initiali
 ```julia
 F = BoxMap(f, P.domain)
 ```
-This will generate a `BoxMap` which uses Monte-Carlo test points to map boxes. To specify the amount of test points used, use the `no_of_points` keyword argument:
+This will generate a `BoxMap` which attempts to calculate setwise images of `f`. To specify the amount of test points used, use the `no_of_points` keyword argument:
 ```julia
 F = BoxMap(f, P.domain, no_of_points=300)
 ```
 
-## AdaptiveBoxMap
-
-For choosing test points we can use some knowledge of the Lipschitz matrix for ``f`` in a box `Box(c, r)`, that is, a matrix ``L \in \mathbb{R}^{d \times d}`` such that 
-```math
-| f(y) - f(z) | \leq L \, | y - z | \quad \text{for all } y, z \in \text{Box}(c, r),
-```
-where the operations ``| \cdot |`` and `` \leq `` are to be understood elementwise. The function `AdaptiveBoxMap` attempts to approximate ``L`` before choosing an adaptive grid of test points in each box, as described in [1]
-```julia
-F = AdaptiveBoxMap(f, P.domain)
-```
-
-## Using BoxMap / AdaptiveBoxMap
+## Using BoxMap
 
 Now, one can map a `BoxSet` via the `BoxMap` `F` by simply calling `F` as a function 
 ```julia

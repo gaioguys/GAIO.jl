@@ -24,10 +24,15 @@ subdivide!
 ```
 
 ```@docs
-SampledBoxMap
 BoxMap
-PointDiscretizedMap
+MonteCarloBoxMap
+GridBoxMap
+PointDiscretizedBoxMap
 AdaptiveBoxMap
+SampledBoxMap
+IntervalBoxMap
+CPUSampledBoxMap
+GPUSampledBoxMap
 ```
 
 ```@docs

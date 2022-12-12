@@ -35,7 +35,7 @@ f(x) = rk4_flow_map(v, x, 0.002f0, 100)
 !!! danger "Using TreePartition"
     `TreePartition` with GPU acceleratioin is not yet supported, since linear indexing of the tree structure is not yet implemented. 
 
-All we need to do is pass `:cpu` as the final argument to one of the box map constructors, eg. `BoxMap`, `PointDiscretizedMap`, `AdaptiveBoxMap`. 
+All we need to do is pass `:gpu` as the final argument to one of the box map constructors, eg. `BoxMap`, `PointDiscretizedMap`, `AdaptiveBoxMap`. 
 ```julia
 center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
 P = BoxPartition(Box(center, radius), (128,128,128))

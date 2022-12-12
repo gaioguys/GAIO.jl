@@ -7,26 +7,29 @@ using SafeTestsets
     @safetestset "Box" begin
         include("box.jl")
     end
-    @safetestset "BoxMap" begin
-        include("boxmap.jl")
-    end
-    @safetestset "BoxMap with :cpu" begin
-        include("boxmap_simd.jl")
-    end
-    if CUDA.functional()
-        @safetestset "BoxMap with :gpu" begin
-            include("boxmap_cuda.jl")
-        end
-    end
-    @safetestset "BoxSet" begin
-        include("boxset.jl")
-    end
     @safetestset "BoxPartition" begin
         include("partition_regular.jl")
     end
     # @safetestset "TreePartition" begin
     #     include("partition_tree.jl")
     # end
+    @safetestset "BoxSet" begin
+        include("boxset.jl")
+    end
+    @safetestset "SampledBoxMap" begin
+        include("boxmap.jl")
+    end
+    @safetestset "IntervalBoxMap" begin
+        include("boxmap_interval.jl")
+    end
+    @safetestset "SampledBoxMap :cpu" begin
+        include("boxmap_simd.jl")
+    end
+    if CUDA.functional()
+        @safetestset "SampledBoxMap :gpu" begin
+            include("boxmap_cuda.jl")
+        end
+    end
     @safetestset "Algorithms" begin
         include("algorithms.jl")
     end
