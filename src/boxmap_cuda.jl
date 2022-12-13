@@ -50,15 +50,16 @@ function map_boxes(
     np = length(p)
     keys = Stateful(source.set)
     P = source.partition
-    K = cu_reduce(keytype(P))
+    K = cu_reduce(keytype(Q))
     image = S()
     while !isnothing(keys.nextvalstate)
         stride = min(
             length(keys),
             available_array_memory() ÷ (sizeof(K) * 10 * (N + 1) * np)
         )
-        in_keys = collect(K, take(keys, stride))
-        nk = length(in_keys)
+        in_cpu = collect(K, take(keys, stride))
+        in_keys = CuArray{K,1}(in_cpu)
+        nk = length(in_cpu)
         out_keys = CuArray{K,1}(undef, nk * np)
         launch_kernel_then_sync!(
             nk * np, map_boxes_kernel!, 
@@ -68,7 +69,7 @@ function map_boxes(
         union!(image, out_cpu)
         CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
     end
-    delete!(image, ntuple(_->zero(K), Val(N)))
+    delete!(image, K(ntuple(_->0, Val(N))))
     return BoxSet(P, image)
 end
 
@@ -81,7 +82,7 @@ function construct_transfers(
     np = length(p)
     keys = Stateful(source.set)
     P = source.partition
-    K = cu_reduce(keytype(P))
+    K = cu_reduce(keytype(Q))
     D = Dict{Tuple{K,K},cu_reduce(T)}
     mat = D()
     variant_keys = S()
@@ -108,7 +109,7 @@ function construct_transfers(
         union!(variant_keys, setdiff(out_cpu, source.set))
         CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
     end
-    delete!(variant_keys, ntuple(_->zero(K), Val(N)))
+    delete!(variant_keys, K(ntuple(_->0, Val(N))))
     return mat, variant_keys
 end
 
@@ -202,9 +203,10 @@ cu_reduce(::Type{Int16}) = Int16
 cu_reduce(::Type{Int8}) = Int8
 cu_reduce(::Type{F}) where {F<:AbstractFloat} = Float32
 cu_reduce(::Type{Float16}) = Float16
+cu_reduce(::Type{<:NTuple{N,T}}) where {N,T} = NTuple{N,cu_reduce(T)}
 
 function Adapt.adapt_structure(a::A, b::BoxPartition{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayAdaptor,<:CUDA.Adaptor}}
-    TT, II = cu_reduce(T) = cu_reduce(I)
+    TT, II = cu_reduce(T), cu_reduce(I)
     Adapt.adapt_storage(a, 
         BoxPartition{N,TT,II}(
             Box{N,TT}(b.domain...),
