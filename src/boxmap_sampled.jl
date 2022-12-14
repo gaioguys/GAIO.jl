@@ -146,9 +146,9 @@ Construct a `SampledBoxMap` which uses `sample_adaptive` to
 generate test points. 
 """
 function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
-    domain_points = sample_adaptive(f, accel)
+    domain_points = sample_adaptive(f)
     image_points = vertices
-    return SampledBoxMap(f, domain, domain_points, image_points, accel)
+    return SampledBoxMap(f, domain, domain_points, image_points)
 end
 
 AdaptiveBoxMap(f, P::BoxPartition) = AdaptiveBoxMap(f, P.domain)

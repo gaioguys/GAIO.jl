@@ -22,6 +22,18 @@ Fields:
 """
 struct GPUSampledBoxMap{N,T,F<:SampledBoxMap{N,T}} <: BoxMap
     boxmap::F
+
+    function GPUSampledBoxMap(g::F) where {N,T,F<:SampledBoxMap{N,T}}
+        if !( g.domain_points(g.domain...) isa Base.Generator{<:Union{<:CuArray,<:CuDeviceArray}} )
+            throw(AssertionError("""
+            GPU BoxMaps require one set of "global" test points in the 
+            unit box `[-1,1]^N`. In particular, `g.domain_points(c, r)` 
+            must return `rescale(c, r, points)` for a `CuArray` `points` 
+            of test points. 
+            """))
+        end
+        new{N,T,F}(g)
+    end
 end
 
 function map_boxes_kernel!(g, P::BoxPartition{N,T,I}, domain_points, in_keys, out_keys) where {N,T,I}
@@ -114,18 +126,6 @@ function construct_transfers(
 end
 
 # constructors
-function GPUSampledBoxMap(g::F) where {N,T,F<:SampledBoxMap{N,T}}
-    if !( g.domain_points(g.domain...) isa Base.Generator{<:Union{<:CuArray,<:CuDeviceArray}} )
-        throw(AssertionError("""
-        GPU BoxMaps require one set of "global" test points in the 
-        unit box `[-1,1]^N`. In particular, `g.domain_points(c, r)` 
-        must return `rescale(c, r, points)` for a `CuArray` `points` 
-        of test points. 
-        """))
-    end
-    GPUSampledBoxMap{N,T,F}(g)
-end
-
 """
     PointDiscretizedBoxMap(Val(:gpu), map, domain, points) -> SampledBoxMap
 
