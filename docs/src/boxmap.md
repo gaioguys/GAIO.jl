@@ -49,8 +49,8 @@ Naturally, if an increase in accuracy is desired in a `SampledBoxMap`, a larger 
 If the point map only uses "basic" instructions, then it is possible to simultaneously apply Single Instructions to Multiple Data (SIMD). This way multiple funnction calls can be made at the same time, increasing performance. For more details, see the [maximizing performance section](https://gaioguys.github.io/GAIO.jl/simd/). 
 
 ```@docs
-GridBoxMap(map, domain::Box{N,T}, c::Val{:cpu}; no_of_points) where {N,T}
-MonteCarloBoxMap(map, domain::Box{N,T}, c::Val{:cpu}; no_of_points) where {N,T}
+GridBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
+MonteCarloBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
 ```
 
 ## `GPUSampledBoxmap`
@@ -58,8 +58,8 @@ MonteCarloBoxMap(map, domain::Box{N,T}, c::Val{:cpu}; no_of_points) where {N,T}
 If an Nvidia gpu is available, the above technique can be improved dramatically. The gpu uses a "massively parallel programming" paradigm, which fits perfectly to the problem of mapping many sample points independently. For more information, see the [maximizing performance section](https://gaioguys.github.io/GAIO.jl/cuda/).
 
 ```@docs
-GridBoxMap(map, domain::Box{N,T}, c::Val{:gpu}; no_of_points) where {N,T}
-MonteCarloBoxMap(map, domain::Box{N,T}, c::Val{:gpu}; no_of_points) where {N,T}
+GridBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
+MonteCarloBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
 ```
 
 ## `PointDiscretizedBoxMap`
