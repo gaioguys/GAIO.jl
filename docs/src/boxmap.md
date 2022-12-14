@@ -2,6 +2,10 @@
 
 There are multiple techniques one could use to discretize point maps into maps over boxes. In [General Usage](https://gaioguys.github.io/GAIO.jl/general/) the discretization `BoxMap` was already briefly introduced. 
 
+```@docs
+BoxMap
+```
+
 ## `MonteCarloBoxMap`
 
 The simplest technique for discretization is a Monte-Carlo approach: choose a random set of sample points within a box and record which boxes are hit by the point map. 
@@ -30,40 +34,12 @@ where the operations ``| \cdot |`` and `` \leq `` are to be understood elementwi
 AdaptiveBoxMap
 ```
 
-## `BoxMap`
-
-Now that `MonteCarloBoxMap` and `AdaptiveBoxMap` have been introduced, a generalized approach can be contructed: we attempt to use adaptive sampling to compute box images, but fall back on Monte-Carlo sample points if this fails: 
-
-```@docs
-BoxMap
-```
-
 ## `IntervalBoxmap`
 
 All of the above techniques provide a fast, efficient way to cover setwise images of boxes, but are not necessarily guaranteed to provide an complete covering. To avoid this as well as other numerical inaccuracies inherent in floating point arithmetic, one can use _interval arithmetic_ to guarantee a rigorous outer covering of box images. Interval arithmetic is a technique from _validated numerics_ which performs calculations while simultaneously recording the error of such calculations. A more detailed discussion and julia-implementation of interval arithmetic can be found in [`IntervalArithmetic.jl`](https://github.com/JuliaIntervals/IntervalArithmetic.jl). 
 
 ```@docs
 IntervalBoxMap
-```
-
-## `PointDiscretizedBoxMap`
-
-A generalization of `MonteCarloBoxMap` and `GridBoxMap` can be defined as follows: 
-1. we provide a "global" set of test points within the unit cube ``[-1,1]^d``. 
-2. For each box `Box(c,r)`, we rescale the global test points to lie within the box by calculating `c .+ r .* p` for each global test point `p`. 
-
-```@docs
-PointDiscretizedBoxMap
-```
-
-## `SampledBoxMap`
-
-We can even further generalize the concept of `MonteCarloBoxMap`, `GridBoxMap`, `PointDiscretizedBoxMap` as follows: we define two functions `domain_points(c, r)` and `image_points(c, r)` for any `Box(c, r)`. 
-1. for each box `Box(c, r)` a set of test points within the box is initialized using `domain_points(C, r)` and mapped forward by the point map. 
-2. For each of the pointwise images `fc`, an optional set of "perturbations" can be applied. These perturbations are generated with `image_points(fc, r)`. The boxes which are hit by these perturbations are recorded. 
-
-```@docs
-SampledBoxMap
 ```
 
 ## `CPUSampledBoxMap`
@@ -84,6 +60,26 @@ If an Nvidia gpu is available, the above technique can be improved dramatically.
 ```@docs
 GridBoxMap(map, domain::Box{N,T}, c::Val{:gpu}; no_of_points) where {N,T}
 MonteCarloBoxMap(map, domain::Box{N,T}, c::Val{:gpu}; no_of_points) where {N,T}
+```
+
+## `PointDiscretizedBoxMap`
+
+A generalization of `MonteCarloBoxMap` and `GridBoxMap` can be defined as follows: 
+1. we provide a "global" set of test points within the unit cube ``[-1,1]^d``. 
+2. For each box `Box(c,r)`, we rescale the global test points to lie within the box by calculating `c .+ r .* p` for each global test point `p`. 
+
+```@docs
+PointDiscretizedBoxMap
+```
+
+## `SampledBoxMap`
+
+We can even further generalize the concept of `MonteCarloBoxMap`, `GridBoxMap`, `PointDiscretizedBoxMap` as follows: we define two functions `domain_points(c, r)` and `image_points(c, r)` for any `Box(c, r)`. 
+1. for each box `Box(c, r)` a set of test points within the box is initialized using `domain_points(C, r)` and mapped forward by the point map. 
+2. For each of the pointwise images `fc`, an optional set of "perturbations" can be applied. These perturbations are generated with `image_points(fc, r)`. The boxes which are hit by these perturbations are recorded. 
+
+```@docs
+SampledBoxMap
 ```
 
 ## Creating you own BoxMap type

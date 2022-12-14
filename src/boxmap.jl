@@ -1,5 +1,5 @@
 """
-    BoxMap(map, domain; no_of_points=64*N) -> SampledBoxMap
+    BoxMap(map, domain; no_of_points=ntuple(_->4, N)) -> SampledBoxMap
 
 Transforms a ``map: Q → Q`` defined on points in 
 the domain ``Q ⊂ ℝᴺ`` to a `SampledBoxMap` defined 
