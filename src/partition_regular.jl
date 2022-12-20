@@ -125,10 +125,19 @@ Find the cartesian index of the nearest box within a
 if the point lies in the partition. 
 """
 function bounded_point_to_key(partition::BoxPartition{N,T,I}, point) where {N,T,I}
+    s = size(partition)
     xi = (point .- partition.left) .* partition.scale
     xi = max.(zero(I), xi)
     xi = min.(size(partition) .- one(I), xi)
-    return ntuple( i -> trunc(I, xi[i]) + one(I), Val(N) )
+    ntuple(Val(N)) do i
+        if isfinite(xi[i])
+            trunc(I, xi[i]) + one(I)
+        elseif point[i] < partition.left[i]
+            one(I)
+        else
+            s[i]
+        end
+    end
 end
 
 """

@@ -93,6 +93,7 @@ function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
     keys = Set{K}()
     vertex_keys = Matrix{I}(undef, N, 2)
     for box_in in boxes
+        (any(isnan, box_in.center) || any(isnan, box_in.radius)) && continue
         box = Box{N,T}(box_in.center .- eps(T), box_in.radius .- eps(T))
         vertex_keys[:, 1] .= vertex_keys[:, 2] .= bounded_point_to_key(partition, box.center)
         for point in vertices(box)

@@ -3,6 +3,18 @@ Base.:(*)(x, ::Type{NumLiteral{T}}) where T = T(x)
 const i32, ui32 = NumLiteral{Int32}, NumLiteral{UInt32}
 
 """
+    BoxMap(:gpu, map, domain; no_of_points) -> CPUSampledBoxMap
+
+Transforms a ``map: Q → Q`` defined on points in 
+the domain ``Q ⊂ ℝᴺ`` to a `CPUSampledBoxMap` defined 
+on `Box`es. 
+
+Uses the GPU's acceleration capabilities. 
+
+By default uses a grid of sample points. 
+
+
+    BoxMap(:sampled, :gpu, boxmap)
     GPUSampledBoxMap(boxmap)
 
 Type representing a dicretization of a map using 
@@ -127,6 +139,7 @@ end
 
 # constructors
 """
+    BoxMap(:pointdiscretized, :gpu, map, domain, points) -> SampledBoxMap
     PointDiscretizedBoxMap(Val(:gpu), map, domain, points) -> SampledBoxMap
 
 Construct a `GPUSampledBoxMap` that uses the Vector `points` as test points. 
@@ -140,6 +153,7 @@ function PointDiscretizedBoxMap(::Val{:gpu}, map, domain::Box{N,T}, points) wher
 end
 
 """
+    BoxMap(:grid, :gpu, map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> GPUSampledBoxMap
     GridBoxMap(Val(:gpu), map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> GPUSampledBoxMap
 
 Construct a `GPUSampledBoxMap` that uses a grid of test points. 
@@ -157,6 +171,7 @@ function GridBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; no_of_points=ntuple
 end
 
 """
+    BoxMap(:montecarlo, :gpu, map, domain; no_of_points=16*N) -> GPUSampledBoxMap
     MonteCarloBoxMap(Val(:gpu), map, domain; no_of_points=16*N) -> GPUSampledBoxMap
 
 Construct a `GPUSampledBoxMap` that uses `no_of_points` 

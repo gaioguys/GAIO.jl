@@ -1,16 +1,22 @@
 """
+    BoxMap(:cpu, map, domain; no_of_points) -> CPUSampledBoxMap
+
+Transforms a ``map: Q → Q`` defined on points in 
+the domain ``Q ⊂ ℝᴺ`` to a `CPUSampledBoxMap` defined 
+on `Box`es. 
+
+Uses the CPU's SIMD acceleration capabilities. 
+
+By default uses a grid of sample points. 
+
+
+    BoxMap(:sampled, :cpu, boxmap, idx_base, temp_vec, temp_points)
     CPUSampledBoxMap(boxmap, idx_base, temp_vec, temp_points)
 
 Type representing a discretization of a map using 
 sample points which are explicitly vectorized. This 
 type performs roughly 2x as many floating point 
 operations per second as standard `SampledBoxMap`s. 
-
-Constructors:
-* `CPUSampledBoxMap(boxmap)`
-* `PointDiscretizedBoxMap(map, domain, points, Val(:cpu))`
-* `GridBoxMap(map, domain, Val(:cpu); no_of_points)`
-* `MonteCarloBoxMap(map, domain, Val(:cpu); no_of_points)`
 
 Fields:
 * `boxmap`:         `SampledBoxMap` with one restriction:
@@ -106,6 +112,7 @@ function CPUSampledBoxMap(boxmap::SampledBoxMap{N,T}) where {N,T}
 end
 
 """
+    BoxMap(:pointdiscretized, :cpu, map, domain, points) -> CPUSampledBoxMap
     PointDiscretizedBoxMap(Val(:cpu), map, domain, points) -> CPUSampledBoxMap
 
 Construct a `CPUSampledBoxMap` that uses the iterator 
@@ -126,6 +133,7 @@ function PointDiscretizedBoxMap(::Val{:cpu}, map, domain::Box{N,T}, points) wher
 end
 
 """
+    BoxMap(:grid, :cpu, map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
     GridBoxMap(Val(:cpu), map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
 
 Construct a `CPUSampledBoxMap` that uses a grid of test points. 
@@ -150,6 +158,7 @@ function GridBoxMap(c::Val{:cpu}, map, P::BoxPartition{N,T}; no_of_points=ntuple
 end
 
 """
+    BoxMap(:montecarlo, :cpu, map, domain; no_of_points=16*N) -> SampledBoxMap
     MonteCarloBoxMap(Val(:cpu), map, domain; no_of_points=16*N) -> SampledBoxMap
 
 Construct a `CPUSampledBoxMap` that uses `no_of_points` 

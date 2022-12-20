@@ -1,4 +1,5 @@
 """
+    BoxMap(:sampled, map, domain::Box, domain_points, image_points)
     SampledBoxMap(map, domain::Box, domain_points, image_points)
 
 Type representing a discretization of a map using sample points. 
@@ -91,6 +92,7 @@ function Base.show(io::IO, g::SampledBoxMap)
 end
 
 """
+    BoxMap(:pointdiscretized, map, domain, points) -> SampledBoxMap
     PointDiscretizedBoxMap(map, domain, points) -> SampledBoxMap
 
 Construct a `SampledBoxMap` that uses the iterator `points` as test points. 
@@ -106,6 +108,8 @@ end
 PointDiscretizedBoxMap(map, P::BoxPartition, points) = PointDiscretizedBoxMap(map, P.domain, points)
 
 """
+    BoxMap(:grid, map, domain::Box{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
+    GridBoxMap(:grid, P::BoxPartition{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
     GridBoxMap(map, domain::Box{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
     GridBoxMap(map, P::BoxPartition{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
 
@@ -124,6 +128,8 @@ function GridBoxMap(map, P::BoxPartition{N,T}; no_of_points=ntuple(_->no_default
 end
 
 """
+    BoxMap(:montecarlo, map, domain::Box{N,T}; no_of_points=16*N) -> SampledBoxMap
+    BoxMap(:montecarlo, map, P::BoxPartition{N,T}; no_of_points=16*N) -> SampledBoxMap
     MonteCarloBoxMap(map, domain::Box{N,T}; no_of_points=16*N) -> SampledBoxMap
     MonteCarloBoxMap(map, P::BoxPartition{N,T}; no_of_points=16*N) -> SampledBoxMap
 
@@ -140,10 +146,15 @@ function MonteCarloBoxMap(map, P::BoxPartition{N,T}; no_of_points=no_default(N,T
 end
 
 """
-    AdaptiveBoxMap(f, domain::Box, accel=nothing) -> SampledBoxMap
+    BoxMap(:adaptive, f, domain::Box) -> SampledBoxMap
+    AdaptiveBoxMap(f, domain::Box) -> SampledBoxMap
 
 Construct a `SampledBoxMap` which uses `sample_adaptive` to 
-generate test points. 
+generate test points as described in 
+
+Oliver Junge. “Rigorous discretization of subdivision techniques”. In: 
+_International Conference on Differential Equations_. Ed. by B. Fiedler, K.
+Gröger, and J. Sprekels. 1999. 
 """
 function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     domain_points = sample_adaptive(f)

@@ -3,19 +3,12 @@
 
 Transforms a ``map: Q → Q`` defined on points in 
 the domain ``Q ⊂ ℝᴺ`` to a `SampledBoxMap` defined 
-on `Box`es. By default uses a grid of sample points. 
+on `Box`es. 
 
-Specific Constructors:
-* `BoxMap`
-* `PointDiscretizedBoxMap`
-* `MonteCarloBoxMap`
-* `GridBoxMap`
-* `AdaptiveBoxMap`
-* `CPUSampledBoxMap`
-* `GPUSampledBoxMap`
-* `IntervalBoxMap`
+By default uses a grid of sample points. 
 """
 BoxMap(symb::Symbol, args...; kwargs...) = BoxMap(Val(symb), args...; kwargs...)
+BoxMap(symb::Symbol, accel::Symbol, args...; kwargs...) = BoxMap(symb, Val(accel), args...; kwargs...)
 
 # default BoxMap behavior
 BoxMap(args...; kwargs...) = GridBoxMap(args...; kwargs...)
@@ -35,8 +28,5 @@ for str in (
     @eval BoxMap(::Val{Symbol(lowercase($str))}, args...; kwargs...) = $(Symbol(str*"BoxMap"))(args...; kwargs...)
 
 end
-
-BoxMap(c::Val{:cpu}, args...; kwargs...) = GridBoxMap(c, args...; kwargs...)
-BoxMap(c::Val{:gpu}, args...; kwargs...) = GridBoxMap(c, args...; kwargs...)
 
 Base.show(io::IO, g::BoxMap) = print(io, "BoxMap over $(g.domain)")

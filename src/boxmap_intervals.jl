@@ -1,4 +1,6 @@
 """
+    BoxMap(:interval, map, domain; no_subintervals::Function) -> IntervalBoxMap
+    BoxMap(:interval, map, domain; no_subintervals::NTuple{N} = ntuple(_->4, N)) -> IntervalBoxMap
     IntervalBoxMap(map, domain; no_subintervals::Function) -> IntervalBoxMap
     IntervalBoxMap(map, domain; no_subintervals::NTuple{N} = ntuple(_->4, N)) -> IntervalBoxMap
 
