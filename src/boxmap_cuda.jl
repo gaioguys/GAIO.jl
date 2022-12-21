@@ -30,7 +30,8 @@ Fields:
 * `boxmap`:     `SampledBoxMap` with one restriction: 
                 `boxmap.image_points` will not be used. 
 
-.
+
+Requires a CUDA-capable gpu. 
 """
 struct GPUSampledBoxMap{N,T,F<:SampledBoxMap{N,T}} <: BoxMap
     boxmap::F
@@ -140,11 +141,12 @@ end
 # constructors
 """
     BoxMap(:pointdiscretized, :gpu, map, domain, points) -> SampledBoxMap
-    PointDiscretizedBoxMap(Val(:gpu), map, domain, points) -> SampledBoxMap
 
 Construct a `GPUSampledBoxMap` that uses the Vector `points` as test points. 
 `points` must be a VECTOR of test points within the unit cube 
 `[-1,1]^N`. 
+
+Requires a CUDA-capable gpu. 
 """
 function PointDiscretizedBoxMap(::Val{:gpu}, map, domain::Box{N,T}, points) where {N,T}
     points_vec = cu(points)
@@ -154,11 +156,12 @@ end
 
 """
     BoxMap(:grid, :gpu, map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> GPUSampledBoxMap
-    GridBoxMap(Val(:gpu), map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> GPUSampledBoxMap
 
 Construct a `GPUSampledBoxMap` that uses a grid of test points. 
 The size of the grid is defined by `no_of_points`, which is 
 a tuple of length equal to the dimension of the domain. 
+
+Requires a CUDA-capable gpu. 
 """
 function GridBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points=ntuple(_->no_default(T),N)) where {N,T}
     Δp = 2 ./ no_of_points
@@ -172,10 +175,11 @@ end
 
 """
     BoxMap(:montecarlo, :gpu, map, domain; no_of_points=16*N) -> GPUSampledBoxMap
-    MonteCarloBoxMap(Val(:gpu), map, domain; no_of_points=16*N) -> GPUSampledBoxMap
 
 Construct a `GPUSampledBoxMap` that uses `no_of_points` 
 Monte-Carlo test points. 
+
+Requires a CUDA-capable gpu. 
 """
 function MonteCarloBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points=no_default(N,T)) where {N,T}
     points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:no_of_points ] 

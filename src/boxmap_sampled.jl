@@ -1,14 +1,7 @@
 """
     BoxMap(:sampled, map, domain::Box, domain_points, image_points)
-    SampledBoxMap(map, domain::Box, domain_points, image_points)
 
 Type representing a discretization of a map using sample points. 
-Constructors:
-
-* `PointDiscretizedBoxMap`
-* `GridBoxMap`
-* `MonteCarloBoxMap`
-* `AdaptiveBoxMap`
 
 Fields:
 * `map`:              map that defines the dynamical system.
@@ -93,7 +86,6 @@ end
 
 """
     BoxMap(:pointdiscretized, map, domain, points) -> SampledBoxMap
-    PointDiscretizedBoxMap(map, domain, points) -> SampledBoxMap
 
 Construct a `SampledBoxMap` that uses the iterator `points` as test points. 
 `points` must be an array or iterator of test points within the unit cube 
@@ -110,8 +102,6 @@ PointDiscretizedBoxMap(map, P::BoxPartition, points) = PointDiscretizedBoxMap(ma
 """
     BoxMap(:grid, map, domain::Box{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
     GridBoxMap(:grid, P::BoxPartition{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
-    GridBoxMap(map, domain::Box{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
-    GridBoxMap(map, P::BoxPartition{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
 
 Construct a `SampledBoxMap` that uses a grid of test points. 
 The size of the grid is defined by `no_of_points`, which is 
@@ -130,8 +120,6 @@ end
 """
     BoxMap(:montecarlo, map, domain::Box{N,T}; no_of_points=16*N) -> SampledBoxMap
     BoxMap(:montecarlo, map, P::BoxPartition{N,T}; no_of_points=16*N) -> SampledBoxMap
-    MonteCarloBoxMap(map, domain::Box{N,T}; no_of_points=16*N) -> SampledBoxMap
-    MonteCarloBoxMap(map, P::BoxPartition{N,T}; no_of_points=16*N) -> SampledBoxMap
 
 Construct a `SampledBoxMap` that uses `no_of_points` 
 Monte-Carlo test points. 
@@ -147,7 +135,6 @@ end
 
 """
     BoxMap(:adaptive, f, domain::Box) -> SampledBoxMap
-    AdaptiveBoxMap(f, domain::Box) -> SampledBoxMap
 
 Construct a `SampledBoxMap` which uses `sample_adaptive` to 
 generate test points as described in 

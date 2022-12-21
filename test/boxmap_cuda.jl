@@ -11,7 +11,7 @@ using Test
     center = SVector(0.0, 0.0)
     radius = SVector(1.0, 1.0)
     domain = Box(center, radius)
-    g = PointDiscretizedBoxMap(Val(:gpu), f, domain, test_points)
+    g = BoxMap(:pointdiscretized, :gpu, f, domain, test_points)
     @testset "basics with :gpu" begin
         @test typeof(g) <: GPUSampledBoxMap
         partition = BoxPartition(domain, (32,32))

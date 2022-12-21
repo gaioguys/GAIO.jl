@@ -12,7 +12,7 @@ using Test
     x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
 
     P = BoxPartition(domain, (128,128,128))
-    F = BoxMap(f, domain)
+    F = BoxMap(:grid, f, domain)
     W = unstable_set(F, P[x])
     @test W isa BoxSet  # passes if no error is thrown
 

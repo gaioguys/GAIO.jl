@@ -8,7 +8,7 @@ BoxMap
 
 We now introduce a set of `BoxMap` subtypes for different discretization algorithms. The types fit into a heirarchy described in the diagram below. 
 
-![Type Hierarchy](assets/type_tree.png)
+![Type Hierarchy](assets/type_tree.jpg)
 
 We will work from the "bottom up", starting with specific types that are of practical use, and then generalizing these approaches for the reader who wishes to know more. 
 
@@ -64,8 +64,8 @@ MonteCarloBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
 If an Nvidia gpu is available, the above technique can be improved dramatically. The gpu uses a "massively parallel programming" paradigm, which fits perfectly to the problem of mapping many sample points independently. For more information, see the [maximizing performance section](https://gaioguys.github.io/GAIO.jl/cuda/).
 
 ```@docs
-GridBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
-MonteCarloBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
+GridBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
+MonteCarloBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
 ```
 
 ## `PointDiscretizedBoxMap`
@@ -87,7 +87,7 @@ We can even further generalize the concept of `MonteCarloBoxMap`, `GridBoxMap`, 
 ```@docs
 SampledBoxMap
 CPUSampledBoxMap
-GPUSampledBoxmap
+GPUSampledBoxMap
 ```
 
 ## Creating you own BoxMap type

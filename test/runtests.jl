@@ -19,9 +19,6 @@ using SafeTestsets
     @safetestset "SampledBoxMap" begin
         include("boxmap.jl")
     end
-    @safetestset "IntervalBoxMap" begin
-        include("boxmap_interval.jl")
-    end
     @safetestset "SampledBoxMap :cpu" begin
         include("boxmap_simd.jl")
     end
@@ -29,6 +26,9 @@ using SafeTestsets
         @safetestset "SampledBoxMap :gpu" begin
             include("boxmap_cuda.jl")
         end
+    end
+    @safetestset "IntervalBoxMap" begin
+        include("boxmap_interval.jl")
     end
     @safetestset "Algorithms" begin
         include("algorithms.jl")

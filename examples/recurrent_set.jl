@@ -84,7 +84,7 @@ f(x) = rk4_flow_map(vf, x, 0.075)
 
 center, radius = (0,0,0), (2,2,2)
 P = BoxPartition(Box(center, radius))
-F = MonteCarloBoxMap(f, P, no_of_points = 200)
+F = BoxMap(:montecarlo, f, P, no_of_points = 200)
 
 C = chain_recurrent_set(F, P[:], steps = 18)
 

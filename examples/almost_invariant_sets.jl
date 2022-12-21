@@ -8,7 +8,7 @@ f(x) = rk4_flow_map(v, x, 0.05, 5)
 center, radius = (0,0,0), (12,3,20)
 Q = Box(center, radius)
 P = BoxPartition(Q, (128,128,128))
-F = BoxMap(f, P, no_of_points=(6,6,6))
+F = BoxMap(:montecarlo, f, P, no_of_points=(6,6,6))
 
 # computing the attractor by covering the 2d unstable manifold
 # of two equilibria

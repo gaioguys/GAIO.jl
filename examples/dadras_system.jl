@@ -11,7 +11,7 @@ domain = Box((0,0,0,0), (250,150,200,25))
 P = BoxPartition(domain, (128,128,128,128))
 equillibrium = P[Box((0,0,0,0), (0.1,0.1,0.1,0.1))]
 
-F = IntervalBoxMap(f, domain, no_subintervals=(8,4,8,2))
+F = BoxMap(:interval, f, domain, no_subintervals=(8,4,8,2))
 
 W = unstable_set(F, equillibrium)
 plot(W)
