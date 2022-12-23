@@ -3,10 +3,10 @@ Base.:(*)(x, ::Type{NumLiteral{T}}) where T = T(x)
 const i32, ui32 = NumLiteral{Int32}, NumLiteral{UInt32}
 
 """
-    BoxMap(:gpu, map, domain; no_of_points) -> CPUSampledBoxMap
+    BoxMap(:gpu, map, domain; no_of_points) -> GPUSampledBoxMap
 
 Transforms a ``map: Q → Q`` defined on points in 
-the domain ``Q ⊂ ℝᴺ`` to a `CPUSampledBoxMap` defined 
+the domain ``Q ⊂ ℝᴺ`` to a `GPUSampledBoxMap` defined 
 on `Box`es. 
 
 Uses the GPU's acceleration capabilities. 
@@ -140,7 +140,7 @@ end
 
 # constructors
 """
-    BoxMap(:pointdiscretized, :gpu, map, domain, points) -> SampledBoxMap
+    BoxMap(:pointdiscretized, :gpu, map, domain, points) -> GPUSampledBoxMap
 
 Construct a `GPUSampledBoxMap` that uses the Vector `points` as test points. 
 `points` must be a VECTOR of test points within the unit cube 
