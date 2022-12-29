@@ -10,9 +10,9 @@ using SafeTestsets
     @safetestset "BoxPartition" begin
         include("partition_regular.jl")
     end
-    # @safetestset "TreePartition" begin
-    #     include("partition_tree.jl")
-    # end
+    @safetestset "TreePartition" begin
+        include("partition_tree.jl")
+    end
     @safetestset "BoxSet" begin
         include("boxset.jl")
     end

@@ -4,7 +4,8 @@
 Compute the attractor relative to `B`. Generally, `B` should be 
 a box set containing the whole partition `P`, ie `B = P[:]`.
 """
-function relative_attractor(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
+function relative_attractor(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    B = copy(B₀)
     for k = 1:steps
         B = subdivide(B, (k % N) + 1)
         B = B ∩ F(B)
@@ -37,7 +38,8 @@ Compute the chain recurrent set over the box set `B`. Generally,
 `B` should be a box set containing the whole partition `P`, 
 ie `B = P[:]`. 
 """
-function chain_recurrent_set(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
+function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    B = copy(B₀)
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
         P = TransferOperator(F, B)
@@ -85,7 +87,8 @@ partition `P`. Generally, `B` should be
 a box set containing the whole partition `P`, ie `B = P[:]`,
 and should contain a root of `g`. 
 """
-function cover_roots(g, Dg, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
+function cover_roots(g, Dg, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    B = copy(B₀)
     domain = B.partition.domain
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)

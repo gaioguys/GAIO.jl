@@ -107,6 +107,27 @@ function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
     return BoxSet(partition, keys)
 end
 
+function cover_boxes(partition::P, boxes) where {N,T,I,P<:TreePartition{N,T,I}}
+    # extremely inefficient naive covering
+    K = keytype(P)
+    keys = Set{K}()
+    d = depth(partition)
+    Q = BoxPartition(partition, d)
+    rad = 0.5 / Q.scale
+    for box_in in boxes
+        box = Box{N,T}(box_in.center .- eps(T), box_in.radius .- eps(T))
+        c, r = box
+        R = range.(c.-r, c.+r; step=min(rad, r))
+        box_keys = Iterators.map(CartesianIndices(tuple(length.(R)...))) do C
+            inds = C.I
+            point = getindex.(R, inds)
+            key = point_to_key(tree, point)
+        end
+        union!(keys, box_keys)
+    end
+    return BoxSet(partition, keys)
+end
+
 for op in (:union, :intersect, :setdiff, :symdiff)
     op! = Symbol(op, :!) 
     boundscheck = quote
@@ -147,14 +168,22 @@ function Base.iterate(boxset::BoxSet, state...)
     itr = iterate(boxset.set, state...)
     isnothing(itr) && return itr
     (key, j) = itr
-    box = key_to_box(boxset.partition, key)
+    box = #= @inbounds =# key_to_box(boxset.partition, key)
     return (box, j)
 end
 
 function SplittablesBase.halve(boxset::BoxSet)
     P = boxset.partition
     left, right = SplittablesBase.halve(boxset.set)
-    ((key_to_box(P, key) for key in left), (key_to_box(P, key) for key in right))
+    liter = (
+        #= @inbounds =# key_to_box(P, key)
+        for key in left
+    )
+    riter = (
+        #= @inbounds =# key_to_box(P, key)
+        for key in right
+    )
+    return (liter, riter)
 end
 
 function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}
@@ -165,25 +194,27 @@ function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}
         child1 = Base.setindex(key, 2 * key[dim] - 1, dim)
         child2 = Base.setindex(key, 2 * key[dim], dim)
 
-        push!(set, child1)
-        push!(set, child2)
+        push!(set, child1, child2)
     end
 
     return BoxSet(subdivide(boxset.partition, dim), set)
 end
 
-function subdivide!(boxset::BoxSet{B,P,S}, key::NTuple{2,<:Integer}) where {B,P<:TreePartition,S}
-    !( key in boxset.set ) && throw(KeyError(key))
+function subdivide!(boxset::BoxSet{B,P,S}, key::Tuple{J,NTuple{N,K}}) where {B,N,P<:TreePartition{N},S,J,K}
+    key in boxset.set || throw(KeyError(key))
+
+    depth, cart = key
+    dim = (depth - 1) % N + 1
 
     delete!(boxset.set, key)
 
     tree = boxset.partition
     subdivide!(tree, key)
 
-    child1, child2 = subdivide(BoxSet(tree.regular_partitions[key[1] + 1], Set(key[2]))).set
+    child1 = (depth+1, Base.setindex(cart, 2 * cart[dim] - 1, dim))
+    child2 = (depth+1, Base.setindex(cart, 2 * cart[dim], dim))
 
-    push!(boxset.set, (key[1] + 1, child1))
-    push!(boxset.set, (key[1] + 1, child2))
+    push!(boxset.set, child1, child2)
 
     return boxset
 end
@@ -195,8 +226,10 @@ Bisect every box in `boxset` along an axis, giving rise to a new
 partition of the domain, with double the amount of boxes. 
 Axis along which to bisect depends on the depth of the nodes. 
 """
-function subdivide(boxset::BoxSet{B,P,S}) where {B,P<:TreePartition,S}
+function subdivide(boxset::BoxSet{B,P,S}, dim=1) where {B,P<:TreePartition,S}
     boxset_new = BoxSet(copy(boxset.partition), copy(boxset.set))
+    #boxset_new = BoxSet(boxset.partition, copy(boxset.set))
+    sizehint!(boxset_new, 2*length(boxset_new))
 
     for key in boxset.set
         subdivide!(boxset_new, key)

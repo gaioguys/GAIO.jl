@@ -131,6 +131,10 @@ function PointDiscretizedBoxMap(::Val{:cpu}, map, domain::Box{N,T}, points) wher
     CPUSampledBoxMap(boxmap)
 end
 
+function PointDiscretizedBoxMap(c::Val{:cpu}, map, P::Q, points) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    PointDiscretizedBoxMap(c, map, P.domain, points)
+end
+
 """
     BoxMap(:grid, :cpu, map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
 
@@ -151,7 +155,7 @@ function GridBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points=ntuple(_->
     PointDiscretizedBoxMap(c, map, domain, points)
 end
 
-function GridBoxMap(c::Val{:cpu}, map, P::BoxPartition{N,T}; no_of_points=ntuple(_->no_default(T),N)) where {N,T}
+function GridBoxMap(c::Val{:cpu}, map, P::Q; no_of_points=ntuple(_->no_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
     GridBoxMap(c, map, P.domain; no_of_points=no_of_points)
 end
 
@@ -170,7 +174,7 @@ function MonteCarloBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points=no_d
     PointDiscretizedBoxMap(c, map, domain, points)
 end 
 
-function MonteCarloBoxMap(c::Val{:cpu}, map, P::BoxPartition{N,T}; no_of_points=no_default(N,T)) where {N,T}
+function MonteCarloBoxMap(c::Val{:cpu}, map, P::Q; no_of_points=no_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
     MonteCarloBoxMap(c, map, P.domain; no_of_points=no_of_points)
 end
 

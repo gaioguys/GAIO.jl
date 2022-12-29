@@ -19,15 +19,10 @@ using Test
         partition = BoxPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), (4,2))
         @test size(partition) == (4, 2)
     end
-    @testset "domain with zero radius" begin
-        center = SVector(0.0, 0.0)
-        radius = SVector(1.0, 0.0)
-        @test_throws DomainError Box(center, radius)
-    end
 end
 @testset "internal functionality" begin
     partition = BoxPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), (4,2,2))
-    @testset "keys all" begin
+    @testset "keys" begin
         @test length(keys(partition)) == length(partition)
     end
     inside = SVector(0.5, 0.5, 0.5)

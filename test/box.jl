@@ -44,10 +44,13 @@ using Test
         radius = SVector(1.0, 1.0)
         @test_throws Exception Box(center, radius)
     end
-    @testset "negative radii" begin
+    @testset "nonpositive radii" begin
         center = SVector(0.0, 0.0)
         radius = SVector(1.0, -1.0)
-        @test_throws Exception Box(center, radius)
+        @test_throws DomainError Box(center, radius)
+        center = SVector(0.0, 0.0)
+        radius = SVector(1.0, 0.0)
+        @test_throws DomainError Box(center, radius)
     end
 end
 @testset "internal functionality" begin

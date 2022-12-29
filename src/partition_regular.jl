@@ -26,7 +26,7 @@ end
 function BoxPartition(domain::Box{N,T}, dims::SVNT{N,I}) where {N,T,I}
     dims = SVector{N,I}(dims)
     left = domain.center .- domain.radius
-    scale = dims ./ (I(2) .* domain.radius)
+    scale = dims ./ (2 .* domain.radius)
     # nr. of boxes / diameter of the domain == 1 / diameter of each box
     return BoxPartition{N,T,I}(domain, left, scale, dims)
 end
@@ -83,8 +83,9 @@ along the axis `dim`, giving rise to a new partition
 of the domain, with double the amount of boxes. 
 """
 function subdivide(P::BoxPartition{N,T,I}, dim) where {N,T,I}
-    new_dims = setindex(P.dims, P.dims[dim] * I(2), dim)
-    return BoxPartition(P.domain, new_dims)
+    new_dims = setindex(P.dims, 2 * P.dims[dim], dim)
+    new_scale = setindex(P.scale, 2 * P.scale[dim], dim)
+    return BoxPartition{N,T,I}(P.domain, P.left, new_scale, new_dims)
 end
 
 """
@@ -93,8 +94,10 @@ end
 Return the box associated with the index 
 within a `BoxPartition`. 
 """
-function key_to_box(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I}
-    checkbounds(Bool, partition, x_ints) || throw(BoundsError(partition, x_ints))
+@inline function key_to_box(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I}
+    @boundscheck begin
+        checkbounds(Bool, partition, x_ints) || throw(BoundsError(partition, x_ints))
+    end
     radius = partition.domain.radius ./ partition.dims
     left = partition.left
     center = @muladd @. left + radius + (2 * radius) * (x_ints - 1)
@@ -122,30 +125,23 @@ end
 
 Find the cartesian index of the nearest box within a 
 `BoxPartition` to a point. Conicides with `point_to_key` 
-if the point lies in the partition. 
+if the point lies in the partition. Default behavior 
+is to set `NaN = Inf` if `NaN`s are present in `point`. 
 """
-function bounded_point_to_key(partition::BoxPartition{N,T,I}, point) where {N,T,I}
-    s = size(partition)
-    xi = (point .- partition.left) .* partition.scale
-    xi = max.(zero(I), xi)
-    xi = min.(size(partition) .- one(I), xi)
-    ntuple(Val(N)) do i
-        if isfinite(xi[i])
-            trunc(I, xi[i]) + one(I)
-        elseif point[i] < partition.left[i]
-            one(I)
-        else
-            s[i]
-        end
-    end
+function bounded_point_to_key(partition::AbstractBoxPartition{B}, point) where {N,T,B<:Box{N,T}}
+    center, radius = partition.domain
+    left, right = center .- radius, center .+ radius .- eps(T)
+    p = ifelse.(isnan.(point), convert(T, Inf), point)
+    p = min.(max.(point, left), right)
+    return point_to_key(partition, p)
 end
 
 """
-    point_to_box(P::BoxPartition, point)
+    point_to_box(P::AbstractBoxPartition, point)
 
 Find the box within a `BoxPartition` containing a point. 
 """
-function point_to_box(partition::BoxPartition{N,T,I}, point) where {N,T,I}
+function point_to_box(partition::AbstractBoxPartition, point)
     x_ints = point_to_key(partition, point)
     isnothing(x_ints) && return x_ints
     return key_to_box(partition, x_ints)

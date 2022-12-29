@@ -60,7 +60,17 @@ function Base.show(io::IO, box::B) where {B<:Box}
     print(io, "$(B):\n    center = $(box.center),\n    radii = $(box.radius)")
 end
 
-Base.in(point, box::Box) = all(box.center .- box.radius  .<=  point  .<  box.center .+ box.radius)
+@inline function Base.in(point, box::Box)
+    c, r = box
+    @boundscheck begin
+        M, N = length(point), length(c)
+        if M != N
+            throw(DimensionMismatch("point has dimension $M but box has dimension $N"))
+        end
+    end
+    all(c .- r .<= point .< c .+ r)
+end
+
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
 
 Base.iterate(b::Box, i...) = (b.center, Val(:radius))

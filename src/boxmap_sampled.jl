@@ -97,7 +97,7 @@ function PointDiscretizedBoxMap(map, domain::Box, points)
     return SampledBoxMap(map, domain, domain_points, image_points)
 end
 
-PointDiscretizedBoxMap(map, P::BoxPartition, points) = PointDiscretizedBoxMap(map, P.domain, points)
+PointDiscretizedBoxMap(map, P::AbstractBoxPartition, points) = PointDiscretizedBoxMap(map, P.domain, points)
 
 """
     BoxMap(:grid, map, domain::Box{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
@@ -113,7 +113,7 @@ function GridBoxMap(map, domain::Box{N,T}; no_of_points::NTuple{N}=ntuple(_->no_
     return PointDiscretizedBoxMap(map, domain, points)
 end
 
-function GridBoxMap(map, P::BoxPartition{N,T}; no_of_points=ntuple(_->no_default(T),N)) where {N,T}
+function GridBoxMap(map, P::Q; no_of_points=ntuple(_->no_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
     GridBoxMap(map, P.domain; no_of_points=no_of_points)
 end
 
@@ -129,7 +129,7 @@ function MonteCarloBoxMap(map, domain::Box{N,T}; no_of_points=no_default(N,T)) w
     return PointDiscretizedBoxMap(map, domain, points) 
 end 
 
-function MonteCarloBoxMap(map, P::BoxPartition{N,T}; no_of_points=no_default(N,T)) where {N,T}
+function MonteCarloBoxMap(map, P::Q; no_of_points=no_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
     MonteCarloBoxMap(map, P.domain; no_of_points=no_of_points)
 end
 
@@ -149,7 +149,7 @@ function AdaptiveBoxMap(f, domain::Box{N,T}) where {N,T}
     return SampledBoxMap(f, domain, domain_points, image_points)
 end
 
-AdaptiveBoxMap(f, P::BoxPartition) = AdaptiveBoxMap(f, P.domain)
+AdaptiveBoxMap(f, P::AbstractBoxPartition) = AdaptiveBoxMap(f, P.domain)
 
 Core.@doc raw"""
     approx_lipschitz(f, center::SVector, radius::SVector, accel=nothing) -> Matrix

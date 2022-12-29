@@ -74,11 +74,11 @@ function construct_transfers(
     return mat, variant_keys
 end
 
-function IntervalBoxMap(map::F, domain::Box{N,T}; no_subintervals=ntuple(_->4,N)) where {N,T,F}
+function IntervalBoxMap(map, domain::Box{N,T}; no_subintervals=ntuple(_->4,N)) where {N,T}
     IntervalBoxMap(map, domain, no_subintervals)
 end
 
-function IntervalBoxMap(map::F, P::BoxPartition{N,T}; no_subintervals=ntuple(_->4,N)) where {N,T,F}
+function IntervalBoxMap(map, P::Q; no_subintervals=ntuple(_->4,N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
     IntervalBoxMap(map, P.domain; no_subintervals=no_subintervals)
 end
 
