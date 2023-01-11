@@ -8,7 +8,7 @@ f(x) = rk4_flow_map(v, x, 0.05, 5)
 center, radius = (0,0,0), (12,3,20)
 Q = Box(center, radius)
 P = BoxPartition(Q, (128,128,128))
-F = BoxMap(:montecarlo, f, P, no_of_points=(6,6,6))
+F = BoxMap(:montecarlo, f, P, no_of_points=200)
 
 # computing the attractor by covering the 2d unstable manifold
 # of two equilibria
@@ -17,12 +17,16 @@ W = unstable_set(F, P[[x, -x]])
 
 # computing the eigenmeasures at the eigenvalues of largest real part
 T = TransferOperator(F, W)
-(λ, ev) = eigs(T; nev=5, which=:LR)
+λ, ev, nconv = eigs(T; nev=5, which=:LR)
 
-# plot the second eigenmeasure according to its sign, revealing 
-# the two almost invariant sets
-using WGLMakie: plot!, Figure, Axis3
+ev_seba = SEBA(ev)
+
+using WGLMakie: plot!, Figure, Axis3, Cycled
 fig = Figure()
 ax = Axis3(fig[1,1], aspect=(1,1.2,1))
-plot!(ax, sign ∘ ev[2])
+
+for i in 1:length(S)
+    plot!(ax, BoxSet(S[i]), color=Cycled(i))
+end
+
 fig

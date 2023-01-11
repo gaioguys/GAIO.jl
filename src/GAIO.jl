@@ -58,6 +58,7 @@ export rk4, rk4_flow_map
 
 export relative_attractor, unstable_set, chain_recurrent_set
 export cover_roots, finite_time_lyapunov_exponents
+export SEBA
 
 export plotboxes, plotboxes!
 
