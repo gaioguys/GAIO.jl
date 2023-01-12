@@ -64,14 +64,15 @@ function construct_transfers(
             fint = g.map(subint)
             fbox = Box(fint)
             isnothing(fbox) && continue
-            Pbox = P[fbox]
-            for hit in Pbox.set
+            fSet = P[fbox]
+            for hit in fSet.set
                 hit in source.set || @reduce( variant_keys = S() ⊔ hit )
                 @reduce( mat = D() ⊔ ((hit,key) => 1) )
             end
         end
     end
-    return mat, variant_keys
+    variant_set = BoxSet(P, variant_keys)
+    return mat, variant_set
 end
 
 function IntervalBoxMap(map, domain::Box{N,T}; no_subintervals=ntuple(_->4,N)) where {N,T}
@@ -83,7 +84,6 @@ function IntervalBoxMap(map, P::Q; no_subintervals=ntuple(_->4,N)) where {N,T,Q<
 end
 
 function Base.show(io::IO, g::IntervalBoxMap)
-    center, radius = g.domain
-    n = g.no_subintervals(center, radius)
+    n = g.no_subintervals(g.domain...)
     print(io, "IntervalBoxMap with $(n) subintervals")
 end

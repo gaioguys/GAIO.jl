@@ -56,7 +56,7 @@ end
 
 function construct_transfers(
         g::SampledBoxMap, boxset::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+    ) where {N,T,R<:Box{N,T},Q,S<:OrderedSet}
 
     P, D = boxset.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
     @floop for key in boxset.set
@@ -75,7 +75,8 @@ function construct_transfers(
             end
         end
     end
-    return mat, variant_keys
+    variant_set = BoxSet(P, variant_keys)
+    return mat, variant_set
 end
 
 function Base.show(io::IO, g::SampledBoxMap)
@@ -107,13 +108,13 @@ Construct a `SampledBoxMap` that uses a grid of test points.
 The size of the grid is defined by `no_of_points`, which is 
 a tuple of length equal to the dimension of the domain. 
 """
-function GridBoxMap(map, domain::Box{N,T}; no_of_points::NTuple{N}=ntuple(_->no_default(T),N)) where {N,T}
+function GridBoxMap(map, domain::Box{N,T}; no_of_points::NTuple{N}=ntuple(_->n_default(T),N)) where {N,T}
     Δp = 2 ./ no_of_points
     points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(no_of_points) ]
     return PointDiscretizedBoxMap(map, domain, points)
 end
 
-function GridBoxMap(map, P::Q; no_of_points=ntuple(_->no_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+function GridBoxMap(map, P::Q; no_of_points=ntuple(_->n_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
     GridBoxMap(map, P.domain; no_of_points=no_of_points)
 end
 
@@ -124,12 +125,12 @@ end
 Construct a `SampledBoxMap` that uses `no_of_points` 
 Monte-Carlo test points. 
 """
-function MonteCarloBoxMap(map, domain::Box{N,T}; no_of_points=no_default(N,T)) where {N,T}
+function MonteCarloBoxMap(map, domain::Box{N,T}; no_of_points=n_default(N,T)) where {N,T}
     points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:no_of_points ] 
     return PointDiscretizedBoxMap(map, domain, points) 
 end 
 
-function MonteCarloBoxMap(map, P::Q; no_of_points=no_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+function MonteCarloBoxMap(map, P::Q; no_of_points=n_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
     MonteCarloBoxMap(map, P.domain; no_of_points=no_of_points)
 end
 
@@ -210,5 +211,5 @@ end
 
 sample_adaptive(f) = (center, radius) -> sample_adaptive(f, center, radius)
 
-no_default(T) = Int(pick_vector_width(T))
-no_default(N, T) = 4 * N * no_default(T)
+n_default(T) = Int(pick_vector_width(T))
+n_default(N, T) = 4 * N * n_default(T)

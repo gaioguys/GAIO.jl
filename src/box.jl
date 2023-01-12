@@ -71,6 +71,13 @@ end
     all(c .- r .<= point .< c .+ r)
 end
 
+function Base.intersect(b1::Box{N}, b2::Box{N}) where {N}
+    lo = max.(b1.center .- b1.radius, b2.center .- b2.radius)
+    hi = min.(b1.center, .+ b1.radius, b2.center .+ b2.radius)
+    all(lo .< hi) || return nothing
+    return Box((hi .+ lo) ./ 2, (hi .- lo) ./ 2)
+end
+
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
 
 Base.iterate(b::Box, i...) = (b.center, Val(:radius))
@@ -88,7 +95,7 @@ volume(box::Box) = prod(2 .* box.radius)
 
 Return an iterator over the vertices of a `box = Box(center, radius)`. 
 """
-function vertices(center::SVNT{N,T}, radius::SVNT{N,T}) where {N,T}
+function vertices(center::SVNT{N,T}, radius::SVNT{N,R}) where {N,T,R}
     I = CartesianIndices(ntuple(_->-1:2:1, N))
     (@muladd(center .+ radius .* Tuple(i)) for i in I)
 end

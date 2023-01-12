@@ -1,9 +1,3 @@
-# TODO: 
-#       * TransferOperator compatibility
-#       * cuda compatibility
-#       * better cover_boxes for TreePartition
-#       * avoid O(log n) time for key_to_box if ran with @inbounds ?
-
 """
 Node structure used for `TreePartition`s
 
@@ -82,25 +76,34 @@ function tree_search(tree::TreePartition{N,T,I}, point, max_depth=Inf) where {N,
     node_idx = 1
     node = tree.nodes[node_idx]
     current_depth = 1
-    key = ntuple(_->one(I), Val(N))
+    cart = ntuple(_->one(I), Val(N))    # = point_to_key(P, point)
 
     while !isleaf(node) && current_depth < max_depth
 
         # finds the CartesianIndex of the point in the "next" partition down the tree
         dim = (current_depth - 1) % N + 1
         P = subdivide(P, dim)
-        key = point_to_key(P, point)
+        cart = point_to_key(P, point)
         
         # cycles through components, decides whether point lies in an even or odd box in that component
-        node_idx = isodd(key[dim]) ? node.left : node.right
+        node_idx = isodd(cart[dim]) ? node.left : node.right
         node = tree.nodes[node_idx]
 
         current_depth += 1
     end
 
-    key = (current_depth, key)
+    key = (current_depth, cart)
 
     return key, node_idx
+end
+
+function Base.checkbounds(::Type{Bool}, tree::TreePartition, key)
+    depth, cart = key
+    P = BoxPartition(tree, depth)
+    box = key_to_box(P, cart)
+    search_key, _ = tree_search(tree, box.center, depth)
+    search_depth, search_cart = search_key
+    return search_depth > depth || ( search_depth == depth && search_cart == cart )
 end
 
 function point_to_key(tree::TreePartition, point)
@@ -109,14 +112,10 @@ function point_to_key(tree::TreePartition, point)
 end
 
 @inline function key_to_box(tree::TreePartition{N}, key::Tuple{I,NTuple{N,J}}) where {N,I,J}
+    @boundscheck checkbounds(Bool, tree, key) || throw(BoundsError(tree, key))
     depth, cart = key
     P = BoxPartition(tree, depth)
     box = key_to_box(P, cart)
-    #= @boundscheck =# begin
-        search_key, _ = tree_search(tree, box.center, depth)
-        search_depth, search_cart = search_key
-        ( search_depth < depth || search_cart != cart ) && throw(BoundsError(tree, key))
-    end
     return box
 end
 
@@ -165,6 +164,8 @@ function subdivide(tree::TreePartition, key_or_depth)
 end
 
 """
+    depth(tree::TreePartition)
+
 Return the depth of the tree structure. 
 """
 function depth(tree::TreePartition{N,T,I}) where {N,T,I}
@@ -199,6 +200,11 @@ function Base.size(tree::TreePartition{N,T,I}) where {N,T,I}
     return ntuple(i->get(sizes, i, 1), depth)
 end
 
+"""
+    find_at_depth(tree, depth)
+
+Return all node indices at a specified depth. 
+"""
 function find_at_depth(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
     node_idxs = I[]
     queue = Tuple{Int,I}[(1, 1)]
@@ -214,6 +220,14 @@ function find_at_depth(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
    return node_idxs
 end
 
+"""
+    leaves(tree, initial_node_idx=1)
+
+Return the node indices of all leaves. 
+Begins search at `initial_node_idx`, i.e.
+only returns node indices of nodes below 
+`initial_node_idx` within the tree. 
+"""
 function leaves(tree::TreePartition{N,T,I}, initial_node_idx=1) where {N,T,I}
     leaf_idxs = I[]
     queue = I[initial_node_idx]
@@ -240,6 +254,32 @@ function Base.keys(tree::Q) where {N,T,I,Q<:TreePartition{N,T,I}}
         if isleaf(node)
             push!(keys, key)
         else
+            c1_idx, c2_idx = node
+            depth, cart = key
+            dim = (depth - 1) % N + 1
+            key1 = (depth+1, Base.setindex(cart, 2 * cart[dim] - 1, dim))
+            key2 = (depth+1, Base.setindex(cart, 2 * cart[dim], dim))
+            push!(queue, (c1_idx, key1), (c2_idx, key2))
+        end
+    end
+    return keys
+end
+
+"""
+    hidden_keys(tree)
+
+Return all keys within the tree, including 
+keys not corresponding to leaf nodes. 
+"""
+function hidden_keys(tree::Q) where {N,T,I,Q<:TreePartition{N,T,I}}
+    K = keytype(Q)
+    keys = K[]
+    queue = Tuple{I,K}[(1, K((1, ntuple(_->1,N))))]
+    while !isempty(queue)
+        node_idx, key = pop!(queue)
+        node = tree.nodes[node_idx]
+        push!(keys, key)
+        if !isleaf(node)
             c1_idx, c2_idx = node
             depth, cart = key
             dim = (depth - 1) % N + 1

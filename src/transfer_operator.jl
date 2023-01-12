@@ -83,14 +83,15 @@ end
 
 function TransferOperator(
         g::BoxMap, boxset::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+    ) where {N,T,R<:Box{N,T},Q,S<:OrderedSet}
 
-    dict, out_of_bounds = construct_transfers(g, boxset)
-    variant_set = BoxSet(boxset.partition, out_of_bounds)
+    dict, variant_set = construct_transfers(g, boxset)
     mat = sparse(dict, boxset, variant_set)
+
     for i in 1:size(mat, 2)
         mat[:, i] ./= sum(mat[:, i])
     end
+
     return TransferOperator(g, boxset, variant_set, mat)
 end
 
@@ -294,8 +295,8 @@ function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,S}, keys) where 
         union!(g.support.set, diff)
 
         # calculate transitions for the new keys
-        new_dict, out_of_bounds = construct_transfers(g, BoxSet(g.support.partition, OrderedSet(diff)))
-        union!(g.variant_set.set, out_of_bounds)
+        new_dict, new_variant_set = construct_transfers(g, BoxSet(g.support.partition, OrderedSet(diff)))
+        union!(g.variant_set, new_variant_set)
 
         # construct the new matrix
         dict = dict ⊔ new_dict

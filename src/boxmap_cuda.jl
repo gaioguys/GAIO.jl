@@ -49,7 +49,7 @@ struct GPUSampledBoxMap{N,T,F<:SampledBoxMap{N,T}} <: BoxMap
     end
 end
 
-function map_boxes_kernel!(g, P::BoxPartition{N,T,I}, domain_points, in_keys, out_keys) where {N,T,I}
+function map_boxes_kernel!(g, P::AbstractBoxPartition{Box{N,T}}, domain_points, in_keys, out_keys) where {N,T}
     nk, np = Int32.((length(in_keys), length(domain_points)))
     ind = (blockIdx().x - 1i32) * blockDim().x + threadIdx().x #- 1i32
     stride = gridDim().x * blockDim().x
@@ -62,7 +62,7 @@ function map_boxes_kernel!(g, P::BoxPartition{N,T,I}, domain_points, in_keys, ou
         c, r = box
         fp   = g(@muladd p .* r .+ c)
         hit  = point_to_key(P, fp)
-        out_keys[i] = isnothing(hit) ? ntuple(_->zero(I), Val(N)) : hit
+        out_keys[i] = isnothing(hit) ? out_of_bounds(P) : hit
     end
 end
 
@@ -94,13 +94,13 @@ function map_boxes(
         union!(image, out_cpu)
         CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
     end
-    delete!(image, K(ntuple(_->0, Val(N))))
+    delete!(image, out_of_bounds(P))
     return BoxSet(P, image)
 end
 
 function construct_transfers(
         G::GPUSampledBoxMap, source::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+    ) where {N,T,R<:Box{N,T},Q,S<:OrderedSet}
 
     g = G.boxmap
     p = g.domain_points(g.domain...).iter
@@ -110,7 +110,7 @@ function construct_transfers(
     K = cu_reduce(keytype(Q))
     D = Dict{Tuple{K,K},cu_reduce(T)}
     mat = D()
-    variant_keys = S()
+    variant_set = BoxSet(P, S())
     while !isnothing(keys.nextvalstate)
         stride = min(
             length(keys),
@@ -131,11 +131,11 @@ function construct_transfers(
             key, hit = in_cpu[n], out_cpu[i]
             mat = mat ⊔ ((hit,key) => 1)
         end
-        union!(variant_keys, setdiff(out_cpu, source.set))
+        union!(variant_set.set, setdiff(out_cpu, source.set))
         CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
     end
-    delete!(variant_keys, K(ntuple(_->0, Val(N))))
-    return mat, variant_keys
+    delete!(variant_set.set, out_of_bounds(P))
+    return mat, variant_set
 end
 
 # constructors
@@ -163,13 +163,13 @@ a tuple of length equal to the dimension of the domain.
 
 Requires a CUDA-capable gpu. 
 """
-function GridBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points=ntuple(_->no_default(T),N)) where {N,T}
+function GridBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points=ntuple(_->n_default(T),N)) where {N,T}
     Δp = 2 ./ no_of_points
     points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(no_of_points) ]
     PointDiscretizedBoxMap(c, map, domain, points)
 end
 
-function GridBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; no_of_points=ntuple(_->no_default(T),N)) where {N,T}
+function GridBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; no_of_points=ntuple(_->n_default(T),N)) where {N,T}
     GridBoxMap(c, map, P.domain, no_of_points=no_of_points)
 end
 
@@ -181,19 +181,18 @@ Monte-Carlo test points.
 
 Requires a CUDA-capable gpu. 
 """
-function MonteCarloBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points=no_default(N,T)) where {N,T}
+function MonteCarloBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points=n_default(N,T)) where {N,T}
     points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:no_of_points ] 
     PointDiscretizedBoxMap(c, map, domain, points)
 end 
 
-function MonteCarloBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; no_of_points=no_default(N,T)) where {N,T}
+function MonteCarloBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; no_of_points=n_default(N,T)) where {N,T}
     MonteCarloBoxMap(c, map, P.domain; no_of_points=no_of_points)
 end
 
 # helper + compatibility functions
 function Base.show(io::IO, g::GPUSampledBoxMap)
-    center, radius = g.domain
-    n = length(g.domain_points(center, radius).iter)
+    n = length(g.domain_points(g.domain...).iter)
     print(io, "GPUSampledBoxMap with $(n) sample points")
 end
 
@@ -224,6 +223,17 @@ cu_reduce(::Type{F}) where {F<:AbstractFloat} = Float32
 cu_reduce(::Type{Float16}) = Float16
 cu_reduce(::Type{<:NTuple{N,T}}) where {N,T} = NTuple{N,cu_reduce(T)}
 
+function out_of_bounds(P::BoxPartition{N,T,I}) where {N,T,I}
+    K = cu_reduce(keytype(P))
+    K(ntuple(_->0, Val(N)))
+end
+
+function out_of_bounds(P::TreePartition{N,T,I}) where {N,T,I}
+    K = cu_reduce(keytype(P))
+    K((0, ntuple(_->0, Val(N))))
+end
+
+
 function Adapt.adapt_structure(a::A, b::BoxPartition{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayAdaptor,<:CUDA.Adaptor}}
     TT, II = cu_reduce(T), cu_reduce(I)
     Adapt.adapt_storage(a, 
@@ -232,6 +242,16 @@ function Adapt.adapt_structure(a::A, b::BoxPartition{N,T,I}) where {N,T,I,A<:Uni
             SVector{N,TT}(b.left),
             SVector{N,TT}(b.scale),
             SVector{N,II}(b.dims)
+        )
+    )
+end
+
+function Adapt.adapt_structure(a::A, b::TreePartition{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayAdaptor,<:CUDA.Adaptor}}
+    TT = cu_reduce(T)
+    Adapt.adapt_storage(a,
+        TreePartition(
+            Box{N,TT}(b.domain...),
+            Adapt.adapt(a, b.nodes)
         )
     )
 end

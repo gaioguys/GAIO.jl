@@ -107,25 +107,40 @@ function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
     return BoxSet(partition, keys)
 end
 
-function cover_boxes(partition::P, boxes) where {N,T,I,P<:TreePartition{N,T,I}}
-    # extremely inefficient naive covering
-    K = keytype(P)
+function cover_boxes(partition::P, box_in::Box) where {N,T,I,P<:TreePartition{N,T,I}}
+    K = keytype(Q)
     keys = Set{K}()
-    d = depth(partition)
-    Q = BoxPartition(partition, d)
-    rad = 0.5 / Q.scale
-    for box_in in boxes
-        box = Box{N,T}(box_in.center .- eps(T), box_in.radius .- eps(T))
-        c, r = box
-        R = range.(c.-r, c.+r; step=min(rad, r))
-        box_keys = Iterators.map(CartesianIndices(tuple(length.(R)...))) do C
-            inds = C.I
-            point = getindex.(R, inds)
-            key = point_to_key(tree, point)
+    box = partition.domain ∩ box_in
+    isnothing(box) && return keys
+
+    queue = Tuple{I,K}[(1, K((1, ntuple(_->1,N))))]
+    while !isempty(queue)
+        node_idx, key = pop!(queue)
+        node = tree.nodes[node_idx]
+        
+        if isleaf(node)
+            keys = keys ⊔ key
+        else
+            c1_idx, c2_idx = node
+            depth, cart = key
+            
+            dim = (depth - 1) % N + 1
+            key1 = (depth+1, Base.setindex(cart, 2 * cart[dim] - 1, dim))
+            key2 = (depth+1, Base.setindex(cart, 2 * cart[dim], dim))
+            
+            Q = BoxPartition(partition, depth)
+            box1 = key_to_box(Q, key1[2])
+            box2 = key_to_box(Q, key2[2])
+
+            isnothing(box1 ∩ box) || push!(queue, (c1_idx, key1))
+            isnothing(box2 ∩ box) || push!(queue, (c2_idx, key2))
         end
-        union!(keys, box_keys)
     end
-    return BoxSet(partition, keys)
+    return keys
+end
+
+function cover_boxes(partition::P, boxes) where {N,T,I,P<:TreePartition{N,T,I}}
+    union(cover_boxes(partition, box) for box in boxes)
 end
 
 for op in (:union, :intersect, :setdiff, :symdiff)
