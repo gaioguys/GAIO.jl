@@ -108,7 +108,7 @@ function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
 end
 
 function cover_boxes(partition::P, box_in::Box) where {N,T,I,P<:TreePartition{N,T,I}}
-    K = keytype(Q)
+    K = keytype(P)
     keys = Set{K}()
     box = partition.domain ∩ box_in
     isnothing(box) && return keys
@@ -117,7 +117,7 @@ function cover_boxes(partition::P, box_in::Box) where {N,T,I,P<:TreePartition{N,
     while !isempty(queue)
         node_idx, key = pop!(queue)
         node = tree.nodes[node_idx]
-        
+
         if isleaf(node)
             keys = keys ⊔ key
         else
