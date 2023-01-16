@@ -170,13 +170,13 @@ end
 function SEBA(V::AbstractArray{<:BoxFun}, Rinit=nothing)
     P = V[1].partition
     all(μ -> μ.partition == P, V) || throw(DomainError(V, "Partitions of BoxFuns do not match. "))
-    supp = union(keys(μ) for μ in V)
+    supp = union((keys(μ) for μ in V)...)
 
     V̄ = [μ[key] for key in supp, μ in V]
     S̄, R = SEBA(V̄, Rinit)
 
     S̄ .= max.(S̄, 0)
-    S_descend = sort(S̄, dims=1)
+    S_descend = sort(S̄, dims=1, rev=true)
     τdp = maximum(S_descend[:, 2])
     S̄[S̄ .< τdp] .= 0
 
