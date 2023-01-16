@@ -180,16 +180,7 @@ function SEBA(V::AbstractArray{<:BoxFun}, Rinit=nothing)
     τdp = maximum(S_descend[:, 2])
     S̄[S̄ .< τdp] .= 0
 
-    S = [BoxFun(
-            P, 
-            Dict(
-                zip(
-                    keys(V[i]), S̄[:, i]
-                )
-            )
-        )
-        for i in 1:size(S̄, 2)
-    ]
+    S = [BoxFun(V[i], S̄[:, i]) for i in 1:size(S̄, 2)]
     return S
 end
 

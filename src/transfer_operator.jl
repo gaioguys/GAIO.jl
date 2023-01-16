@@ -139,16 +139,9 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
 
         function eigenfunctions(g::$type, B=I; nev=1, ritzvec=true, kwargs...)
             λ, ϕ, nconv = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
-            P = $gmap.support.partition
-            b = [
-                BoxFun(
-                    P, 
-                    OrderedDict{keytype(typeof(P)),eltype(ϕ)}(
-                        zip($gmap.support.set, ϕ[:, i])
-                    )
-                ) 
-                for i in 1:nev
-            ]
+            S = $gmap.support
+            P = S.partition
+            b = [BoxFun(S, ϕ[:, i], OrderedDict) for i in 1:nev]
             return ritzvec ? (λ, b, nconv) : (λ, nconv)
         end
 
