@@ -69,24 +69,26 @@ will be copied and converted to `OrderedSet`s.
 """
 mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMatrix{T,Int}
     boxmap::M
-    support::S
-    variant_set::S
+    domain::S
+    codomain::S
     mat::SparseMatrixCSC{T,Int}
 end
 
-construct_transfers(g::TransferOperator, boxset) = construct_transfers(g.boxmap, boxset)
+construct_transfers(g::TransferOperator, domain::BoxSet) = construct_transfers(g.boxmap, domain)
 
 # ensure that `TransferOperator` uses an `OrderedSet`
-function TransferOperator(g::BoxMap, boxset::BoxSet{B,Q,S}) where {B,Q,S}
-    TransferOperator(g, BoxSet(boxset.partition, OrderedSet(boxset.set)))
+function TransferOperator(g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q,W}) where {B,P,S,R,Q,W}
+    dom = BoxSet(domain.partition, OrderedSet(domain.set))
+    codom = BoxSet(codomain.partition, OrderedSet(codomain.set))
+    TransferOperator(g, dom, codom)
 end
 
 function TransferOperator(
-        g::BoxMap, boxset::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q,S<:OrderedSet}
+        g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q,W}
+    ) where {B,P,S<:OrderedSet,R,Q,W<:OrderedSet}
 
-    dict, variant_set = construct_transfers(g, boxset)
-    mat = sparse(dict, boxset, variant_set)
+    dict = construct_transfers(g, domain, codomain)
+    mat = sparse(dict, domain, codomain)
 
     for i in 1:size(mat, 2)
         mat[:, i] ./= sum(mat[:, i])
