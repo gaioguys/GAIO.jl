@@ -99,18 +99,19 @@ function map_boxes(
 end
 
 function construct_transfers(
-        G::GPUSampledBoxMap, source::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q,S<:OrderedSet}
+        G::GPUSampledBoxMap, domain::BoxSet{R,Q,S}
+    ) where {N,T,R<:Box{N,T},Q,S}
 
     g = G.boxmap
     p = g.domain_points(g.domain...).iter
     np = length(p)
-    keys = Stateful(source.set)
-    P = source.partition
+    keys = Stateful(domain.set)
+    P = domain.partition
     K = cu_reduce(keytype(Q))
     D = Dict{Tuple{K,K},cu_reduce(T)}
     mat = D()
-    variant_set = BoxSet(P, S())
+    codomain = BoxSet(P, S())
+    oob = out_of_bounds(P)
     while !isnothing(keys.nextvalstate)
         stride = min(
             length(keys),
@@ -129,13 +130,57 @@ function construct_transfers(
         for i in 1:nk*np
             _, n = C[i].I
             key, hit = in_cpu[n], out_cpu[i]
+            hit == oob && continue
             mat = mat ⊔ ((hit,key) => 1)
         end
-        union!(variant_set.set, setdiff(out_cpu, source.set))
+        union!(codomain.set, out_cpu)
         CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
     end
-    delete!(variant_set.set, out_of_bounds(P))
-    return mat, variant_set
+    delete!(codomain.set, oob)
+    return mat, codomain
+end
+
+function construct_transfers(
+        G::GPUSampledBoxMap, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
+    ) where {N,T,R<:Box{N,T},Q,S,U,H,W}
+
+    g = G.boxmap
+    p = g.domain_points(g.domain...).iter
+    np = length(p)
+    keys = Stateful(domain.set)
+    P = domain.partition
+    P2 = codomain.partition
+    P == P2 || throw(DomainError((P, P2), "Partitions of domain and codomain dno not match. For GPU acceleration, they must be equal."))
+    K = cu_reduce(keytype(Q))
+    D = Dict{Tuple{K,K},cu_reduce(T)}
+    mat = D()
+    codomain = BoxSet(P2, S())
+    oob = out_of_bounds(P)
+    while !isnothing(keys.nextvalstate)
+        stride = min(
+            length(keys),
+            available_array_memory() ÷ (sizeof(K) * 10 * (N + 1) * np)
+        )
+        in_cpu = collect(K, take(keys, stride))
+        in_keys = CuArray{K,1}(in_cpu)
+        nk = length(in_cpu)
+        out_keys = CuArray{K,1}(undef, nk * np)
+        launch_kernel_then_sync!(
+            nk * np, map_boxes_kernel!, 
+            g.map, P, p, in_keys, out_keys
+        )
+        out_cpu = Array{K,1}(out_keys)
+        C = CartesianIndices((np, nk))
+        for i in 1:nk*np
+            _, n = C[i].I
+            key, hit = in_cpu[n], out_cpu[i]
+            hit == oob && continue
+            hit in codomain.set || continue
+            mat = mat ⊔ ((hit,key) => 1)
+        end
+        CUDA.unsafe_free!(in_keys); CUDA.unsafe_free!(out_keys)
+    end
+    return mat
 end
 
 # constructors

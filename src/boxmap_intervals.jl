@@ -53,11 +53,11 @@ function map_boxes(g::IntervalBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
 end
 
 function construct_transfers(
-        g::IntervalBoxMap, source::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+        g::IntervalBoxMap, domain::BoxSet{R,Q,S}
+    ) where {N,T,R<:Box{N,T},Q,S}
 
-    P, D = source.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
-    @floop for key in source.set
+    P, D = domain.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
+    @floop for key in domain.set
         c, r = key_to_box(P, key)
         int = IntervalBox(c .± r ...)
         for subint in mince(int, g.no_subintervals(c, r))
@@ -66,13 +66,36 @@ function construct_transfers(
             isnothing(fbox) && continue
             fSet = P[fbox]
             for hit in fSet.set
-                hit in source.set || @reduce( variant_keys = S() ⊔ hit )
+                @reduce( image = S() ⊔ hit )
                 @reduce( mat = D() ⊔ ((hit,key) => 1) )
             end
         end
     end
     variant_set = BoxSet(P, variant_keys)
     return mat, variant_set
+end
+
+function construct_transfers(
+        g::IntervalBoxMap, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
+    ) where {N,T,R<:Box{N,T},Q,S,U,H,W}
+
+    P1, P2 = domain.partiiton, codomain.partition
+    D = Dict{Tuple{keytype(H),keytype(Q)},T}
+    @floop for key in domain.set
+        c, r = key_to_box(P1, key)
+        int = IntervalBox(c .± r ...)
+        for subint in mince(int, g.no_subintervals(c, r))
+            fint = g.map(subint)
+            fbox = Box(fint)
+            isnothing(fbox) && continue
+            fSet = P2[fbox]
+            for hit in fSet.set
+                hit in codomain.set || continue
+                @reduce( mat = D() ⊔ ((hit,key) => 1) )
+            end
+        end
+    end
+    return mat
 end
 
 function IntervalBoxMap(map, domain::Box{N,T}; no_subintervals=ntuple(_->4,N)) where {N,T}

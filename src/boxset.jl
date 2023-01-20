@@ -33,12 +33,12 @@ struct BoxSet{B,P<:AbstractBoxPartition{B},S<:AbstractSet} <: AbstractSet{B}
     set::S
 end
 
-function Base.show(io::IO, boxset::BoxSet)
-    size = length(boxset.set)
-    print(io, "$size-element BoxSet in ", boxset.partition)
-end
+Base.show(io::IO, boxset::BoxSet) = print(io, "BoxSet in ", boxset.partition)
 
-Base.show(io::IO, ::MIME"text/plain", boxset::BoxSet) = show(io, boxset)
+function Base.show(io::IO, m::MIME"text/plain", boxset::BoxSet)
+    print(io, "$(length(boxset)) - element BoxSet in ")
+    show(io, m, boxset.partition)
+end
 
 # TODO: replace with BoxSet(partition)
 function boxset_empty(partition::P) where P <: AbstractBoxPartition

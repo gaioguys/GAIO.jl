@@ -29,6 +29,7 @@ using MakieCore: @recipe
 using RecipesBase: RecipesBase
 
 import Base: ∘
+import Base: @propagate_inbounds
 
 export Box
 export volume, center, vertices, rescale

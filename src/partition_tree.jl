@@ -111,7 +111,7 @@ function point_to_key(tree::TreePartition, point)
     return key
 end
 
-@inline function key_to_box(tree::TreePartition{N}, key::Tuple{I,NTuple{N,J}}) where {N,I,J}
+@propagate_inbounds function key_to_box(tree::TreePartition{N}, key::Tuple{I,NTuple{N,J}}) where {N,I,J}
     @boundscheck checkbounds(Bool, tree, key) || throw(BoundsError(tree, key))
     depth, cart = key
     P = BoxPartition(tree, depth)

@@ -55,11 +55,11 @@ function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
 end 
 
 function construct_transfers(
-        g::SampledBoxMap, boxset::BoxSet{R,Q,S}
+        g::SampledBoxMap, domain::BoxSet{R,Q,S}
     ) where {N,T,R<:Box{N,T},Q,S<:OrderedSet}
 
-    P, D = boxset.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
-    @floop for key in boxset.set
+    P, D = domain.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
+    @floop for key in domain.set
         box = key_to_box(P, key)
         c, r = box
         for p in g.domain_points(c, r)
@@ -70,13 +70,38 @@ function construct_transfers(
             for ip in g.image_points(c, r)
                 hit = point_to_key(P, ip)
                 isnothing(hit) && continue
-                hit in boxset.set || @reduce( variant_keys = S() ⊔ hit )
+                @reduce( image = S() ⊔ hit )
                 @reduce( mat = D() ⊔ ((hit,key) => 1) )
             end
         end
     end
-    variant_set = BoxSet(P, variant_keys)
-    return mat, variant_set
+    codomain = BoxSet(P, image)
+    return mat, codomain
+end
+
+function construct_transfers(
+        g::SampledBoxMap, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
+    ) where {N,T,R<:Box{N,T},Q,S,U,H,W}
+
+    P1, P2 = domain.partition, codomain.partition
+    D = Dict{Tuple{keytype(H),keytype(Q)},T}
+    @floop for key in domain.set
+        box = key_to_box(P1, key)
+        c, r = box
+        for p in g.domain_points(c, r)
+            c = g.map(p)
+            hitbox = point_to_box(P2, c)
+            isnothing(hitbox) && continue
+            _, r = hitbox
+            for ip in g.image_points(c, r)
+                hit = point_to_key(P2, ip)
+                isnothing(hit) && continue
+                hit in codomain.set || continue
+                @reduce( mat = D() ⊔ ((hit,key) => 1) )
+            end
+        end
+    end
+    return mat
 end
 
 function Base.show(io::IO, g::SampledBoxMap)

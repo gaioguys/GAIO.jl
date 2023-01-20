@@ -72,12 +72,12 @@ end
 end
 
 @inbounds @muladd function construct_transfers(
-        G::CPUSampledBoxMap{simd}, source::BoxSet{R,Q,S}
-    ) where {simd,N,T,R<:Box{N,T},Q,S<:OrderedSet}
+        G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q,S}
+    ) where {simd,N,T,R<:Box{N,T},Q,S}
     
-    P, D = source.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
+    P, D = domain.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
     g, idx_base, temp_points = G
-    @floop for key in source.set
+    @floop for key in domain.set
         tid = (threadid() - 1) * simd
         idx = idx_base + tid * N
         mapped_points = @view temp_points[tid+1:tid+simd]
@@ -93,14 +93,46 @@ end
                 for ip in g.image_points(q, r)
                     hit = point_to_key(P, ip)
                     isnothing(hit) && continue
-                    hit in source.set || @reduce( variant_keys = S() ⊔ hit )
+                    @reduce( image = S() ⊔ hit )
                     @reduce( mat = D() ⊔ ((hit,key) => 1) )
                 end
             end
         end
     end
-    variant_set = BoxSet(P, variant_keys)
-    return mat, variant_set
+    codomain = BoxSet(P, image)
+    return mat, codomain
+end
+
+@inbounds @muladd function construct_transfers(
+        G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
+    ) where {simd,N,T,R<:Box{N,T},Q,S,U,H,W}
+
+    P1, P2 = domain.partition, codomain.partition, 
+    D = Dict{Tuple{keytype(H),keytype(Q)},T}
+    g, idx_base, temp_points = G
+    @floop for key in domain.set
+        tid = (threadid() - 1) * simd
+        idx = idx_base + tid * N
+        mapped_points = @view temp_points[tid+1:tid+simd]
+        box = key_to_box(P1, key)
+        c, r = box
+        for p in g.domain_points(c, r)
+            fp = g.map(p)
+            tuple_vscatter!(temp_points, fp, idx)
+            for q in mapped_points
+                hitbox = point_to_box(P2, q)
+                isnothing(hitbox) && continue
+                _, r = hitbox
+                for ip in g.image_points(q, r)
+                    hit = point_to_key(P2, ip)
+                    isnothing(hit) && continue
+                    hit in codomain.set || continue
+                    @reduce( mat = D() ⊔ ((hit,key) => 1) )
+                end
+            end
+        end
+    end
+    return mat
 end
 
 # constuctors
@@ -192,7 +224,7 @@ Base.iterate(c::CPUSampledBoxMap, ::Val{:idx_base}) = (c.idx_base, Val(:temp_poi
 Base.iterate(c::CPUSampledBoxMap, ::Val{:temp_points}) = (c.temp_points, Val(:done))
 Base.iterate(c::CPUSampledBoxMap, ::Val{:done}) = nothing
 
-Base.@propagate_inbounds function tuple_vgather(
+@propagate_inbounds function tuple_vgather(
         v::V, idx::SIMD.Vec{simd,Int}# = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
     ) where {N,T,simd,V<:AbstractArray{<:SVNT{N,T}}}
 
@@ -201,7 +233,7 @@ Base.@propagate_inbounds function tuple_vgather(
     return vo
 end
 
-Base.@propagate_inbounds function tuple_vgather(
+@propagate_inbounds function tuple_vgather(
         v::V, simd::Integer
     ) where {N,T,V<:AbstractArray{<:SVNT{N,T}}}
 
@@ -219,7 +251,7 @@ Base.@propagate_inbounds function tuple_vgather(
     return vo
 end
 
-Base.@propagate_inbounds function tuple_vgather_lazy(
+@propagate_inbounds function tuple_vgather_lazy(
         v::V, simd
     ) where {N,T,V<:AbstractArray{<:SVNT{N,T}}}
     
@@ -237,7 +269,7 @@ Base.@propagate_inbounds function tuple_vgather_lazy(
     return vr
 end
 
-Base.@propagate_inbounds function tuple_vscatter!(
+@propagate_inbounds function tuple_vscatter!(
         vo::VO, vi::VI, idx::SIMD.Vec{simd,I}
     ) where {N,T,simd,VO<:AbstractArray{T},VI<:SVNT{N,SIMD.Vec{simd,T}},I<:Integer}
     
@@ -247,7 +279,7 @@ Base.@propagate_inbounds function tuple_vscatter!(
     return vo
 end
 
-Base.@propagate_inbounds function tuple_vscatter!(
+@propagate_inbounds function tuple_vscatter!(
         vo::VO, vi::VI
     ) where {N,T,simd,VO<:AbstractArray{T},VI<:AbstractArray{<:SVNT{N,SIMD.Vec{simd,T}}}}
 
@@ -258,7 +290,7 @@ Base.@propagate_inbounds function tuple_vscatter!(
     return vo
 end
 
-Base.@propagate_inbounds function tuple_vscatter!(
+@propagate_inbounds function tuple_vscatter!(
         vo::VO, vi::VI, idx::SIMD.Vec{simd,I}
     ) where {N,T,simd,VO<:AbstractArray{<:SVNT{N,T}},VI<:SVNT{N,SIMD.Vec{simd,T}},I<:Integer}
 
@@ -266,7 +298,7 @@ Base.@propagate_inbounds function tuple_vscatter!(
     return tuple_vscatter!(vr, vi, idx)
 end
 
-Base.@propagate_inbounds function tuple_vscatter!(
+@propagate_inbounds function tuple_vscatter!(
         vo::VO, vi::VI
     ) where {N,T,simd,VO<:AbstractArray{<:SVNT{N,T}},VI<:AbstractArray{<:SVNT{N,SIMD.Vec{simd,T}}}}
     
