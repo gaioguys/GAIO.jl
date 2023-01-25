@@ -80,7 +80,46 @@ Graphs.Graph(gstar::TransferOperator) = BoxGraph(gstar)
 Graphs.Graph(g::BoxMap, boxset::BoxSet) = Graph(TransferOperator(g, boxset, boxset))
 
 function Base.show(io::IO, g::BoxGraph)
-    print(io, "{$(nv(g)), $(ne(g))} directed simple $Int graph representation of $(g.gstar)")
+    print(io, "{$(nv(g)), $(ne(g))} directed simple $Int graph representation of TransferOperator")
+end
+
+function row_to_index(g::BoxGraph, row)
+    g.gstar.domain === g.gstar.codomain && return row
+    if row ≤ g.n_intersections
+        u = getindex_fromkeys(g.gstar.codomain, row)
+        j = getkeyindex(g.gstar.domain, u)    
+    else
+        m, n = size(g.gstar)
+        j = row + n - g.n_intersections
+    end
+    return j
+end
+
+function index_to_row(g::BoxGraph, j)
+    g.gstar.domain === g.gstar.codomain && return j
+    if j ≤ n
+        u = getindex_fromkeys(g.gstar.domain, j)
+        row = getkeyindex(g.gstar.codomain, u)
+    else
+        m, n = size(g.gstar)
+        row = j - n + g.n_intersections
+    end
+    return row
+end
+
+# partition-key to vertex-index
+function getkeyindex(g::BoxGraph, u)
+    i = getkeyindex(g.gstar.domain, u)
+    !isnothing(i) && return i
+    j = row_to_index(g, getkeyindex(g.gstar.codomain, u))
+    return j
+end
+
+# vertex-index to partition-key
+function getindex_fromkeys(g::BoxGraph, j)
+    m, n = size(g.gstar)
+    j ≤ n && return getindex_fromkeys(g.gstar.domain, j)
+    return getindex_fromkeys(g.gstar.codomain, index_to_row(g, j))
 end
 
 Base.eltype(::BoxGraph{B,T}) where {B,T} = B
@@ -91,29 +130,24 @@ Graphs.weights(g::BoxGraph) = g.gstar.mat'
 
 Graphs.nv(g::BoxGraph) = sum(size(g.gstar.mat)) - g.n_intersections
 Graphs.vertices(g::BoxGraph) = 1:nv(g)
-Graphs.has_vertex(g::BoxGraph, i) = 1 ≤ i ≤ nv(g)
-
-Graphs.ne(g::BoxGraph) = length(nonzeros(g.gstar))
+Graphs.has_vertex(g::BoxGraph, i::Integer) = 1 ≤ i ≤ nv(g)
+Graphs.has_vertex(g::BoxGraph, key) = has_vertex(g, getkeyindex(g, key))
 
 function Graphs.edges(g::BoxGraph)
-    m, n = size(g.gstar)
-    Iterators.map(zip(findnz(g.gstar.mat)...)) do nz
-        i, ĵ, _ = nz
-        if ĵ > g.n_intersections
-            j = ĵ - n
-        else
-            u = getindex_fromkeys(g.gstar.codomain, ĵ)
-            j = getkeyindex(g.gstar.domain, u)
-        end
-        graphs.SimpleEdge{Int}(j, i)
-    end
+    return (
+        Graphs.SimpleEdge{Int}(i, row_to_index(g, j))
+        for (j,i,w) in zip(findnz(g.gstar.mat)...)
+    )
 end
-
-function Graphs.has_edge(g::BoxGraph, i, j)
-    m, n = size(g.gstar)
-    v = g.gstar.mat[i, j ≤ n ? j : j - n + g.n_intersections]
+        
+function Graphs.has_edge(g::BoxGraph, i::Integer, j::Integer)
+    ĵ = index_to_row(g, j)
+    v = g.gstar.mat[ĵ, i]
     return !iszero(v)
 end
+
+Graphs.ne(g::BoxGraph) = length(nonzeros(g.gstar.mat))
+Graphs.has_edge(g::BoxGraph, u, v) = has_edge(g, getkeyindex(g, u), getkeyindex(g, v))
 
 Graphs.SimpleGraphs.badj(g::BoxGraph, v) = collect(inneighbors(g, v))
 Graphs.SimpleGraphs.badj(g::BoxGraph) = [Graphs.SimpleGraphs.badj(g, v) for v in Graphs.vertices(g)]
@@ -127,7 +161,7 @@ function Graphs.LinAlg.adjacency_matrix(g::BoxGraph{B,T}) where {B,T}
     set = g.gstar.domain ∪ g.gstar.codomain
     N = length(set)
     mat = spzeros(T, N, N)
-    mat[n + g.n_intersections + 1 : end, 1:n] .= g.gstar.mat[n_intersections + 1 : end, :]
+    mat[n + g.n_intersections + 1 : end, 1:n] .= g.gstar.mat[g.n_intersections + 1 : end, :]
 
     cut = g.gstar.codomain ∩ g.gstar.domain
     dom_inds = [getkeyindex(g.gstar.domain, key) for key in cut.set]
@@ -145,25 +179,35 @@ function Graphs.outneighbors(g::BoxGraph, v::Integer)
     # take nzrange for column or empty range if v > n, i.e. transfers out of v not calulated.
     # we do it this way to ensure that the result is type stable
     iterrange = 1 ≤ v ≤ n ? nzrange(g.gstar.mat, v) : (1:0)
-    Iterators.map(@view rows[iterrange]) do ĵ
-        if ĵ > g.n_intersections
-            j = ĵ - n
-        else
-            u = getindex_fromkeys(g.gstar.codomain, ĵ)
-            j = getkeyindex(g.gstar.domain, u)
-        end
-        j
-    end
+
+    return ( row_to_index(g, row) for row in @view(rows[iterrange]) )
 end
 
 #Graphs.inneighbors(g::BoxGraph,  u::Integer) = findall(!iszero, g.gstar.mat[u, :])
 # efficiently find the nonzero columns related to a row 
 function Graphs.inneighbors(g::BoxGraph, u::Integer)
-    m , n = size(g.gstar)
-    j = u ≤ n ? u : u - n + g.n_intersections
     rows = rowvals(g.gstar.mat)
     colptr = SparseArrays.getcolptr(g.gstar.mat)
-    (findfirst(>(i), colptr) - 1 for (i, row) in enumerate(rows) if row == j)
+    j = index_to_row(g, u)
+    return ( findfirst(>(i), colptr) - 1 for (i, row) in enumerate(rows) if row == j )
+end
+
+function Graphs.strongly_connected_components(g::BoxGraph)
+    P = g.gstar.domain.partition
+
+    sccs = Graphs.strongly_connected_components(Graphs.IsDirected{typeof(g)}, g)
+    connected_vertices = OrderedSet{keytype(typeof(P))}()
+
+    for scc in sccs
+        if length(scc) > 1 || has_edge(g, scc[1], scc[1])
+            union!(
+                connected_vertices, 
+                (getindex_fromkeys(g, i) for i in scc)
+            )
+        end
+    end
+    
+    return BoxSet(P, connected_vertices)
 end
 
 """
@@ -173,14 +217,7 @@ Construct a BoxSet from some
 index / indices of vertices in a BoxGraph. 
 """
 function BoxSet(g::BoxGraph{P}, inds) where {B,T,Q,R,S<:BoxSet{B,Q,R},P<:TransferOperator{B,T,S}}
-    keys = map(inds) do j
-        if j ≤ n
-            getindex_fromkeys(g.gstar.domain, j)
-        else
-            getindex_fromkeys(g.gstar.codomain, j - n + g.n_intersections)
-        end
-    end
-
+    keys = (getindex_fromkeys(g, i) for i in inds)
     return BoxSet(g.gstar.domain.partition, R(keys))
 end
 

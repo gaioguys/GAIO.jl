@@ -1,7 +1,7 @@
 using GAIO
 
 # the Henon map
-a, b = 1.4, 0.3
+const a, b = 1.4, 0.3
 f((x,y)) = (1 - a*x^2 + y, b*x)
 
 center, radius = (0, 0), (3, 3)
@@ -9,7 +9,7 @@ P = BoxPartition(Box(center, radius))
 F = BoxMap(:adaptive, f, P)
 A = relative_attractor(F, P[:], steps = 16)
 
-T = TransferOperator(F, A)
+T = TransferOperator(F, A, A)
 λ, ev = eigs(T)
 μ = abs ∘ (x -> 0.1*x) ∘ ev[1]
 

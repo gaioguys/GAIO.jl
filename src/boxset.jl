@@ -33,7 +33,7 @@ struct BoxSet{B,P<:AbstractBoxPartition{B},S<:AbstractSet} <: AbstractSet{B}
     set::S
 end
 
-Base.show(io::IO, boxset::BoxSet) = print(io, "BoxSet in ", boxset.partition)
+Base.show(io::IO, boxset::BoxSet) = print(io, "$(length(boxset)) - element BoxSet in ", boxset.partition)
 
 function Base.show(io::IO, m::MIME"text/plain", boxset::BoxSet)
     print(io, "$(length(boxset)) - element BoxSet in ")

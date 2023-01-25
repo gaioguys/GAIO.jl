@@ -104,7 +104,8 @@ function TransferOperator(
     mat = sparse(dict, domain, codomain)
 
     for i in 1:size(mat, 2)
-        mat[:, i] ./= sum(mat[:, i])
+        s = sum(mat[:, i])
+        iszero(s) || mat[:, i] ./= s
     end
 
     return TransferOperator(g, domain, codomain, mat)
@@ -118,7 +119,8 @@ function TransferOperator(
     mat = sparse(dict, domain, codomain)
 
     for i in 1:size(mat, 2)
-        mat[:, i] ./= sum(mat[:, i])
+        s = sum(mat[:, i])
+        iszero(s) || (mat[:, i] ./= s)
     end
 
     return TransferOperator(g, domain, codomain, mat)
@@ -163,7 +165,7 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
 
         function _eigs(g::$type, B=I; nev=1, ritzvec=true, kwargs...)
             λ, ϕ, nconv = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
-            S = $gmap.support
+            S = $gmap.domain
             P = S.partition
             b = [BoxFun(S, ϕ[:, i], OrderedDict) for i in 1:nev]
             return ritzvec ? (λ, b, nconv) : (λ, nconv)
@@ -220,12 +222,14 @@ _rehash!(d::Union{AbstractDict,AbstractSet}) = d
 _rehash!(boxset::BoxSet) = _rehash!(boxset.set)
 
 # helper function to access `Set` / `OrderedSet` internals
+# converts partition-key to index if a set is enumerated 1..n, or nothing if key not in set
 getkeyindex(dict::Dict, i) = (j = Base.ht_keyindex(dict, i); j > 0 ? j : nothing)
 getkeyindex(set::Set, i) = (j = Base.ht_keyindex(set.dict, i); j > 0 ? j : nothing)
 getkeyindex(dict::OrderedDict, i) = (j = OrderedCollections.ht_keyindex(dict, i, true); j > 0 ? j : nothing)
 getkeyindex(set::OrderedSet, i) = (j = OrderedCollections.ht_keyindex(set.dict, i, true); j > 0 ? j : nothing)
 getkeyindex(boxset::BoxSet, i) = getkeyindex(boxset.set, i)
 
+# converts index if a set is enumerated 1..n to partition-key, or BoundsError
 getindex_fromkeys(dict::Union{Dict,OrderedDict}, i) = dict.keys[i]
 getindex_fromkeys(set::Union{Set,OrderedSet}, i) = getindex_fromkeys(set.dict, i)
 getindex_fromkeys(boxset::BoxSet, i) = getindex_fromkeys(boxset.set, i)
@@ -247,7 +251,7 @@ function SparseArrays.sparse(
     sizehint!(ws, length(dict))
 
     for ((u, v), w) in dict
-        x = getkeyindex(comdomain, u)
+        x = getkeyindex(codomain, u)
         y = getkeyindex(domain, v)
         push!(xs, x)
         push!(ys, y)
