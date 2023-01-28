@@ -22,7 +22,7 @@ struct SampledBoxMap{N,T,F,D,I} <: BoxMap
     image_points::I
 end
 
-# wee need a small helper function because of 
+# we need a small helper function because of 
 # how julia dispatches on `union!`
 ⊔(set1::AbstractSet, set2::AbstractSet) = union!(set1, set2)
 ⊔(set1::AbstractSet, object) = union!(set1, (object,))

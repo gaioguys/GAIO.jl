@@ -46,7 +46,8 @@ function map_boxes(g::IntervalBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
             fint = g.map(subint)
             fbox = Box(fint)
             isnothing(fbox) && continue
-            @reduce(image = BoxSet(P, S()) ⊔ P[fbox])
+            fSet = cover(P, fbox)
+            @reduce(image = BoxSet(P, S()) ⊔ fSet)
         end
     end
     return image
@@ -64,7 +65,7 @@ function construct_transfers(
             fint = g.map(subint)
             fbox = Box(fint)
             isnothing(fbox) && continue
-            fSet = P[fbox]
+            fSet = cover(P, fbox)
             for hit in fSet.set
                 @reduce( image = S() ⊔ hit )
                 @reduce( mat = D() ⊔ ((hit,key) => 1) )
@@ -88,7 +89,7 @@ function construct_transfers(
             fint = g.map(subint)
             fbox = Box(fint)
             isnothing(fbox) && continue
-            fSet = P2[fbox]
+            fSet = cover(P2, fbox)
             for hit in fSet.set
                 hit in codomain.set || continue
                 @reduce( mat = D() ⊔ ((hit,key) => 1) )

@@ -7,12 +7,13 @@ f(x) = rk4_flow_map(v, x)
 
 center, radius = (0,0,25), (30,30,30)
 P = BoxPartition(Box(center, radius), (128,128,128))
-F = BoxMap(:adaptive, f, P, no_of_points=200)
+F = BoxMap(:adaptive, f, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
-W = unstable_set(F, P[x])
+S = cover(P, x)
+W = unstable_set(F, S)
 
-T = TransferOperator(F, W)
+T = TransferOperator(F, W, W)
 (λ, ev) = eigs(T)
 μ = log ∘ abs ∘ ev[1]
 

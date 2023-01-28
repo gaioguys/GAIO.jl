@@ -13,10 +13,11 @@ F = BoxMap(:montecarlo, f, P, no_of_points=200)
 # computing the attractor by covering the 2d unstable manifold
 # of two equilibria
 x = [sqrt(-3*m0/m1), 0.0, -sqrt(-3*m0/m1)]     # equilibrium
-W = unstable_set(F, P[[x, -x]])
+S = cover(P, [x, -x])
+W = unstable_set(F, S)
 
 # computing the eigenmeasures at the eigenvalues of largest real part
-T = TransferOperator(F, W)
+T = TransferOperator(F, W, W)
 λ, ev, nconv = eigs(T; nev=5, which=:LR)
 
 ev_seba = SEBA(ev)

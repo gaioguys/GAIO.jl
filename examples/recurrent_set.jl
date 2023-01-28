@@ -86,7 +86,8 @@ center, radius = (0,0,0), (2,2,2)
 P = BoxPartition(Box(center, radius))
 F = BoxMap(:montecarlo, f, P, no_of_points = 200)
 
-C = chain_recurrent_set(F, P[:], steps = 18)
+S = cover(P, :)
+C = chain_recurrent_set(F, S, steps = 18)
 
 #using Plots: plot     # plot a 2D projection
 using WGLMakie: plot

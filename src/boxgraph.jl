@@ -71,7 +71,7 @@ function BoxGraph(gstar::TransferOperator)
     # permute the row indices so that we can skip already identified boxes
     cut = gstar.codomain ∩ gstar.domain
     n = length(cut)
-    inds = [getkeyindex(gstar.codomain, key) for key in cut.set]
+    inds = [key_to_index(gstar.codomain, key) for key in cut.set]
     gstar.mat[[1:n; inds], :] .= gstar.mat[[inds; 1:n], :]
     return BoxGraph(gstar, n)
 end
@@ -86,8 +86,8 @@ end
 function row_to_index(g::BoxGraph, row)
     g.gstar.domain === g.gstar.codomain && return row
     if row ≤ g.n_intersections
-        u = getindex_fromkeys(g.gstar.codomain, row)
-        j = getkeyindex(g.gstar.domain, u)    
+        u = index_to_key(g.gstar.codomain, row)
+        j = key_to_index(g.gstar.domain, u)    
     else
         m, n = size(g.gstar)
         j = row + n - g.n_intersections
@@ -98,8 +98,8 @@ end
 function index_to_row(g::BoxGraph, j)
     g.gstar.domain === g.gstar.codomain && return j
     if j ≤ n
-        u = getindex_fromkeys(g.gstar.domain, j)
-        row = getkeyindex(g.gstar.codomain, u)
+        u = index_to_key(g.gstar.domain, j)
+        row = key_to_index(g.gstar.codomain, u)
     else
         m, n = size(g.gstar)
         row = j - n + g.n_intersections
@@ -108,18 +108,18 @@ function index_to_row(g::BoxGraph, j)
 end
 
 # partition-key to vertex-index
-function getkeyindex(g::BoxGraph, u)
-    i = getkeyindex(g.gstar.domain, u)
+function key_to_index(g::BoxGraph, u)
+    i = key_to_index(g.gstar.domain, u)
     !isnothing(i) && return i
-    j = row_to_index(g, getkeyindex(g.gstar.codomain, u))
+    j = row_to_index(g, key_to_index(g.gstar.codomain, u))
     return j
 end
 
 # vertex-index to partition-key
-function getindex_fromkeys(g::BoxGraph, j)
+function index_to_key(g::BoxGraph, j)
     m, n = size(g.gstar)
-    j ≤ n && return getindex_fromkeys(g.gstar.domain, j)
-    return getindex_fromkeys(g.gstar.codomain, index_to_row(g, j))
+    j ≤ n && return index_to_key(g.gstar.domain, j)
+    return index_to_key(g.gstar.codomain, index_to_row(g, j))
 end
 
 Base.eltype(::BoxGraph{B,T}) where {B,T} = B
@@ -131,7 +131,7 @@ Graphs.weights(g::BoxGraph) = g.gstar.mat'
 Graphs.nv(g::BoxGraph) = sum(size(g.gstar.mat)) - g.n_intersections
 Graphs.vertices(g::BoxGraph) = 1:nv(g)
 Graphs.has_vertex(g::BoxGraph, i::Integer) = 1 ≤ i ≤ nv(g)
-Graphs.has_vertex(g::BoxGraph, key) = has_vertex(g, getkeyindex(g, key))
+Graphs.has_vertex(g::BoxGraph, key) = has_vertex(g, key_to_index(g, key))
 
 function Graphs.edges(g::BoxGraph)
     return (
@@ -147,7 +147,7 @@ function Graphs.has_edge(g::BoxGraph, i::Integer, j::Integer)
 end
 
 Graphs.ne(g::BoxGraph) = length(nonzeros(g.gstar.mat))
-Graphs.has_edge(g::BoxGraph, u, v) = has_edge(g, getkeyindex(g, u), getkeyindex(g, v))
+Graphs.has_edge(g::BoxGraph, u, v) = has_edge(g, key_to_index(g, u), key_to_index(g, v))
 
 Graphs.SimpleGraphs.badj(g::BoxGraph, v) = collect(inneighbors(g, v))
 Graphs.SimpleGraphs.badj(g::BoxGraph) = [Graphs.SimpleGraphs.badj(g, v) for v in Graphs.vertices(g)]
@@ -164,8 +164,8 @@ function Graphs.LinAlg.adjacency_matrix(g::BoxGraph{B,T}) where {B,T}
     mat[n + g.n_intersections + 1 : end, 1:n] .= g.gstar.mat[g.n_intersections + 1 : end, :]
 
     cut = g.gstar.codomain ∩ g.gstar.domain
-    dom_inds = [getkeyindex(g.gstar.domain, key) for key in cut.set]
-    codom_inds = [getkeyindex(g.gstar.codomain, key) for key in cut.set]
+    dom_inds = [key_to_index(g.gstar.domain, key) for key in cut.set]
+    codom_inds = [key_to_index(g.gstar.codomain, key) for key in cut.set]
     mat[dom_inds, 1:n] .= g.gstar.mat[codom_inds, :]
 
     return mat'
@@ -192,7 +192,7 @@ function Graphs.inneighbors(g::BoxGraph, u::Integer)
     return ( findfirst(>(i), colptr) - 1 for (i, row) in enumerate(rows) if row == j )
 end
 
-function Graphs.strongly_connected_components(g::BoxGraph)
+function union_strongly_connected_components(g::BoxGraph)
     P = g.gstar.domain.partition
 
     sccs = Graphs.strongly_connected_components(Graphs.IsDirected{typeof(g)}, g)
@@ -202,7 +202,7 @@ function Graphs.strongly_connected_components(g::BoxGraph)
         if length(scc) > 1 || has_edge(g, scc[1], scc[1])
             union!(
                 connected_vertices, 
-                (getindex_fromkeys(g, i) for i in scc)
+                (index_to_key(g, i) for i in scc)
             )
         end
     end
@@ -217,7 +217,7 @@ Construct a BoxSet from some
 index / indices of vertices in a BoxGraph. 
 """
 function BoxSet(g::BoxGraph{P}, inds) where {B,T,Q,R,S<:BoxSet{B,Q,R},P<:TransferOperator{B,T,S}}
-    keys = (getindex_fromkeys(g, i) for i in inds)
+    keys = (index_to_key(g, i) for i in inds)
     return BoxSet(g.gstar.domain.partition, R(keys))
 end
 

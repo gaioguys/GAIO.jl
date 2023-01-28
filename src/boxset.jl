@@ -33,6 +33,10 @@ struct BoxSet{B,P<:AbstractBoxPartition{B},S<:AbstractSet} <: AbstractSet{B}
     set::S
 end
 
+function BoxSet(partition::P) where P <: AbstractBoxPartition
+    return BoxSet(partition, Set{keytype(P)}())
+end
+
 Base.show(io::IO, boxset::BoxSet) = print(io, "$(length(boxset)) - element BoxSet in ", boxset.partition)
 
 function Base.show(io::IO, m::MIME"text/plain", boxset::BoxSet)
@@ -40,44 +44,47 @@ function Base.show(io::IO, m::MIME"text/plain", boxset::BoxSet)
     show(io, m, boxset.partition)
 end
 
-# TODO: replace with BoxSet(partition)
-function boxset_empty(partition::P) where P <: AbstractBoxPartition
-    return BoxSet(partition, Set{keytype(P)}())
+function Base.getindex(partition::P, key) where P<:AbstractBoxPartition
+    eltype(point) <: Number || return map(x->partition[x], key)
+    return key_to_box(P, key)
 end
 
+Base.getindex(partition::P, ::Colon) where P<:AbstractBoxPartition = collect(keys(partition))
+Base.getindex(partition::P, c::CartesianIndex) where P<:AbstractBoxPartition = partition[c.I]
+
 """
-* getindex constructors:
+* `BoxSet` constructors:
     * set of all boxes in partition / box set `P`:
     ```julia
-    B = P[:]    
+    B = cover(P, :)    
     ```
     * cover the point `x`, or points `x = [x_1, x_2, x_3] # etc ...` using boxes from `P`
     ```julia
-    B = P[x]
+    B = cover(P, x)
     ```    
     * a covering of `S` using boxes from `P`
     ```julia
     S = [Box(center_1, radius_1), Box(center_2, radius_2), Box(center_3, radius_3)] # etc... 
-    B = P[S]    
+    B = cover(P, S)
     ```
 
 Return a subset of the partition or box set `P` based on the second argument. 
 """
-function Base.getindex(partition::P, points) where P<:AbstractBoxPartition
-    eltype(points) <: Number && ndims(partition) > 1 && return partition[(points,)]
+function cover(partition::P, points) where P<:AbstractBoxPartition
+    eltype(points) <: Number && ndims(partition) > 1 && return cover(partition, (points,))
     eltype(points) <: Box && return cover_boxes(partition, points)
     gen = (key for key in (point_to_key(partition, point) for point in points) if !isnothing(key))
     return BoxSet(partition, Set{keytype(P)}(gen))
 end
 
-Base.getindex(partition::P, box::Box) where P<:AbstractBoxPartition = getindex(partition, (box,))
-Base.getindex(partition::P, int::IntervalBox) where P<:AbstractBoxPartition = getindex(partition, Box(int))
+cover(partition::P, box::Box) where P<:AbstractBoxPartition = cover(partition, (box,))
+cover(partition::P, int::IntervalBox) where P<:AbstractBoxPartition = cover(partition, Box(int))
 
-function Base.getindex(partition::P, ::Colon) where {P<:AbstractBoxPartition}
+function cover(partition::P, ::Colon) where {P<:AbstractBoxPartition}
     return BoxSet(partition, Set{keytype(P)}(keys(partition)))
 end
 
-function Base.getindex(B::BoxSet, points)
+function cover(B::BoxSet, points)
     A = getindex(B.partition, points)
     return B ∩ A
 end
@@ -87,6 +94,7 @@ end
 
 Return a covering of an iterator of `Box`es using `Box`es from `partition`. 
 Only covers the part of `boxes` which lies within `partition.domain`. 
+This is returned by `cover(partition, boxes)`. 
 """
 function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
     K = keytype(P)
@@ -140,7 +148,12 @@ function cover_boxes(partition::P, box_in::Box) where {N,T,I,P<:TreePartition{N,
 end
 
 function cover_boxes(partition::P, boxes) where {N,T,I,P<:TreePartition{N,T,I}}
-    union(cover_boxes(partition, box) for box in boxes)
+    K = keytype(P)
+    keys = Set{K}()
+    for box in boxes
+        union!(keys, cover_boxes(partition, box))
+    end
+    return keys
 end
 
 for op in (:union, :intersect, :setdiff, :symdiff)

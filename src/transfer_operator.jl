@@ -105,7 +105,7 @@ function TransferOperator(
 
     for i in 1:size(mat, 2)
         s = sum(mat[:, i])
-        iszero(s) || mat[:, i] ./= s
+        iszero(s) || (mat[:, i] ./= s)
     end
 
     return TransferOperator(g, domain, codomain, mat)
@@ -127,11 +127,13 @@ function TransferOperator(
 end
 
 function Base.show(io::IO, g::TransferOperator)
-    print(io, "TransferOperator over $(g.domain)")
+    m, n = size(g)
+    print(io, "$m x $n TransferOperator over $(g.domain.partition)")
 end
 
 function Base.show(io::IO, ::MIME"text/plain", g::TransferOperator)
-    print(io, "TransferOperator over $(g.domain) with $(length(nonzeros(g.mat))) stored entries:\n\n")
+    m, n = size(g)
+    print(io, "$m x $n TransferOperator over $(g.domain.partition) with $(length(nonzeros(g.mat))) stored entries:\n\n")
     SparseArrays._show_with_braille_patterns(io, g.mat)
 end
 
@@ -145,7 +147,7 @@ Base.axes(g::TransferOperator) = (collect(g.domain), collect(g.codomain))
 
 @propagate_inbounds function Base.getindex(g::TransferOperator{T,I}, u, v) where {T,I}
     @boundscheck checkbounds(Bool, g, u, v) || throw(BoundsError(g, (u,v)))
-    i, j = getkeyindex(g.codomain, u), getkeyindex(g.domain, v)
+    i, j = key_to_index(g.codomain, u), key_to_index(g.domain, v)
     return g.mat[i, j]
 end
 
@@ -166,7 +168,6 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         function _eigs(g::$type, B=I; nev=1, ritzvec=true, kwargs...)
             λ, ϕ, nconv = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
             S = $gmap.domain
-            P = S.partition
             b = [BoxFun(S, ϕ[:, i], OrderedDict) for i in 1:nev]
             return ritzvec ? (λ, b, nconv) : (λ, nconv)
         end
@@ -196,7 +197,7 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
                     w = vals[k]
                     row_i = rows[k]
                     # grab the key that this row represents
-                    i = getindex_fromkeys($gmap.codomain, row_i)
+                    i = index_to_key($gmap.codomain, row_i)
                     y[$ind1] = @muladd y[$ind1] + $func(w) * x[$ind2]
                 end
             end
@@ -213,7 +214,7 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
     end
 end
 
-# helper function to force rehash `Set` / `OrderdSet` objects
+# helper function to force rehash `Set` / `OrderedSet` objects
 _rehash!(dict::Dict) = Base.rehash!(dict)
 _rehash!(dict::OrderedDict) = OrderedCollections.rehash!(dict)
 _rehash!(dict::IdDict) = Base.rehash!(dict)
@@ -223,17 +224,35 @@ _rehash!(boxset::BoxSet) = _rehash!(boxset.set)
 
 # helper function to access `Set` / `OrderedSet` internals
 # converts partition-key to index if a set is enumerated 1..n, or nothing if key not in set
-getkeyindex(dict::Dict, i) = (j = Base.ht_keyindex(dict, i); j > 0 ? j : nothing)
-getkeyindex(set::Set, i) = (j = Base.ht_keyindex(set.dict, i); j > 0 ? j : nothing)
-getkeyindex(dict::OrderedDict, i) = (j = OrderedCollections.ht_keyindex(dict, i, true); j > 0 ? j : nothing)
-getkeyindex(set::OrderedSet, i) = (j = OrderedCollections.ht_keyindex(set.dict, i, true); j > 0 ? j : nothing)
-getkeyindex(boxset::BoxSet, i) = getkeyindex(boxset.set, i)
+Core.@doc raw"""
+    key_to_index(iterable, key)
+
+Find the index in `1..length(iterable)` which holds `key`, 
+or return `nothing`. Used to enumerate `BoxSet`s as 
+``\left{ B_1, B_2, \ldots, B_n \right}`` in 
+`TransferOperator`, `BoxGraph`. 
+"""
+key_to_index(arr::AbstractArray, i) = findfirst(==(i), arr)
+key_to_index(dict::Dict, i) = (j = Base.ht_keyindex(dict, i); j > 0 ? j : nothing)
+key_to_index(set::Set, i) = (j = Base.ht_keyindex(set.dict, i); j > 0 ? j : nothing)
+key_to_index(dict::OrderedDict, i) = (j = OrderedCollections.ht_keyindex(dict, i, true); j > 0 ? j : nothing)
+key_to_index(set::OrderedSet, i) = (j = OrderedCollections.ht_keyindex(set.dict, i, true); j > 0 ? j : nothing)
+key_to_index(boxset::BoxSet, i) = key_to_index(boxset.set, i)
 
 # converts index if a set is enumerated 1..n to partition-key, or BoundsError
-getindex_fromkeys(dict::Union{Dict,OrderedDict}, i) = dict.keys[i]
-getindex_fromkeys(set::Union{Set,OrderedSet}, i) = getindex_fromkeys(set.dict, i)
-getindex_fromkeys(boxset::BoxSet, i) = getindex_fromkeys(boxset.set, i)
-getindex_fromkeys(g::TransferOperator, i, j) = (getindex_fromkeys(g.codomain, i), getindex_fromkeys(g.domain, j))
+Core.@doc raw"""
+    index_to_key(iterable, i)
+
+Return the object held in the `i`th position of `iterable`. 
+Used to enumerate `BoxSet`s as 
+``\left{ B_1, B_2, \ldots, B_n \right}`` in 
+`TransferOperator`, `BoxGraph`. 
+"""
+index_to_key(arr::AbstractArray, i) = arr[i]
+index_to_key(dict::Union{Dict,OrderedDict}, i) = dict.keys[i]
+index_to_key(set::Union{Set,OrderedSet}, i) = index_to_key(set.dict, i)
+index_to_key(boxset::BoxSet, i) = index_to_key(boxset.set, i)
+index_to_key(g::TransferOperator, i, j) = (index_to_key(g.codomain, i), index_to_key(g.domain, j))
 
 # convert DOK sparse matrix to CSC using indices from support / variant_set
 function SparseArrays.sparse(
@@ -251,8 +270,8 @@ function SparseArrays.sparse(
     sizehint!(ws, length(dict))
 
     for ((u, v), w) in dict
-        x = getkeyindex(codomain, u)
-        y = getkeyindex(domain, v)
+        x = key_to_index(codomain, u)
+        y = key_to_index(domain, v)
         push!(xs, x)
         push!(ys, y)
         push!(ws, w)
@@ -273,7 +292,7 @@ function Base.Dict(g::TransferOperator{B,T,S}) where {B,T,R,Q,G,S<:BoxSet{R,Q,G}
             w = vals[k]
             row_i = rows[k]
             # grab the key that this row represents
-            i = getindex_fromkeys(g.codomain, row_i)
+            i = index_to_key(g.codomain, row_i)
             dict[(i,j)] = w
         end
     end

@@ -7,11 +7,12 @@ f((x,y)) = (1 - a*x^2 + y, b*x)
 center, radius = (0, 0), (3, 3)
 P = BoxPartition(Box(center, radius))
 F = BoxMap(:adaptive, f, P)
-A = relative_attractor(F, P[:], steps = 16)
+S = cover(P, :)
+A = relative_attractor(F, S, steps = 16)
 
 T = TransferOperator(F, A, A)
 λ, ev = eigs(T)
-μ = abs ∘ (x -> 0.1*x) ∘ ev[1]
+μ = abs ∘ ev[1]
 
 # --- choose either Plots or Makie ---
 
