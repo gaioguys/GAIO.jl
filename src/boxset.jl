@@ -33,6 +33,10 @@ struct BoxSet{B,P<:AbstractBoxPartition{B},S<:AbstractSet} <: AbstractSet{B}
     set::S
 end
 
+function BoxSet{B,P,S}(partition::P) where {B,P<:AbstractBoxPartition{B},S<:AbstractSet}
+    return BoxSet{B,P,S}(partition, S())
+end
+
 function BoxSet(partition::P) where P <: AbstractBoxPartition
     return BoxSet(partition, Set{keytype(P)}())
 end
