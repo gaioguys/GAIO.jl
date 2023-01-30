@@ -15,19 +15,16 @@ F = BoxMap(:montecarlo, f, P, no_of_points=200)
 x = [sqrt(-3*m0/m1), 0.0, -sqrt(-3*m0/m1)]     # equilibrium
 S = cover(P, [x, -x])
 W = unstable_set(F, S)
-
-# computing the eigenmeasures at the eigenvalues of largest real part
 T = TransferOperator(F, W, W)
-λ, ev, nconv = eigs(T; nev=5, which=:LR)
 
-ev_seba = SEBA(ev)
+# we give Arpack some help converging to the eigenvalues,
+# see the Arpack docs for explanations of keywords
+tol, maxiter, v0 = eps()^(1/4), 1000, ones(size(T, 2))
+λ, ev = eigs(T; nev=2, which=:LR, maxiter=maxiter, tol=tol, v0=v0)
 
 using WGLMakie: plot!, Figure, Axis3, Cycled
+
 fig = Figure()
 ax = Axis3(fig[1,1], aspect=(1,1.2,1))
-
-for i in 1:length(S)
-    plot!(ax, BoxSet(S[i]), color=Cycled(i))
-end
-
+plot!(ax, ev[2])
 fig

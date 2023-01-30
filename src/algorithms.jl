@@ -218,24 +218,92 @@ with step size `step_size`.
     return x
 end
 
-function SEBA(V::AbstractArray{<:BoxFun}, Rinit=nothing)
+Core.@doc raw"""
+    SEBA(V::Matrix{<:Real}, Rinit=nothing) -> S, R
+
+Construct a sparse approximation of the basis V, as described in 
+[1]. Returns matrices ``S``, ``R`` such that
+```math
+\frac{1}{2} \| V - SR \|_F^2 + \mu \| S \|_{1,1}
+```
+where ``\mu \in \mathbb{R}``, ``\|\|_F`` is the Frobenuius-norm, 
+and ``\|\|_{1,1}`` is the element sum norm, and ``R`` 
+is orthogonal. See [1] for further information on the argument 
+`Rinit`, as well as a description of the algorithm. 
+
+    SEBA(V::Matrix{<:BoxFun}, Rinit=nothing; which=partition_unity) -> S, A
+
+Construct a sparse eigenbasis approximation of V, as described in 
+[1]. Returns an `Array` of `BoxFun`s corresponding to the eigenbasis, 
+as well as a maximum-likelihood `BoxFun` that maps a box to the 
+element of S which has the largest value over the support. 
+
+The keyword `which` is used to set the threshholding heuristic, 
+which is used to extract a partition of the supports from the 
+sparse basis. Builtin options are
+```julia
+partition_unity, partition_disjoint, partition_likelihood
+```
+
+[1] Gary Froyland, Christopher P. Rock, and Konstantinos Sakellariou. 
+Sparse eigenbasis approximation: multiple feature extraction 
+across spatiotemporal scales with application to coherent set 
+identification. Communications in Nonlinear Science and Numerical 
+Simulation, 77:81-107, 2019. https://arxiv.org/abs/1812.02787
+"""
+function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D<:OrderedSet,U<:BoxFun{B,K,W,Q,D}}
     P = V[1].partition
-    all(μ -> μ.partition == P, V) || throw(DomainError(V, "Partitions of BoxFuns do not match. "))
+    all(μ -> μ.partition == P, V) || throw(DomainError(V, "Partitions of BoxFuns do not match."))
     supp = union((keys(μ) for μ in V)...)
 
     V̄ = [μ[key] for key in supp, μ in V]
     S̄, R = SEBA(V̄, Rinit)
-
-    S̄ .= max.(S̄, 0)
-    S_descend = sort(S̄, dims=1, rev=true)
-    τdp = maximum(S_descend[:, 2])
-    S̄[S̄ .< τdp] .= 0
+    S̄, Ā, τ = which(S̄)
 
     S = [BoxFun(V[i], S̄[:, i]) for i in 1:size(S̄, 2)]
-    return S
+    A = BoxFun(V[1], Ā)
+    return S, A
 end
 
-function SEBA(V::AbstractMatrix, Rinit=nothing)
+function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D,U<:BoxFun{B,K,W,Q,D}}
+    V = [
+        BoxFun( V[i].partition, OrderedDict(V[i]) )
+        for i in 1:length(V)
+    ]   # convert to ordered collections to guarantee deterministic iteration order
+    return SEBA(V, Rinit; which=which)
+end
+
+function partition_unity(S)
+    S .= max.(S, 0)
+    S_sum = sum(S, dims=2)
+    τᵖᵘ = maximum(S[S_sum .> 1, :])
+    S[S .≤ τᵖᵘ] .= 0
+    A = argmax.(eachrow(S))
+    return S, A, τᵖᵘ
+end
+
+function partition_disjoint(S)
+    S .= max(S, 0)
+    S_descend = sort(S, dims=2, rev=true)
+    τᵈᵖ = maximum(S_descend[:, 2])
+    S[S .≤ τᵈᵖ] .= 0
+    A = argmax.(eachrow(S))
+    return S, A, τᵈᵖ
+end
+
+function partition_likelihood(S)
+    A = argmax.(eachrow(S))
+    M = S[:, A]
+    A[M .≤ 0] .= 0
+    S .= 0
+    r = size(S, 2)
+    for i in 1:r
+        S[A .== i, i] .= M[A .== i]
+    end
+    return S, A, 0.
+end
+
+function SEBA(V::AbstractArray{U}, Rinit=nothing) where {U}
 
     # Inputs: 
     # V is pxr matrix (r vectors of length p as columns)

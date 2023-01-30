@@ -28,7 +28,10 @@ BoxFun(boxset::BoxSet, T::Type, dicttype=Dict) = BoxFun(boxset.partition, dictty
 BoxFun(boxset::BoxSet) = BoxFun(boxset, Float)
 BoxFun(boxfun::BoxFun{B,K,V,P,D}, vals) where {B,K,V,P,D} = BoxFun(BoxSet(boxfun), vals, D)
 
-BoxSet(boxfun::BoxFun) = BoxSet(boxfun.partition, Set(keys(boxfun)))
+BoxSet(boxfun::BoxFun; settype=Set) = BoxSet(boxfun.partition, settype(keys(boxfun)))
+
+Base.Dict(boxfun::BoxFun) = Dict( zip( keys(boxfun), values(boxfun) ) )
+OrderedCollections.OrderedDict(boxfun::BoxFun) = OrderedDict( zip( keys(boxfun), values(boxfun) ) )
 
 Core.@doc raw"""
     sum(f, μ::BoxFun)
