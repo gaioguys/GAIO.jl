@@ -75,6 +75,7 @@ function Base.show(io::IO, g::BoxFun)
 end
 
 Base.length(fun::BoxFun) = length(fun.vals)
+Base.size(boxfun::BoxFun) = (length(boxfun),)
 Base.keytype(::BoxFun{B,K,V}) where {B,K,V} = K
 Base.eltype(::BoxFun{B,K,V}) where {B,K,V} = V
 Base.keys(fun::BoxFun) = keys(fun.vals)
@@ -111,7 +112,7 @@ function Base.isapprox(
     
     l === r && return true
     atol_used = max(atol, rtol * max(norm(values(l)), norm(values(r))))
-    for key in (keys(l.vals) ∪ keys(r.vals))
+    for key in (keys(l) ∪ keys(r))
         isapprox(l[key], r[key]; atol=atol_used, rtol=rtol, kwargs...) || return false
     end
     return true
@@ -139,4 +140,25 @@ end
 function ∘(boxfun::BoxFun, F::BoxMap)
     T = TransferOperator(F, BoxSet(boxfun))
     T' * boxfun
+end
+
+Base.:(*)(a::Number, boxfun::BoxFun) = (x -> x*a) ∘ boxfun
+Base.:(*)(boxfun::BoxFun, a::Number) = (x -> x*a) ∘ boxfun
+Base.:(/)(boxfun::BoxFun, a::Number) = (x -> x/a) ∘ boxfun
+Base.:(-)(b::BoxFun) = -1 * b
+Base.:(-)(b1::BoxFun, b2::BoxFun) = b1 + (-b2)
+
+function Base.:(+)(b1::BoxFun, b2::BoxFun)
+    b1.partition == b2.partition || throw(DomainError("Partitions of BoxFuns do not match."))
+
+    v1 = first(values(b1))
+    D = gen_type(x -> x + v1, b2.vals)
+    b = BoxFun(b1.partition, D())
+
+    sizehint!(b, max(length(b1), lenth(b2)))
+    for key in (keys(b1) ∪ keys(b2))
+        b[key] = b1[key] + b2[key]
+    end
+
+    return b
 end
