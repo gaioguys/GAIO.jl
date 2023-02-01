@@ -107,7 +107,7 @@ end
         G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
     ) where {simd,N,T,R<:Box{N,T},Q,S,U,H,W}
 
-    P1, P2 = domain.partition, codomain.partition, 
+    P1, P2 = domain.partition, codomain.partition
     D = Dict{Tuple{keytype(H),keytype(Q)},T}
     g, idx_base, temp_points = G
     @floop for key in domain.set
