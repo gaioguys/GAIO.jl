@@ -23,12 +23,12 @@ struct BoxFun{B,K,V,P<:AbstractBoxPartition{B},D<:AbstractDict{K,V}} <: Abstract
     vals::D
 end
 
-BoxFun(boxset::BoxSet, vals, dicttype=Dict) = BoxFun(boxset.partition, dicttype(zip(boxset.set, vals)))
-BoxFun(boxset::BoxSet, T::Type, dicttype=Dict) = BoxFun(boxset.partition, dicttype(key=>zero(T) for key in boxset.set))
+BoxFun(boxset::BoxSet, vals, dicttype=OrderedDict) = BoxFun(boxset.partition, dicttype(zip(boxset.set, vals)))
+BoxFun(boxset::BoxSet, T::Type, dicttype=OrderedDict) = BoxFun(boxset.partition, dicttype(key=>zero(T) for key in boxset.set))
 BoxFun(boxset::BoxSet) = BoxFun(boxset, Float)
-BoxFun(boxfun::BoxFun{B,K,V,P,D}, vals) where {B,K,V,P,D} = BoxFun(BoxSet(boxfun), vals, D)
+BoxFun(boxfun::BoxFun, vals, dicttype=OrderedDict)= BoxFun(boxfun.partition, dicttype(zip( keys(boxfun), vals )))
 
-BoxSet(boxfun::BoxFun; settype=Set) = BoxSet(boxfun.partition, settype(keys(boxfun)))
+BoxSet(boxfun::BoxFun; settype=OrderedSet) = BoxSet(boxfun.partition, settype(keys(boxfun)))
 
 Base.Dict(boxfun::BoxFun) = Dict( zip( keys(boxfun), values(boxfun) ) )
 OrderedCollections.OrderedDict(boxfun::BoxFun) = OrderedDict( zip( keys(boxfun), values(boxfun) ) )
