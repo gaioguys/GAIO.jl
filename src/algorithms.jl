@@ -251,7 +251,7 @@ across spatiotemporal scales with application to coherent set
 identification. Communications in Nonlinear Science and Numerical 
 Simulation, 77:81-107, 2019. https://arxiv.org/abs/1812.02787
 """
-function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D<:OrderedSet,U<:BoxFun{B,K,W,Q,D}}
+function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D<:OrderedDict,U<:BoxFun{B,K,W,Q,D}}
     P = V[1].partition
     all(μ -> μ.partition == P, V) || throw(DomainError(V, "Partitions of BoxFuns do not match."))
     supp = union((keys(μ) for μ in V)...)
