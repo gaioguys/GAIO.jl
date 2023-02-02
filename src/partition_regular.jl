@@ -128,9 +128,9 @@ is to set `NaN = Inf` if `NaN`s are present in `point`.
 """
 function bounded_point_to_key(partition::AbstractBoxPartition{B}, point) where {N,T,B<:Box{N,T}}
     center, radius = partition.domain
-    left, right = center .- radius, center .+ radius .- eps(T)
+    left, right = center .- radius .+ 10*eps(T), center .+ radius .- 10*eps(T)
     p = ifelse.(isnan.(point), convert(T, Inf), point)
-    p = min.(max.(point, left), right)
+    p = min.(max.(p, left), right)
     return point_to_key(partition, p)
 end
 

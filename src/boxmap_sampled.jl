@@ -26,9 +26,11 @@ end
 # how julia dispatches on `union!`
 ⊔(set1::AbstractSet, set2::AbstractSet) = union!(set1, set2)
 ⊔(set1::AbstractSet, object) = union!(set1, (object,))
+⊔(set1::AbstractSet, ::Nothing) = set1
 
 ⊔(d::AbstractDict...) = mergewith!(+, d...)
 ⊔(d::AbstractDict, p::Pair...) = foreach(q -> d ⊔ q, p)
+⊔(d::AbstractDict, ::Nothing) = d
 function ⊔(d::AbstractDict, p::Pair)
     k, v = p
     d[k] = haskey(d, k) ? d[k] + v : v

@@ -83,6 +83,7 @@ end
 
 cover(partition::P, box::Box) where P<:AbstractBoxPartition = cover(partition, (box,))
 cover(partition::P, int::IntervalBox) where P<:AbstractBoxPartition = cover(partition, Box(int))
+cover(partition::P, ::Nothing) where P<:AbstractBoxPartition = nothing
 
 function cover(partition::P, ::Colon) where {P<:AbstractBoxPartition}
     return BoxSet(partition, Set{keytype(P)}(keys(partition)))
@@ -106,10 +107,11 @@ function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
     vertex_keys = Matrix{I}(undef, N, 2)
     for box_in in boxes
         (any(isnan, box_in.center) || any(isnan, box_in.radius)) && continue
-        box = Box{N,T}(box_in.center .- eps(T), box_in.radius .- eps(T))
+        box = Box{N,T}(box_in.center .- 10*eps(T), box_in.radius .- 10*eps(T))
         vertex_keys[:, 1] .= vertex_keys[:, 2] .= bounded_point_to_key(partition, box.center)
         for point in vertices(box)
             ints = bounded_point_to_key(partition, point)
+            #@debug point, ints
             vertex_keys[:, 1] .= min.(vertex_keys[:, 1], ints)
             vertex_keys[:, 2] .= max.(vertex_keys[:, 2], ints)
         end

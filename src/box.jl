@@ -50,6 +50,8 @@ end
 
 Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype(radius))}(center, radius)
 Box(int::IntervalBox{N,T}) where {N,T} = Box{N,T}(int)
+Box(ints::Interval...) = Box(IntervalBox(ints...))
+Box(ints::NTuple{N,<:Interval{T}}) where {N,T} = Box(ints...)
 
 function IntervalArithmetic.IntervalBox(box::Box{N,T}) where {N,T}
     c, r = box
