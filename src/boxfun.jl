@@ -75,12 +75,14 @@ function Base.show(io::IO, g::BoxFun)
 end
 
 Base.length(fun::BoxFun) = length(fun.vals)
-Base.size(boxfun::BoxFun) = (length(boxfun),)
+Base.size(fun::BoxFun) = (length(fun),)
 Base.keytype(::BoxFun{B,K,V}) where {B,K,V} = K
 Base.eltype(::BoxFun{B,K,V}) where {B,K,V} = V
 Base.keys(fun::BoxFun) = keys(fun.vals)
 Base.values(fun::BoxFun) = values(fun.vals)
 Base.show(io::IO, ::MIME"text/plain", fun::BoxFun) = show(io, fun)
+Base.maximum(fun::BoxFun) = maximum(values(fun))
+Base.minimum(fun::BoxFun) = minimum(values(fun))
 
 function Base.iterate(boxfun::BoxFun, i...)
     itr = iterate(boxfun.vals, i...)

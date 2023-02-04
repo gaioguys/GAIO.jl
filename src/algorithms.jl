@@ -252,16 +252,15 @@ identification. Communications in Nonlinear Science and Numerical
 Simulation, 77:81-107, 2019. https://arxiv.org/abs/1812.02787
 """
 function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D<:OrderedDict,U<:BoxFun{B,K,W,Q,D}}
-    P = V[1].partition
-    all(μ -> μ.partition == P, V) || throw(DomainError(V, "Partitions of BoxFuns do not match."))
-    supp = union((keys(μ) for μ in V)...)
+    supp = BoxSet(V[1])
+    all(x -> BoxSet(x) == supp, V) || throw(DomainError(V, "Supports of BoxFuns do not match."))
 
-    V̄ = [μ[key] for key in supp, μ in V]
+    V̄ = [μ[key] for key in supp.set, μ in V]
     S̄, R = SEBA(V̄, Rinit)
     S̄, Ā, τ = which(S̄)
 
-    S = [BoxFun(V[i], S̄[:, i]) for i in 1:size(S̄, 2)]
-    A = BoxFun(V[1], Ā)
+    S = [BoxFun(supp, S̄[:, i]) for i in 1:size(S̄, 2)]
+    A = BoxFun(supp, Ā)
     return S, A
 end
 

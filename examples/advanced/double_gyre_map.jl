@@ -54,9 +54,7 @@ T = TransferOperator(F, S, S)
 tol, maxiter, v0 = eps()^(1/4), 1000, ones(size(T, 2))
 λ, ev = eigs(T; nev=2, which=:LR, maxiter=maxiter, tol=tol, v0=v0)
 
-μ = real ∘ ev[2]
-μ = μ / maximum(values(μ))  # normalize for the plot
-plot(μ)
+plot(real ∘ ev[2])
 
 # applying GAIO.jl functions to multiple time spans
 # to animate time-dependent results
@@ -81,7 +79,7 @@ anim2 = @animate for t in t₀:τ:t₁
     λ, ev = eigs(T; nev=2, which=:LR, maxiter=maxiter, tol=tol, v0=v0)
 
     μ = abs ∘ ev[2]
-    μ = μ / maximum(values(μ))
+    μ = μ / maximum(μ)
     plot(μ)
 end
 gif(anim2, fps=Tspan÷τ)
