@@ -78,7 +78,7 @@ end
 Return a rough estimate of how many Newton steps 
 should be taken, given a step size h. 
 """
-function expon(h, ϵ=0.2, σ=1.0, δ=0.1)
+function expon(h, σ=1, ϵ=0.2, δ=0.1)
     n = log( ϵ * (1/2)^σ ) / log( maximum((1 - h, δ)) )
     return Int(ceil(n))
 end
@@ -88,11 +88,11 @@ end
 
 Return one step of the adaptive Newton algorithm for the point `x`. 
 """
-@muladd function adaptive_newton_step(g, g_jacobian, x)
+@muladd function adaptive_newton_step(g, g_jacobian, x, k=1)
     Dg = g_jacobian(x)
     d = Dg \ g(x)
     h = armijo_rule(g, g_jacobian, x, d)
-    n = expon(h)
+    n = expon(h, k)
     for _ in 1:n
         Dg = g_jacobian(x)
         x = x - h * (Dg \ g(x))
@@ -113,9 +113,9 @@ function cover_roots(g, Dg, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     domain = B.partition.domain
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
-        f = x -> adaptive_newton_step(g, Dg, x, k)
-        F_k = BoxMap(f, domain)
-        B = F_k(B)
+        f(x) = adaptive_newton_step(g, Dg, x, k)
+        F = BoxMap(f, domain)
+        B = F(B)
     end
     return B
 end
