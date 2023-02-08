@@ -114,7 +114,7 @@ function cover_roots(g, Dg, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
         f = x -> adaptive_newton_step(g, Dg, x, k)
-        F_k = BoxMap(f, domain, no_of_points = 40)
+        F_k = BoxMap(f, domain)
         B = F_k(B)
     end
     return B
