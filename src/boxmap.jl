@@ -11,7 +11,7 @@ BoxMap(symb::Symbol, args...; kwargs...) = BoxMap(Val(symb), args...; kwargs...)
 BoxMap(symb::Symbol, accel::Symbol, args...; kwargs...) = BoxMap(symb, Val(accel), args...; kwargs...)
 
 # default BoxMap behavior
-BoxMap(args...; kwargs...) = GridBoxMap(args...; kwargs...)
+BoxMap(args...; kwargs...) = AdaptiveBoxMap(args...; kwargs...)
 
 for str in (
         "PointDiscretized", 

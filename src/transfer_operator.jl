@@ -103,10 +103,9 @@ function TransferOperator(
     dict, codomain = construct_transfers(g, domain)
     mat = sparse(dict, domain, codomain)
 
-    for i in 1:size(mat, 2)
-        s = sum(mat[:, i])
-        iszero(s) || (mat[:, i] ./= s)
-    end
+    s = vec(sum(mat, dims=1))
+    s[s .!= 0] .= 1 ./ s[s .!= 0]
+    mat = mat * Diagonal(s)
 
     return TransferOperator(g, domain, codomain, mat)
 end
@@ -118,10 +117,9 @@ function TransferOperator(
     dict = construct_transfers(g, domain, codomain)
     mat = sparse(dict, domain, codomain)
 
-    for i in 1:size(mat, 2)
-        s = sum(mat[:, i])
-        iszero(s) || (mat[:, i] ./= s)
-    end
+    s = vec(sum(mat, dims=1))
+    s[s .!= 0] .= 1 ./ s[s .!= 0]
+    mat = mat * Diagonal(s)
 
     return TransferOperator(g, domain, codomain, mat)
 end
@@ -166,14 +164,14 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         LinearAlgebra.issymmetric(g::$type) = issymmetric($gmap.mat)
 
         function _eigs(g::$type, B=I; nev=1, ritzvec=true, kwargs...)
-            λ, ϕ, nconv = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
+            λ, ϕ, ext... = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
             S = $gmap.domain
             b = [BoxFun(S, ϕ[:, i]) for i in 1:nev]
-            return ritzvec ? (λ, b, nconv) : (λ, nconv)
+            return ritzvec ? (λ, b, ext...) : (λ, ext...)
         end
 
         """
-            eigs(gstar::TransferOperator [; kwargs...]) -> (d[, v], nconv)
+            eigs(gstar::TransferOperator [; kwargs...]) -> (d,[v,],nconv,niter,nmult,resid)
 
         Compute a set of eigenvalues `d` and eigenmeasures `v` of `gstar`. 
         Works with the adjoint _Koopman operator_ as well. 
@@ -260,7 +258,7 @@ function SparseArrays.sparse(
     ) where {I,T}
 
     _rehash!(domain)
-    _rehash!(codomain)
+    domain === codomain || _rehash!(codomain)
 
     m, n = length(codomain), length(domain)
     xs, ys, ws = Int[], Int[], T[]

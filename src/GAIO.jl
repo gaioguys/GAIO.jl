@@ -93,8 +93,14 @@ include("plot.jl")
 
 if CUDA.functional()
     include("boxmap_cuda.jl")
+    @info "GAIO has found a CUDA-capable GPU."
 else
     include("no_boxmap_cuda.jl")
+    @info "GAIO has not found a CUDA-capable GPU."
+end
+
+function __init__()
+    @info "GAIO is running on $(Threads.nthreads()) thread(s)."
 end
 
 end # module

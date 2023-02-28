@@ -153,6 +153,18 @@ end
 
 MakieCore.plottype(::Union{BoxSet,BoxFun}) = PlotBoxes
 
+function MakieCore.convert_arguments(::MakieCore.PointBased, coords::AbstractVector{<:Complex})
+    #Float32.(real.(coords)), Float32.(imag.(coords))
+    (map(x -> Point2f0(real(x), imag(x)), coords),)
+end
+
+function MakieCore.convert_arguments(::MakieCore.PointBased, coords::AbstractVector{<:Complex}, heights::AbstractVector{<:Real})
+    #Float32.(real.(coords)), Float32.(imag.(coords)), Float32.(heights)
+    (map((x,y) -> Point3f0(real(x), imag(x), y)),)
+end
+
+MakieCore.plottype(::AbstractVector{<:Complex}) = Scatter
+
 RecipesBase.@recipe function plot!(boxset::BoxSet{Box{N,T}}; projection=x->x[1:2]) where {N,T}
     xs = Vector{Float32}(undef, 5*length(boxset))
     ys = Vector{Float32}(undef, 5*length(boxset))
@@ -227,3 +239,15 @@ RecipesBase.@recipe function plot!(boxset::BoxFun{Box{1,T}}) where {T}
 
     xs, ys
 end
+
+#=
+RecipesBase.@recipe function plot!(coords::AbstractVector{<:Complex})
+    seriestype --> scatter
+    float.(real.(coords)), float.(imag.(coords))
+end
+
+RecipesBase.@recipe function plot!(coords::AbstractVector{<:Complex}, heights::AbstractVector{<:Real})
+    seriestype --> scatter
+    float.(real.(coords)), float.(imag.(coords)), float.(heights)
+end
+=#
