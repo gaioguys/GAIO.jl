@@ -49,7 +49,10 @@ BoxPartition(tree::TreePartition) = BoxPartition(tree, depth(tree))
 
 function BoxPartition(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
     center, radius = tree.domain
-    dims = 2 .^ ( ((depth + N) .- (2:N+1)) .÷ N )
+    dims = ntuple(Val(N)) do i
+        2 ^ ( ((depth+N) - (i+1)) ÷ N )
+    end
+    #dims = 2 .^ ( ((depth + N) .- (2:N+1)) .÷ N )
     BoxPartition{N,T,I}(
         tree.domain, 
         center .- radius, 
@@ -73,14 +76,14 @@ Base.copy(tr::TreePartition) = TreePartition(tr.domain, copy(tr.nodes))
 Base.length(tr::TreePartition) = length(keys(tr))
 Base.sizehint!(tr::TreePartition, s) = sizehint!(tr.nodes, s)
 
-function tree_search(tree::TreePartition{N,T,I}, point, max_depth=Inf) where {N,T,I}
+function tree_search(tree::TR, point, max_depth=Inf) where {N,T,I,TR<:TreePartition{N,T,I}}
     point in tree.domain || return nothing, 1
     
     # start at root
-    P = BoxPartition(tree.domain)
+    P = BoxPartition{I}(tree.domain)
     node_idx = 1
     node = tree.nodes[node_idx]
-    current_depth = 1
+    current_depth = one(I)
     cart = ntuple(_->one(I), Val(N))    # = point_to_key(P, point)
 
     while !isleaf(node) && current_depth < max_depth
@@ -94,10 +97,10 @@ function tree_search(tree::TreePartition{N,T,I}, point, max_depth=Inf) where {N,
         node_idx = isodd(cart[dim]) ? node.left : node.right
         node = tree.nodes[node_idx]
 
-        current_depth += 1
+        current_depth += one(I)
     end
 
-    key = (current_depth, cart)
+    key = (current_depth, cart) :: keytype(TR)
 
     return key, node_idx
 end
@@ -106,7 +109,7 @@ function Base.checkbounds(::Type{Bool}, tree::TreePartition, key)
     depth, cart = key
     P = BoxPartition(tree, depth)
     box = key_to_box(P, cart)
-    search_key, _ = tree_search(tree, box.center, depth)
+    search_key, _ = tree_search(tree, box.center, depth+1)
     search_depth, search_cart = search_key
     return search_depth > depth || ( search_depth == depth && search_cart == cart )
 end

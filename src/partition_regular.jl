@@ -31,10 +31,12 @@ function BoxPartition(domain::Box{N,T}, dims::SVNT{N,I}) where {N,T,I}
     return BoxPartition{N,T,I}(domain, left, scale, dims)
 end
 
-function BoxPartition(domain::Box{N,T}) where {N,T}
-    dims = tuple(ones(Int,N)...)
+function BoxPartition{I}(domain::Box{N,T}) where {N,T,I}
+    dims = ntuple(_->one(I), Val(N))
     BoxPartition(domain, dims)
 end
+
+BoxPartition(domain::Box{N,T}) where {N,T} = BoxPartition{Int}(domain)
 
 function BoxPartition(domain::Box{1}, dims::Integer)
     BoxPartition(domain, (dims,))
