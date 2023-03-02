@@ -46,6 +46,9 @@ Base.size(partition::BoxPartition) = partition.dims.data # .data returns as tupl
 Base.length(partition::BoxPartition) = prod(partition.dims)
 Base.keytype(::Type{<:BoxPartition{N,T,I}}) where {N,T,I} = NTuple{N,I}
 
+center(partition::BoxPartition) = center(partition.domain)
+radius(partition::BoxPartition) = radius(partition.domain)
+
 Base.CartesianIndices(partition::BoxPartition) = CartesianIndices(size(partition))
 Base.LinearIndices(partition::BoxPartition) = LinearIndices(size(partition))
 
@@ -57,15 +60,6 @@ function Base.keys(partition::P) where {P<:BoxPartition}
 end
 
 function Base.show(io::IO, partition::P) where {N,P<:BoxPartition{N}}
-    if N ≤ 5
-        print(io, join(size(partition), " x "), " - element $P")
-    else
-        sz = size(partition)
-        print(io, sz[1], " x ", sz[2], " ... ", sz[N-1], " x ", sz[N], " - element $P")
-    end
-end
-
-function Base.show(io::IO, ::MIME"text/plain", partition::P) where {N,P<:BoxPartition{N}}
     if N ≤ 5
         print(io, join(size(partition), " x "), " - element BoxPartition")
     else

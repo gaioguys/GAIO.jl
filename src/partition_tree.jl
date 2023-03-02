@@ -36,8 +36,6 @@ struct TreePartition{N,T,I,V<:AbstractArray{Node{I}}} <: AbstractBoxPartition{Bo
     nodes::V
 end
 
-TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)])
-
 function TreePartition(domain::Box, depth::Integer)
     tree = TreePartition(domain)
     for i in 1:depth
@@ -45,6 +43,9 @@ function TreePartition(domain::Box, depth::Integer)
     end
     return tree
 end
+
+TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)])
+BoxPartition(tree::TreePartition) = BoxPartition(tree, depth(tree))
 
 function BoxPartition(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
     center, radius = tree.domain
@@ -63,10 +64,14 @@ end
 
 isleaf(node::Node) = iszero(node.left) || iszero(node.right)
 children(tr::TreePartition, node::Node) = isleaf(node) ? () : (tr.nodes[node.left], tr.nodes[node.right])
+center(tr::TreePartition) = center(tr.domain)
+radius(tr::TreePartition) = radius(tr.domain)
+
 Base.ndims(::TreePartition{N}) where {N} = N
 Base.keytype(::Type{<:TreePartition{N,T,I}}) where {N,T,I} = Tuple{I,NTuple{N,I}}
 Base.copy(tr::TreePartition) = TreePartition(tr.domain, copy(tr.nodes))
 Base.length(tr::TreePartition) = length(keys(tr))
+Base.sizehint!(tr::TreePartition, s) = sizehint!(tr.nodes, s)
 
 function tree_search(tree::TreePartition{N,T,I}, point, max_depth=Inf) where {N,T,I}
     point in tree.domain || return nothing, 1
@@ -149,13 +154,22 @@ end
 
 function subdivide!(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
     node_idxs = find_at_depth(tree, depth)
-    leaf_idxs = union!((leaves(tree, idx) for idx in node_idxs)...)
+
+    if all(idx -> isleaf(tree.nodes[idx]), node_idxs)
+        leaf_idxs = node_idxs
+    else
+        leaf_idxs = union!((leaves(tree, idx) for idx in node_idxs)...)
+    end
+
     n = length(tree.nodes)
+    sizehint!(tree, n + 2*length(leaf_idxs))
+
     for idx in leaf_idxs
         tree.nodes[idx] = Node{I}(n+1, n+2)
         push!(tree.nodes, Node{I}(0,0), Node{I}(0,0))
         n = n + 2
     end
+
     return tree
 end
 
