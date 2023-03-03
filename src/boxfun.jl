@@ -52,7 +52,7 @@ integration is restricted to the boxes in `B`
 The notation `μ(B)` is offered to compute 
 ``\mu (\bigcup_{b \in B} b)``. 
 """
-function Base.sum(f, boxfun::BoxFun{B,K,V}, boxset=nothing) where {B,K,V}
+function Base.sum(f, boxfun::BoxFun{B,K,V,P,D}, boxset=nothing) where {B,K,V,P,D}
     sum(boxfun; init=zero(V)) do pair
         box, val = pair
         f(box.center) * volume(box) * val
@@ -68,7 +68,7 @@ function Base.sum(f, boxfun::BoxFun{B,K,V,P,D}, boxset::Union{Box,BoxSet}) where
     sum(f, boxfun_new)
 end
 
-(boxfun::BoxFun)(boxset::Union{Box,BoxSet}) = sum(identity, boxfun, boxset)
+(boxfun::BoxFun)(boxset::Union{Box,BoxSet}) = sum(_->1, boxfun, boxset)
 
 function Base.show(io::IO, g::BoxFun)
     print(io, "BoxFun in $(g.partition) with $(length(g.vals)) stored weights")
@@ -100,9 +100,9 @@ function LinearAlgebra.normalize!(boxfun::BoxFun)
     boxfun
 end
 
-Base.:(==)(b1::BoxFun, b2::BoxFun) = b1.vals == b2.vals
 Base.getindex(boxfun::BoxFun{B,K,V}, key) where {B,K,V} = get(boxfun.vals, key, zero(V))
 Base.setindex!(boxfun::BoxFun, val, key) = setindex!(boxfun.vals, val, key)
+Base.sizehint!(boxfun::BoxFun, sz) = sizehint!(boxfun.vals, sz)
 Base.copy(boxfun::BoxFun) = BoxFun(boxfun.partition, copy(boxfun.vals))
 Base.deepcopy(boxfun::BoxFun) = BoxFun(boxfun.partition, deepcopy(boxfun.vals))
 SparseArrays.findnz(boxfun::BoxFun) = (collect(keys(boxfun)), collect(values(boxfun)))
@@ -120,6 +120,14 @@ function Base.isapprox(
     return true
 end
 
+function Base.:(==)(l::BoxFun{B,K,V}, r::BoxFun{R,J,W}) where {B,K,V,R,J,W}
+    l === r && return true
+    for key in (keys(l) ∪ keys(r))
+        l[key] == r[key] || return false
+    end
+    return true
+end
+
 gen_type(d::AbstractDict{K,V}, f) where {K,V} = Dict{K,(typeof ∘ f ∘ first ∘ values)(d)}
 gen_type(d::OrderedDict{K,V}, f) where {K,V} = OrderedDict{K,(typeof ∘ f ∘ first ∘ values)(d)}
 
@@ -129,7 +137,9 @@ gen_type(d::OrderedDict{K,V}, f) where {K,V} = OrderedDict{K,(typeof ∘ f ∘ f
 
 Postcompose the function `f` with the `boxfun`,
 or precompose a BoxMap `F` with the `boxfun` 
-(by applying the Koopman operator). 
+(by applying the Koopman operator). Note that 
+the support of `BoxFun` must be forward-invariant
+under `F`. 
 """
 function ∘(f, boxfun::BoxFun)
     D = gen_type(boxfun.vals, f)
@@ -154,10 +164,10 @@ function Base.:(+)(b1::BoxFun, b2::BoxFun)
     b1.partition == b2.partition || throw(DomainError("Partitions of BoxFuns do not match."))
 
     v1 = first(values(b1))
-    D = gen_type(x -> x + v1, b2.vals)
+    D = gen_type(b2.vals, x -> x + v1)
     b = BoxFun(b1.partition, D())
 
-    sizehint!(b, max(length(b1), lenth(b2)))
+    sizehint!(b, max(length(b1), length(b2)))
     for key in (keys(b1) ∪ keys(b2))
         b[key] = b1[key] + b2[key]
     end

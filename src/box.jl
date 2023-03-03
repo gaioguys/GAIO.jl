@@ -42,15 +42,17 @@ end
 
 function Box{N,T}(int::IntervalBox{N}) where {N,T}
     mat = reinterpret(reshape, T, collect(int))
-    c = (mat[1, :] .+ mat[2, :]) ./ 2
-    r = (mat[2, :] .- mat[1, :]) ./ 2
+    c = ( (mat[1, :] .+ mat[2, :]) ./ 2 ) .- eps(T)
+    r = ( (mat[2, :] .- mat[1, :]) ./ 2 ) .- eps(T)
     all(>(0), r) || return nothing
     @inbounds Box{N,T}(c, r)
 end
 
 function IntervalArithmetic.IntervalBox(box::Box{N,T}) where {N,T}
     c, r = box
-    IntervalBox{N,T}(c .± r ...)
+    ϵ = eps(T)
+    c, r = c .+ ϵ, r .+ ϵ
+    IntervalBox{N,T}(c .± r)
 end
 
 Box{T}(box::Box{N}) where {N,T} = Box{N,T}(box.center, box.radius)
@@ -87,7 +89,7 @@ end
 
 function Base.intersect(b1::Box{N}, b2::Box{N}) where {N}
     lo = max.(b1.center .- b1.radius, b2.center .- b2.radius)
-    hi = min.(b1.center, .+ b1.radius, b2.center .+ b2.radius)
+    hi = min.(b1.center .+ b1.radius, b2.center .+ b2.radius)
     all(lo .< hi) || return nothing
     return Box((hi .+ lo) ./ 2, (hi .- lo) ./ 2)
 end
