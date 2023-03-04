@@ -108,8 +108,8 @@ end
 function Base.checkbounds(::Type{Bool}, tree::TreePartition, key)
     depth, cart = key
     P = BoxPartition(tree, depth)
-    box = key_to_box(P, cart)
-    search_key, _ = tree_search(tree, box.center, depth+1)
+    c, _ = key_to_box(P, cart)
+    search_key, _ = tree_search(tree, c, depth+1)
     search_depth, search_cart = search_key
     return search_depth > depth || ( search_depth == depth && search_cart == cart )
 end
@@ -144,9 +144,16 @@ key_to_box(tree::TreePartition, ::Nothing) = nothing
 Subdivide a `TreePartition` at `key`. Dimension along which 
 the node is subdivided depends on the depth of the node. 
 """
-function subdivide!(tree::TreePartition{N,T,I}, key::Tuple{J,NTuple{N,K}}) where {N,T,I,J,K}
-    c, _ = key_to_box(tree, key)
-    _, node_idx = tree_search(tree, c)
+@propagate_inbounds function subdivide!(tree::TreePartition{N,T,I}, key::Tuple{J,NTuple{N,K}}) where {N,T,I,J,K}
+    depth, cart = key
+    P = BoxPartition(tree, depth)
+    c, _ = key_to_box(P, cart)
+    search_key, node_idx = tree_search(tree, c, depth + 1)
+    
+    @boundscheck begin
+        search_depth, search_cart = search_key
+        search_depth > depth || ( search_depth == depth && search_cart == cart ) || throw(BoundsError(tree, key))
+    end
 
     n = length(tree.nodes)
     tree.nodes[node_idx] = Node{I}(n+1, n+2)
