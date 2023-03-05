@@ -69,9 +69,10 @@ end
 function BoxGraph(gstar::TransferOperator)
     gstar.codomain === gstar.domain && return BoxGraph(gstar, length(gstar.domain))
     # permute the row indices so that we can skip already identified boxes
-    cut = gstar.codomain ∩ gstar.domain
+    cut = intersect!(copy(gstar.domain), gstar.codomain)
     n = length(cut)
     inds = [key_to_index(gstar.codomain, key) for key in cut.set]
+    gstar.codomain = union!(cut, gstar.codomain)
     gstar.mat[[1:n; inds], :] .= gstar.mat[[inds; 1:n], :]
     return BoxGraph(gstar, n)
 end
