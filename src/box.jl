@@ -40,10 +40,25 @@ struct Box{N,T <: AbstractFloat}
     end
 end
 
-function Box{N,T}(int::IntervalBox{N}) where {N,T}
-    mat = reinterpret(reshape, T, collect(int))
-    c = ( (mat[1, :] .+ mat[2, :]) ./ 2 ) .- eps(T)
-    r = ( (mat[2, :] .- mat[1, :]) ./ 2 ) .- eps(T)
+Box{T}(box::Box{N}) where {N,T} = Box{N,T}(box.center, box.radius)
+Box{T}(args...) where {T} = Box{T}(Box(args...))
+Box(c, r) = Box{length(c), F}(c, r)
+Box(c::Number, r::Number) = Box((c,), (r,))
+
+Box(int::IntervalBox{N}) where {N} = Box{N,F}(int)
+Box(ints::Interval...) = Box(IntervalBox(ints...))
+Box(ints::NTuple{N,<:Interval{T}}) where {N,T} = Box(ints...)
+
+function Box{N,T}(intbox::IntervalBox{N}) where {N,T}
+    ϵ = eps(T)
+    c = ntuple(Val(N)) do i
+        int = intbox.v[i]
+        (int.hi .+ int.lo) ./ 2 .- ϵ
+    end
+    r = ntuple(Val(N)) do i
+        int = intbox.v[i]
+        (int.hi .- int.lo) ./ 2 .- ϵ
+    end
     all(>(0), r) || return nothing
     @inbounds Box{N,T}(c, r)
 end
@@ -54,13 +69,6 @@ function IntervalArithmetic.IntervalBox(box::Box{N,T}) where {N,T}
     c, r = c .+ ϵ, r .+ ϵ
     IntervalBox{N,T}(c .± r)
 end
-
-Box{T}(box::Box{N}) where {N,T} = Box{N,T}(box.center, box.radius)
-Box{T}(args...) where {T} = Box{T}(Box(args...))
-Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype(radius))}(center, radius)
-Box(int::IntervalBox{N,T}) where {N,T} = Box{N,T}(int)
-Box(ints::Interval...) = Box(IntervalBox(ints...))
-Box(ints::NTuple{N,<:Interval{T}}) where {N,T} = Box(ints...)
 
 Base.show(io::IO, box::Box) = show(io, IntervalBox(box))
 

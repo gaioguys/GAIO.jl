@@ -36,7 +36,7 @@ export volume, center, vertices, rescale
 
 export AbstractBoxPartition, BoxPartition, TreePartition
 export key_to_box, point_to_key, bounded_point_to_key, point_to_box
-export depth, tree_search
+export depth, tree_search, abstracttree
 
 export BoxSet
 export cover, subdivide, subdivide!

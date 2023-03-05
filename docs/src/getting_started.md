@@ -8,39 +8,48 @@ Iterating some random intial point exhibits a strange attractor (a=1.4 and b=0.3
 
 ![Hénon attractor](assets/henon-simulation.svg)
 
-Since this map is _chaotic_ [2,3], it has sensitive dependence on initial conditions.  That is, small perturbations (as unavoidable on a computer) during the computation grow exponentially during the iteration.  Thus, apart from a few iterates at the beginning, the computed trajectory does not (necessarily) follow a true trajectory. One might therefore question how reliable this figure is.
+This map is _chaotic_ [2,3], it has sensitive dependence on initial conditions. That is, small perturbations (as unavoidable on a computer) during the computation grow exponentially during the iteration.  Thus, apart from a few iterates at the beginning, the computed trajectory does not (necessarily) follow a true trajectory. One might therefore question how reliable this figure is.
 
 Instead of trying to approximate the attractor by a long forward trajectory, we will capture it by computing a collection of boxes (i.e. cubes) covering the attractor. 
 
 Start by loading the GAIO package
-```julia
+```@repl
+using Plots # hide
 using GAIO
 ```
 A `Box` is descibed by its center and its radius
-```julia
+```@repl
 box_center, box_radius = (0,0), (3,3)
 Q = Box(box_center, box_radius)
 ```
-This box will serve as the domain for our computation.  The box covering which we will compute is a subset of a _partition_ of Q into smaller boxes. The command
-```julia
+This box will serve as the domain for our computation.  The box covering which we will compute is a subset of a _partition_ of `Q` into smaller boxes. The command
+```@repl
 P = BoxPartition(Q, (4,4)) 
 ```
-yields a partition of Q into a grid of 4 x 4 equally sized smaller boxes. From P, box sets can be constructed. For example, the command
-```julia
-B = P[:]
+yields a partition of `Q` into a grid of 4 x 4 equally sized smaller boxes. From `P`, box sets can be constructed. For example, the commands
+```@repl
+test_points = [
+    (1, 1),
+    (2, 1)
+];
+B = cover(P, test_points)
 ```
-yields a `BoxSet` containing all boxes from the partition P (i.e. a set containing 16 boxes).
+yields a `BoxSet` containing boxes from the partition `P` which cover each of `test_points`. Similarly, 
+```@repl
+B = cover(P, :)
+```
+yields a `BoxSet` containing all boxes from the partition `P` (i.e. a set containing 16 boxes).
 
-In order to deal with the Hénon map as a map on box sets, we have to turn it into a `BoxMap` on the given partition P
-```julia
+In order to deal with the Hénon map as a map over box sets, we have to turn it into a `BoxMap` on the domain `Q`
+```@repl
 a, b = 1.4, 0.3
 f((x,y)) = (1 - a*x^2 + y, b*x) 
-F = BoxMap(f, P) 
+F = BoxMap(f, Q) 
 ```
-We can now compute a covering of the attractor in Q, starting with the full box set B, by applying 15 steps of the subdivison algorithm described in [4]:
-```julia
+We can now compute a covering of the attractor in `Q`, starting with the full box set `B`, by applying 15 steps of the subdivison algorithm described in [4]:
+```@repl
 A = relative_attractor(F, B, steps = 15)  
-plot(A)
+plot(A);
 ```
 
 ![box covering of the Hénon attractor](assets/henon-attractor.svg)

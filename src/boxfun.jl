@@ -36,7 +36,7 @@ OrderedCollections.OrderedDict(boxfun::BoxFun) = OrderedDict( zip( keys(boxfun),
 Core.@doc raw"""
     sum(f, μ::BoxFun)
     sum(f, μ::BoxFun, B::BoxSet)
-    μ(B) = sum(identity, μ, B)
+    μ(B) = sum(x->1, μ, B)
 
 Integrate a function `f` using `μ` as a density, that is,
 if `boxfun` is the discretization of a measure ``\mu`` over the domain 
