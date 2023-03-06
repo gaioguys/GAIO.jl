@@ -276,7 +276,7 @@ end
 Core.@doc raw"""
     SEBA(V::Matrix{<:Real}, Rinit=nothing) -> S, R
 
-Construct a sparse approximation of the basis V, as described in 
+Construct a sparse approximation of the basis `V`, as described in 
 [1]. Returns matrices ``S``, ``R`` such that
 ```math
 \frac{1}{2} \| V - SR \|_F^2 + \mu \| S \|_{1,1}
@@ -288,10 +288,10 @@ is orthogonal. See [1] for further information on the argument
 
     SEBA(V::Matrix{<:BoxFun}, Rinit=nothing; which=partition_unity) -> S, A
 
-Construct a sparse eigenbasis approximation of V, as described in 
+Construct a sparse eigenbasis approximation of `V`, as described in 
 [1]. Returns an `Array` of `BoxFun`s corresponding to the eigenbasis, 
 as well as a maximum-likelihood `BoxFun` that maps a box to the 
-element of S which has the largest value over the support. 
+element of `S` which has the largest value over the support. 
 
 The keyword `which` is used to set the threshholding heuristic, 
 which is used to extract a partition of the supports from the 
