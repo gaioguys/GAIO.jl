@@ -23,8 +23,12 @@ struct BoxFun{B,K,V,P<:AbstractBoxPartition{B},D<:AbstractDict{K,V}} <: Abstract
     vals::D
 end
 
+BoxFun(boxset::BoxSet, vals, dicttype=Dict) = BoxFun(boxset.partition, dicttype(zip(boxset.set, vals)))
+BoxFun(boxset::BoxSet, T::Type, dicttype=Dict) = BoxFun(boxset.partition, dicttype(key=>zero(T) for key in boxset.set))
+BoxFun(boxset::BoxSet) = BoxFun(boxset, Float)
+BoxFun(boxfun::BoxFun{B,K,V,P,D}, vals) where {B,K,V,P,D} = BoxFun(BoxSet(boxfun), vals, D)
+
 BoxSet(boxfun::BoxFun) = BoxSet(boxfun.partition, Set(keys(boxfun)))
-BoxFun(boxset::BoxSet, T=Float) = BoxFun(boxset.partition, Dict(key=>zero(T) for key in boxset.set))
 
 Core.@doc raw"""
     sum(f, μ::BoxFun)

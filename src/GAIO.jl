@@ -14,6 +14,7 @@ using FLoops
 using SplittablesBase
 using SplitOrderedCollections
 using Base: unsafe_trunc
+using IntervalArithmetic
 using MuladdMacro
 using HostCPUFeatures
 using SIMD
@@ -42,25 +43,28 @@ export boxset_empty, subdivide, subdivide!
 export BoxFun
 
 export TransferOperator
-export eigs
+export construct_transfers, eigs
 
 export BoxGraph
 
-export BoxMap, PointDiscretizedMap
-export SampledBoxMap, AdaptiveBoxMap
-export approx_lipschitz, sample_adaptive
+export BoxMap, map_boxes
+export SampledBoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap
+export AdaptiveBoxMap, approx_lipschitz, sample_adaptive
+export CPUSampledBoxMap, GPUSampledBoxMap
+export SmartBoxMap
+export IntervalBoxMap
 
 export rk4, rk4_flow_map
 
 export relative_attractor, unstable_set, chain_recurrent_set
 export cover_roots, finite_time_lyapunov_exponents
+export SEBA
 
 export plotboxes, plotboxes!
 
 # ENV["JULIA_DEBUG"] = all
 
 const SVNT{N,T} = Union{<:NTuple{N,T}, <:StaticVector{N,T}}
-const IndexTypes{N} = Union{<:Integer,<:NTuple{N,<:Integer},<:CartesianIndex{N}}
 
 include("box.jl")
 
@@ -69,16 +73,26 @@ abstract type AbstractBoxPartition{B <: Box} end
 include("partition_regular.jl")
 include("partition_tree.jl")
 include("boxset.jl")
+
+abstract type BoxMap end
+
+(g::BoxMap)(source::BoxSet) = map_boxes(g, source)
+
+include("boxmap_sampled.jl")
+include("boxmap_simd.jl")
+include("boxmap_intervals.jl")
 include("boxmap.jl")
+
 include("boxfun.jl")  
 include("transfer_operator.jl")
 include("boxgraph.jl")
-include("boxmap_simd.jl")
 include("algorithms.jl")
 include("plot.jl")
 
 if CUDA.functional()
     include("boxmap_cuda.jl")
+else
+    include("no_boxmap_cuda.jl")
 end
 
 end # module

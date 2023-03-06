@@ -74,41 +74,6 @@ mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMat
     mat::SparseMatrixCSC{T,Int}
 end
 
-# helper function so we aren't doing type piracy on `mergewith!`
-⊔(d::AbstractDict...) = mergewith!(+, d...)
-⊔(d::AbstractDict, p::Pair...) = foreach(q -> d ⊔ q, p)
-function ⊔(d::AbstractDict, p::Pair)
-    k, v = p
-    d[k] = haskey(d, k) ? d[k] + v : v
-    d
-end
-
-function construct_transfers(
-        g::SampledBoxMap, boxset::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
-
-    P, D = boxset.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
-    @floop for key in boxset.set
-        box = key_to_box(P, key)
-        c, r = box.center, box.radius
-        domain_points = g.domain_points(c, r)
-        inv_n = 1. / length(domain_points)
-        for p in domain_points
-            c = g.map(p)
-            hitbox = point_to_box(P, c)
-            isnothing(hitbox) && continue
-            r = hitbox.radius
-            for ip in g.image_points(c, r)
-                hit = point_to_key(P, ip)
-                isnothing(hit) && continue
-                hit in boxset.set || @reduce( variant_keys = S() ⊔ hit )
-                @reduce( mat = D() ⊔ ((hit,key) => inv_n) )
-            end
-        end
-    end
-    return mat, variant_keys
-end
-
 construct_transfers(g::TransferOperator, boxset) = construct_transfers(g.boxmap, boxset)
 
 # ensure that `TransferOperator` uses an `OrderedSet`
@@ -118,11 +83,15 @@ end
 
 function TransferOperator(
         g::BoxMap, boxset::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+    ) where {N,T,R<:Box{N,T},Q,S<:OrderedSet}
 
-    dict, out_of_bounds = construct_transfers(g, boxset)
-    variant_set = BoxSet(boxset.partition, out_of_bounds)
+    dict, variant_set = construct_transfers(g, boxset)
     mat = sparse(dict, boxset, variant_set)
+
+    for i in 1:size(mat, 2)
+        mat[:, i] ./= sum(mat[:, i])
+    end
+
     return TransferOperator(g, boxset, variant_set, mat)
 end
 
@@ -170,16 +139,9 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
 
         function eigenfunctions(g::$type, B=I; nev=1, ritzvec=true, kwargs...)
             λ, ϕ, nconv = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
-            P = $gmap.support.partition
-            b = [
-                BoxFun(
-                    P, 
-                    OrderedDict{keytype(typeof(P)),eltype(ϕ)}(
-                        zip($gmap.support.set, ϕ[:, i])
-                    )
-                ) 
-                for i in 1:nev
-            ]
+            S = $gmap.support
+            P = S.partition
+            b = [BoxFun(S, ϕ[:, i], OrderedDict) for i in 1:nev]
             return ritzvec ? (λ, b, nconv) : (λ, nconv)
         end
 
@@ -326,8 +288,8 @@ function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,S}, keys) where 
         union!(g.support.set, diff)
 
         # calculate transitions for the new keys
-        new_dict, out_of_bounds = construct_transfers(g, BoxSet(g.support.partition, OrderedSet(diff)))
-        union!(g.variant_set.set, out_of_bounds)
+        new_dict, new_variant_set = construct_transfers(g, BoxSet(g.support.partition, OrderedSet(diff)))
+        union!(g.variant_set, new_variant_set)
 
         # construct the new matrix
         dict = dict ⊔ new_dict

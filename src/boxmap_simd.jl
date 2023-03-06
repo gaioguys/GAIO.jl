@@ -1,56 +1,65 @@
-struct BoxMapCPUCache{simd,V,W}
+"""
+    BoxMap(:cpu, map, domain; no_of_points) -> CPUSampledBoxMap
+
+Transforms a ``map: Q → Q`` defined on points in 
+the domain ``Q ⊂ ℝᴺ`` to a `CPUSampledBoxMap` defined 
+on `Box`es. 
+
+Uses the CPU's SIMD acceleration capabilities. 
+
+By default uses a grid of sample points. 
+
+
+    BoxMap(:sampled, :cpu, boxmap, idx_base, temp_vec, temp_points)
+    CPUSampledBoxMap(boxmap, idx_base, temp_vec, temp_points)
+
+Type representing a discretization of a map using 
+sample points which are explicitly vectorized. This 
+type performs roughly 2x as many floating point 
+operations per second as standard `SampledBoxMap`s. 
+
+Fields:
+* `boxmap`:         `SampledBoxMap` with one restriction:
+                    `boxmap.domain_points(c, r)` must 
+                    return an iterable with eltype 
+                    `SVector{N, SIMD.Vec{S,T}}` where `N`
+                    is the dimension, `S` is the cpu's 
+                    SIMD operation capacity, e.g. `4`, 
+                    and `T` is the individual element type, 
+                    e.g. `Float64`. 
+* `idx_base`:       `SIMD.Vec{S,Int}` which is used to 
+                    transform a 
+                    `Vector{SVector{N, SIMD.Vec{S,T}}}`
+                    into a 
+                    `Vector{SVector{N,T}}`. 
+* `temp_points`:    Raw data `Vector{SVector{N,T}}` 
+                    which holds the `S` temporary pointwise 
+                    images of a `SVector{N, SIMD.Vec{S,T}}`
+                    under the point map. 
+
+.
+"""
+struct CPUSampledBoxMap{simd,N,T,F<:SampledBoxMap{N,T},V} <: BoxMap
+    boxmap::F
     idx_base::SIMD.Vec{simd,Int}
-    temp_vec::V
-    temp_points::W
+    temp_points::V
 end
 
-function BoxMapCPUCache(N, T)
-    simd = Int(pick_vector_width(T))
-    idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
-    temp_vec = Vector{T}(undef, N*simd*nthreads())
-    temp_points = reinterpret(SVector{N,T}, temp_vec)
-    BoxMapCPUCache(idx_base, temp_vec, temp_points)
-end
-
-BoxMapCPUCache(::Box{N,T}) where {N,T} = BoxMapCPUCache(N, T)
-
-function PointDiscretizedMap(map, domain::Box{N,T}, points, ::Val{:cpu}) where {N,T}
-    n, simd = length(points), Int(pick_vector_width(T))
-    if n % simd != 0
-        throw(DimensionMismatch("Number of test points $n is not divisible by $T SIMD capability $simd"))
-    end
-    gathered_points = tuple_vgather(points, simd)
-    domain_points = rescale(gathered_points)
-    image_points = center
-    return SampledBoxMap(map, domain, domain_points, image_points, BoxMapCPUCache(domain))
-end
-
-function sample_adaptive(f, center, radius, simd::Integer)
-    @error "Adaptive sampling techniques not implemented for cpu acceleration. Please wait until next PR."
-end
-
-function AdaptiveBoxMap(f, domain::Box{N,T}, accel::Val{:cpu}) where {N,T}
-    simd = Int(pick_vector_width(T))
-    domain_points = sample_adaptive(f, Val(simd))
-    image_points = vertices
-    return SampledBoxMap(f, domain, domain_points, image_points, BoxMapCPUCache(domain))
-end
-
-@inbounds @muladd function map_boxes(g::SampledBoxMap{<:BoxMapCPUCache{simd},N}, source::BoxSet{B,Q,S}) where {simd,N,B,Q,S}
+@inbounds @muladd function map_boxes(G::CPUSampledBoxMap{simd,N}, source::BoxSet{B,Q,S}) where {simd,N,B,Q,S}
     P = source.partition
-    idx_base, temp_vec, temp_points = g.acceleration
+    g, idx_base, temp_points = G
     @floop for box in source
         tid = (threadid() - 1) * simd
         idx = idx_base + tid * N
         mapped_points = @view temp_points[tid+1:tid+simd]
-        c, r = box.center, box.radius
+        c, r = box
         for p in g.domain_points(c, r)
             fp = g.map(p)
-            tuple_vscatter!(temp_vec, fp, idx)
+            tuple_vscatter!(temp_points, fp, idx)
             for q in mapped_points
                 hitbox = point_to_box(P, q)
                 isnothing(hitbox) && continue
-                r = hitbox.radius
+                _, r = hitbox
                 for ip in g.image_points(q, r)
                     hit = point_to_key(P, ip)
                     isnothing(hit) && continue
@@ -63,49 +72,125 @@ end
 end
 
 @inbounds @muladd function construct_transfers(
-        g::SampledBoxMap{<:BoxMapCPUCache{simd}}, source::BoxSet{R,Q,S}
-    ) where {simd,N,T,R<:Box{N,T},Q<:BoxPartition,S<:OrderedSet}
+        G::CPUSampledBoxMap{simd}, source::BoxSet{R,Q,S}
+    ) where {simd,N,T,R<:Box{N,T},Q,S<:OrderedSet}
     
     P, D = source.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
-    idx_base, temp_vec, temp_points = g.acceleration
+    g, idx_base, temp_points = G
     @floop for key in source.set
         tid = (threadid() - 1) * simd
         idx = idx_base + tid * N
         mapped_points = @view temp_points[tid+1:tid+simd]
         box = key_to_box(P, key)
-        c, r = box.center, box.radius
-        domain_points = g.domain_points(c, r)
-        inv_n = 1 / (simd * length(domain_points))
-        for p in domain_points
+        c, r = box
+        for p in g.domain_points(c, r)
             fp = g.map(p)
-            tuple_vscatter!(temp_vec, fp, idx)
+            tuple_vscatter!(temp_points, fp, idx)
             for q in mapped_points
                 hitbox = point_to_box(P, q)
                 isnothing(hitbox) && continue
-                r = hitbox.radius
+                _, r = hitbox
                 for ip in g.image_points(q, r)
                     hit = point_to_key(P, ip)
                     isnothing(hit) && continue
                     hit in source.set || @reduce( variant_keys = S() ⊔ hit )
-                    @reduce( mat = D() ⊔ ((hit,key) => inv_n) )
+                    @reduce( mat = D() ⊔ ((hit,key) => 1) )
                 end
             end
         end
     end
-    return mat, variant_keys
+    variant_set = BoxSet(P, variant_keys)
+    return mat, variant_set
+end
+
+# constuctors
+function CPUSampledBoxMap(boxmap::SampledBoxMap{N,T}) where {N,T}
+    simd = n_default(T)
+    idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
+    temp_vec = Vector{T}(undef, N*simd*nthreads())
+    temp_points = reinterpret(SVector{N,T}, temp_vec)
+    CPUSampledBoxMap(boxmap, idx_base, temp_points)
+end
+
+"""
+    BoxMap(:pointdiscretized, :cpu, map, domain, points) -> CPUSampledBoxMap
+
+Construct a `CPUSampledBoxMap` that uses the iterator 
+`points` as test points. `points` must have eltype 
+`SVector{N, SIMD.Vec{S,T}}` and be within the unit 
+cube `[-1,1]^N`. 
+"""
+function PointDiscretizedBoxMap(::Val{:cpu}, map, domain::Box{N,T}, points) where {N,T}
+    n, simd = length(points), n_default(T)
+    if n % simd != 0
+        throw(DimensionMismatch("Number of test points $n is not divisible by $T SIMD capability $simd"))
+    end
+    gathered_points = tuple_vgather(points, simd)
+    domain_points = rescale(gathered_points)
+    image_points = center
+    boxmap = SampledBoxMap(map, domain, domain_points, image_points)
+    CPUSampledBoxMap(boxmap)
+end
+
+function PointDiscretizedBoxMap(c::Val{:cpu}, map, P::Q, points) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    PointDiscretizedBoxMap(c, map, P.domain, points)
+end
+
+"""
+    BoxMap(:grid, :cpu, map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
+
+Construct a `CPUSampledBoxMap` that uses a grid of test points. 
+The size of the grid is defined by `no_of_points`, which is 
+a tuple of length equal to the dimension of the domain. 
+The number of points is rounded up to the nearest mutiple 
+of the cpu's SIMD capacity. 
+"""
+function GridBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points=ntuple(_->n_default(T),N)) where {N,T}
+    simd = n_default(T)
+    no_of_points = ntuple(N) do i
+        rem = no_of_points[i] % simd
+        no_of_points[i] + (rem == 0 ? rem : simd - rem)
+    end
+    Δp = 2 ./ no_of_points
+    points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(no_of_points) ]
+    PointDiscretizedBoxMap(c, map, domain, points)
+end
+
+function GridBoxMap(c::Val{:cpu}, map, P::Q; no_of_points=ntuple(_->n_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    GridBoxMap(c, map, P.domain; no_of_points=no_of_points)
+end
+
+"""
+    BoxMap(:montecarlo, :cpu, map, domain; no_of_points=16*N) -> SampledBoxMap
+
+Construct a `CPUSampledBoxMap` that uses `no_of_points` 
+Monte-Carlo test points. The number of points is rounded 
+up to the nearest multiple of the cpu's SIMD capacity. 
+"""
+function MonteCarloBoxMap(c::Val{:cpu}, map, domain::Box{N,T}; no_of_points=n_default(N,T)) where {N,T}
+    simd = n_default(T)
+    rem = no_of_points % simd
+    no_of_points = no_of_points + (rem == 0 ? rem : simd - rem)
+    points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:no_of_points ] 
+    PointDiscretizedBoxMap(c, map, domain, points)
+end 
+
+function MonteCarloBoxMap(c::Val{:cpu}, map, P::Q; no_of_points=n_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    MonteCarloBoxMap(c, map, P.domain; no_of_points=no_of_points)
 end
 
 # helper + compatibility functions
-function Base.show(io::IO, g::SampledBoxMap{C}) where {simd,C<:BoxMapCPUCache{simd}}
-    center, radius = g.domain.center, g.domain.radius
+function Base.show(io::IO, G::CPUSampledBoxMap{simd}) where {simd}
+    g = G.boxmap
+    center, radius = g.domain
     n = length(g.domain_points(center, radius)) * simd
-    print(io, "BoxMap with $(n) sample points")
+    print(io, "CPUSampledBoxMap with $(n) sample points")
 end
 
-Base.iterate(c::BoxMapCPUCache) = (c.idx_base, Val(:temp_vec))
-Base.iterate(c::BoxMapCPUCache, ::Val{:temp_vec}) = (c.temp_vec, Val(:temp_points))
-Base.iterate(c::BoxMapCPUCache, ::Val{:temp_points}) = (c.temp_points, Val(:done))
-Base.iterate(c::BoxMapCPUCache, ::Val{:done}) = nothing
+Base.iterate(c::CPUSampledBoxMap, i...) = (c.boxmap, Val(:idx_base))
+Base.iterate(c::CPUSampledBoxMap, ::Val{:idx_base}) = (c.idx_base, Val(:temp_points))
+Base.iterate(c::CPUSampledBoxMap, ::Val{:temp_points}) = (c.temp_points, Val(:done))
+Base.iterate(c::CPUSampledBoxMap, ::Val{:done}) = nothing
 
 Base.@propagate_inbounds function tuple_vgather(
         v::V, idx::SIMD.Vec{simd,Int}# = SIMD.Vec(ntuple( i -> N*(i-1), simd ))
@@ -159,6 +244,7 @@ Base.@propagate_inbounds function tuple_vscatter!(
     for i in 1:N
         vo[idx + i] = vi[i]
     end
+    return vo
 end
 
 Base.@propagate_inbounds function tuple_vscatter!(
@@ -169,4 +255,21 @@ Base.@propagate_inbounds function tuple_vscatter!(
     for j in 1:length(vi)
         tuple_vscatter!( vo, vi[j], idx + (j-1)*N*simd )
     end
+    return vo
+end
+
+Base.@propagate_inbounds function tuple_vscatter!(
+        vo::VO, vi::VI, idx::SIMD.Vec{simd,I}
+    ) where {N,T,simd,VO<:AbstractArray{<:SVNT{N,T}},VI<:SVNT{N,SIMD.Vec{simd,T}},I<:Integer}
+
+    vr = reinterpret(T, vo)
+    return tuple_vscatter!(vr, vi, idx)
+end
+
+Base.@propagate_inbounds function tuple_vscatter!(
+        vo::VO, vi::VI
+    ) where {N,T,simd,VO<:AbstractArray{<:SVNT{N,T}},VI<:AbstractArray{<:SVNT{N,SIMD.Vec{simd,T}}}}
+    
+    vr = reinterpret(T, vo)
+    return tuple_vscatter!(vr, vi)
 end

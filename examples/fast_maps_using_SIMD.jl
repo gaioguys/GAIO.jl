@@ -28,10 +28,11 @@ F(x) = rk4_flow_map(f, x)
 # To see which instructions are supported, refer to 
 # https://github.com/eschnett/SIMD.jl.git
 
-# All we need to do is pass :cpu to the BoxMap command.
 center, radius = (0,0,25), (30,30,30)
 P = BoxPartition(Box(center, radius), (128,128,128))
-G = BoxMap(F, P, :cpu)
+
+# All we need to do is pass :cpu to the BoxMap command.
+G = MonteCarloBoxMap(:cpu, F, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
 @time W = unstable_set(G, P[x])

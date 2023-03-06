@@ -24,27 +24,60 @@ struct Box{N,T <: AbstractFloat}
     center::SVector{N,T}
     radius::SVector{N,T}
 
-    function Box{N,T}(center, radius) where {N,T}
+    @inline function Box{N,T}(center, radius) where {N,T}
 
-        if !( N == length(radius) == length(center) )
-            throw(DimensionMismatch("Center vector and radius vector must have same length ($N)"))
-        end
+        @boundscheck begin
+            if !( N == length(radius) == length(center) )
+                throw(DimensionMismatch("Center vector and radius vector must have same length ($N)"))
+            end
 
-        if any(≤(0), radius)
-            throw(DomainError(radius, "radius must be positive in every component"))
+            if any(≤(0), radius)
+                throw(DomainError(radius, "radius must be positive in every component"))
+            end
         end
 
         return new{N,T}(SVector{N,T}(center), SVector{N,T}(radius))
     end
 end
 
+function Box{N,T}(int::IntervalBox{N}) where {N,T}
+    mat = reinterpret(reshape, T, collect(int))
+    c = (mat[1, :] .+ mat[2, :]) ./ 2
+    r = (mat[2, :] .- mat[1, :]) ./ 2
+    all(>(0), r) || return nothing
+    @inbounds Box{N,T}(c, r)
+end
+
 Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype(radius))}(center, radius)
+Box(int::IntervalBox{N,T}) where {N,T} = Box{N,T}(int)
+
+function IntervalArithmetic.IntervalBox(box::Box{N,T}) where {N,T}
+    c, r = box
+    IntervalBox{N,T}(c .± r ...)
+end
 
 function Base.show(io::IO, box::B) where {B<:Box} 
     print(io, "$(B):\n    center = $(box.center),\n    radii = $(box.radius)")
 end
 
-Base.in(point, box::Box) = all(box.center .- box.radius  .<=  point  .<  box.center .+ box.radius)
+@inline function Base.in(point, box::Box)
+    c, r = box
+    @boundscheck begin
+        M, N = length(point), length(c)
+        if M != N
+            throw(DimensionMismatch("point has dimension $M but box has dimension $N"))
+        end
+    end
+    all(c .- r .<= point .< c .+ r)
+end
+
+function Base.intersect(b1::Box{N}, b2::Box{N}) where {N}
+    lo = max.(b1.center .- b1.radius, b2.center .- b2.radius)
+    hi = min.(b1.center, .+ b1.radius, b2.center .+ b2.radius)
+    all(lo .< hi) || return nothing
+    return Box((hi .+ lo) ./ 2, (hi .- lo) ./ 2)
+end
+
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
 
 Base.iterate(b::Box, i...) = (b.center, Val(:radius))
@@ -62,11 +95,24 @@ volume(box::Box) = prod(2 .* box.radius)
 
 Return an iterator over the vertices of a `box = Box(center, radius)`. 
 """
-function vertices(center::SVNT{N,T}, radius::SVNT{N,T}) where {N,T}
+function vertices(center::SVNT{N,T}, radius::SVNT{N,R}) where {N,T,R}
     I = CartesianIndices(ntuple(_->-1:2:1, N))
     (@muladd(center .+ radius .* Tuple(i)) for i in I)
 end
 vertices(box::Box) = vertices(box.center, box.radius)
+
+function subdivide(box::Box{N,T}, dim) where {N,T} 
+    c, r = box
+    b1 = Box{N,T}(
+        setindex(c, c[dim] - r[dim] / 2, dim),
+        setindex(r, r[dim] / 2, dim)
+    )
+    b2 = Box{N,T}(
+        setindex(c, c[dim] + r[dim] / 2, dim),
+        setindex(r, r[dim] / 2, dim)
+    )
+    b1, b2
+end
 
 """
     center(b::Box)

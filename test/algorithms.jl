@@ -10,7 +10,7 @@ using Test
     center = (0.0, 0.0)
     radius = (1.0, 1.0)
     domain = Box(center, radius)
-    g = PointDiscretizedMap(f, domain, test_points)
+    g = BoxMap(:pointdiscretized, f, domain, test_points)
     partition = BoxPartition(domain)
     n = 10
     dims = (32, 32)

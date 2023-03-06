@@ -4,7 +4,8 @@
 Compute the attractor relative to `B`. Generally, `B` should be 
 a box set containing the whole partition `P`, ie `B = P[:]`.
 """
-function relative_attractor(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
+function relative_attractor(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    B = copy(B₀)
     for k = 1:steps
         B = subdivide(B, (k % N) + 1)
         B = B ∩ F(B)
@@ -37,7 +38,8 @@ Compute the chain recurrent set over the box set `B`. Generally,
 `B` should be a box set containing the whole partition `P`, 
 ie `B = P[:]`. 
 """
-function chain_recurrent_set(F::BoxMap, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
+function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    B = copy(B₀)
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
         P = TransferOperator(F, B)
@@ -85,7 +87,8 @@ partition `P`. Generally, `B` should be
 a box set containing the whole partition `P`, ie `B = P[:]`,
 and should contain a root of `g`. 
 """
-function cover_roots(g, Dg, B::BoxSet{Box{N,T}}; steps=12) where {N,T}
+function cover_roots(g, Dg, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    B = copy(B₀)
     domain = B.partition.domain
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
@@ -162,4 +165,84 @@ with step size `step_size`.
         x = rk4(f, x, step_size)
     end
     return x
+end
+
+function SEBA(V::AbstractArray{<:BoxFun}, Rinit=nothing)
+    P = V[1].partition
+    all(μ -> μ.partition == P, V) || throw(DomainError(V, "Partitions of BoxFuns do not match. "))
+    supp = union((keys(μ) for μ in V)...)
+
+    V̄ = [μ[key] for key in supp, μ in V]
+    S̄, R = SEBA(V̄, Rinit)
+
+    S̄ .= max.(S̄, 0)
+    S_descend = sort(S̄, dims=1, rev=true)
+    τdp = maximum(S_descend[:, 2])
+    S̄[S̄ .< τdp] .= 0
+
+    S = [BoxFun(V[i], S̄[:, i]) for i in 1:size(S̄, 2)]
+    return S
+end
+
+function SEBA(V::AbstractMatrix, Rinit=nothing)
+
+    # Inputs: 
+    # V is pxr matrix (r vectors of length p as columns)
+    # Rinit is an (optional) initial rotation matrix.
+
+    # Outputs:
+    # S is pxr matrix with columns approximately spanning the column space of V
+    # R is the optimal rotation that acts on V, which followed by thresholding, produces S
+
+    maxiter = 5000   #maximum number of iterations allowed
+    F = qr(V) # Enforce orthonormality
+    V = Matrix(F.Q)
+    p, r = size(V)
+    μ = 0.99 / sqrt(p)
+
+    S = zeros(size(V))
+    # Perturb near-constant vectors
+    for j = 1:r
+        if maximum(V[:,j]) - minimum(V[:,j]) < 1e-14
+            V[:,j] = V[:,j] .+ (rand(p, 1) .- 1 / 2) * 1e-12
+        end
+    end
+
+    # Initialise rotation
+    if Rinit ≡ nothing
+        Rnew = Matrix(I, r, r)
+    else
+        # Ensure orthonormality of Rinit
+        F = svd(Rinit)
+        Rnew = F.U * F.Vt
+    end
+
+    R = zeros(r, r)
+    iter = 0
+    while norm(Rnew - R) > 1e-14 && iter < maxiter
+        iter = iter + 1
+        R = Rnew
+        Z = V * R'
+        # Threshold to solve sparse approximation problem
+        for i = 1:r
+            Si = sign.(Z[:,i]) .* max.(abs.(Z[:,i]) .- μ, zeros(p))
+            S[:,i] = Si / norm(Si)
+        end
+        # Polar decomposition to solve Procrustes problem
+        F = svd(S' * V, full=false)
+        Rnew = F.U * F.Vt
+    end
+
+    # Choose correct parity of vectors and scale so largest value is 1
+    for i = 1:r
+        S[:,i] = S[:,i] * sign(sum(S[:,i]))
+        S[:,i] = S[:,i] / maximum(S[:,i])
+    end
+
+    # Sort so that most reliable vectors appear first
+    ind = sortperm(vec(minimum(S, dims=1)), rev=true)
+    S = S[:, ind]
+
+    return S, R
+
 end
