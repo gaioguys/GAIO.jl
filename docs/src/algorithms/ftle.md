@@ -72,7 +72,7 @@ P = BoxPartition(Q, (1000,1000))
 S = cover(P, :)
 T = TransferOperator(F, S, S)
 λ, ev = eigs(T)   # The Lebesque measure - i.e. the constant-weight measure - is invariant
-μ = ev[1]
+μ = real ∘ ev[1]
 
 σ8 = finite_time_lyapunov_exponents(f, Df, μ; n = 8)
 σ16 = finite_time_lyapunov_exponents(f, Df, μ; n = 16)

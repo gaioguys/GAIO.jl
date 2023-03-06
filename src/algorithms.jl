@@ -139,10 +139,10 @@ function cover_manifold(f, B₀::BoxSet{Box{N,T},Q,S}; steps=12) where {N,T,Q,S}
         B = subdivide(B, (k % N) + 1)
         P = B.partition
         @floop for key in B.set
-            c, r = key_to_box(P, key)
-            box = IntervalBox(c .± r ...)
-            fbox = f(box)
-            if sign(fbox.lo * fbox.hi) ≤ 0
+            box = key_to_box(P, key)
+            int = IntervalBox(box)
+            fint = f(int)
+            if contains_zero(fint)
                 @reduce( image = S() ⊔ key )
             end
         end

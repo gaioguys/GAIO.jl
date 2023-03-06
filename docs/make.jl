@@ -8,7 +8,10 @@ makedocs(
         "Home" => "index.md",
         "Getting started" => "getting_started.md",
         "General usage" => "general.md",
-        "Algorithms" => "algorithms.md",
+        "Algorithms" => [
+            ""
+        ],
+        #"Algorithms" => "algorithms.md",
         "BoxMaps" => "boxmap.md",
         "Maximizing Performance" => [
             "simd.md",

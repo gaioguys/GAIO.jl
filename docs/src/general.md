@@ -48,15 +48,6 @@ The `TreePartition` created above is equivalent to a 4x2 `BoxPartition`. One can
 ```@repl
 P3 = BoxPartition(P2)
 ```
-
-One can print a description of the tree in the REPL using the `AbstractTrees` package
-```@repl
-using AbstractTrees
-tr = abstracttree(P2);
-print_tree(tr)
-```
-(printing in this form is not the default behavior in GAIO.jl since GAIO.jl's tree datatype is optimized for different behavior)
-
 `TreePartition`s use indices of the type `(depth, cartesian_index)` where `cartesian_index` is the equivalent index of a `BoxPartition` with the same size as a `TreePartition` subdivided `depth` times. In other words,
 ```@repl
 key_to_box( P, (1, 1) ) == key_to_box( P2, (4, (1, 1)) )
@@ -158,12 +149,21 @@ Of course, the same holds for the the Koopman operator as well.
 ```@repl
 ν = T'μ
 ```
+Since a measure ``\mu`` is a function defined over measurable sets, composite measures ``g \circ \mu`` are well-defined for functions ``g : \mathbb{R} \to \mathbb{R}`` (or ``g : \mathbb{C} \to \mathbb{C}``). This is supported in GAIO.jl for `BoxFuns`
+```@repl
+η = exp ∘ μ
+```
+Similarly probability measures can be given a vector space structure. This is also supported in GAIO.jl
+```@repl
+ν + μ
+2ν - μ/2
+```
 
 ## BoxGraph
 
-One could equivalently view the transfer operator as a weighted directed graph. That is, a transfer operator in GAIO.jl is the (transposed) weighted adjacency matrix for a graph. This graph can be constructed using
+One could equivalently view the transfer operator as a weighted directed graph. That is, a transfer matrix in GAIO.jl is the (transposed) weighted adjacency matrix for a graph. This graph can be constructed using
 ```@repl
-G = Graph(T)    # T is a transfer operator
+G = Graph(T)
 ```
 The return type is a `BoxGraph`. `Boxgraph` is hooked into the `Graphs.jl` interface, which means all algorithms or etc. from Graphs.jl should work "out of the box". To construct a BoxSet from some index / indices of vertices in a BoxGraph, call
 ```julia

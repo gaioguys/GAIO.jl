@@ -331,12 +331,3 @@ function Base.:(==)(tr1::TreePartition{N,T,I}, tr2::TreePartition{N,V,J}) where 
     end
     return true
 end
-
-function abstracttree(tree::TreePartition{N,T,I}, node_idx=1) where {N,T,I}
-    node = tree.nodes[node_idx]
-    if isleaf(node)
-        node_idx
-    else
-        [generate_abstracttree(tree, node.left), generate_abstracttree(tree, node.right)]
-    end
-end
