@@ -36,8 +36,6 @@ struct TreePartition{N,T,I,V<:AbstractArray{Node{I}}} <: AbstractBoxPartition{Bo
     nodes::V
 end
 
-TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)])
-
 function TreePartition(domain::Box, depth::Integer)
     tree = TreePartition(domain)
     for i in 1:depth
@@ -46,9 +44,15 @@ function TreePartition(domain::Box, depth::Integer)
     return tree
 end
 
+TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)])
+BoxPartition(tree::TreePartition) = BoxPartition(tree, depth(tree))
+
 function BoxPartition(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
     center, radius = tree.domain
-    dims = 2 .^ ( ((depth + N) .- (2:N+1)) .÷ N )
+    dims = ntuple(Val(N)) do i
+        2 ^ ( ((depth+N) - (i+1)) ÷ N )
+    end
+    #dims = 2 .^ ( ((depth + N) .- (2:N+1)) .÷ N )
     BoxPartition{N,T,I}(
         tree.domain, 
         center .- radius, 
@@ -63,19 +67,23 @@ end
 
 isleaf(node::Node) = iszero(node.left) || iszero(node.right)
 children(tr::TreePartition, node::Node) = isleaf(node) ? () : (tr.nodes[node.left], tr.nodes[node.right])
+center(tr::TreePartition) = center(tr.domain)
+radius(tr::TreePartition) = radius(tr.domain)
+
 Base.ndims(::TreePartition{N}) where {N} = N
 Base.keytype(::Type{<:TreePartition{N,T,I}}) where {N,T,I} = Tuple{I,NTuple{N,I}}
 Base.copy(tr::TreePartition) = TreePartition(tr.domain, copy(tr.nodes))
 Base.length(tr::TreePartition) = length(keys(tr))
+Base.sizehint!(tr::TreePartition, s) = sizehint!(tr.nodes, s)
 
-function tree_search(tree::TreePartition{N,T,I}, point, max_depth=Inf) where {N,T,I}
+function tree_search(tree::TR, point, max_depth=Inf) where {N,T,I,TR<:TreePartition{N,T,I}}
     point in tree.domain || return nothing, 1
     
     # start at root
-    P = BoxPartition(tree.domain)
+    P = BoxPartition{I}(tree.domain)
     node_idx = 1
     node = tree.nodes[node_idx]
-    current_depth = 1
+    current_depth = one(I)
     cart = ntuple(_->one(I), Val(N))    # = point_to_key(P, point)
 
     while !isleaf(node) && current_depth < max_depth
@@ -89,10 +97,10 @@ function tree_search(tree::TreePartition{N,T,I}, point, max_depth=Inf) where {N,
         node_idx = isodd(cart[dim]) ? node.left : node.right
         node = tree.nodes[node_idx]
 
-        current_depth += 1
+        current_depth += one(I)
     end
 
-    key = (current_depth, cart)
+    key = (current_depth, cart) :: keytype(TR)
 
     return key, node_idx
 end
@@ -100,8 +108,8 @@ end
 function Base.checkbounds(::Type{Bool}, tree::TreePartition, key)
     depth, cart = key
     P = BoxPartition(tree, depth)
-    box = key_to_box(P, cart)
-    search_key, _ = tree_search(tree, box.center, depth)
+    c, _ = key_to_box(P, cart)
+    search_key, _ = tree_search(tree, c, depth+1)
     search_depth, search_cart = search_key
     return search_depth > depth || ( search_depth == depth && search_cart == cart )
 end
@@ -136,9 +144,16 @@ key_to_box(tree::TreePartition, ::Nothing) = nothing
 Subdivide a `TreePartition` at `key`. Dimension along which 
 the node is subdivided depends on the depth of the node. 
 """
-function subdivide!(tree::TreePartition{N,T,I}, key::Tuple{J,NTuple{N,K}}) where {N,T,I,J,K}
-    c, _ = key_to_box(tree, key)
-    _, node_idx = tree_search(tree, c)
+@propagate_inbounds function subdivide!(tree::TreePartition{N,T,I}, key::Tuple{J,NTuple{N,K}}) where {N,T,I,J,K}
+    depth, cart = key
+    P = BoxPartition(tree, depth)
+    c, _ = key_to_box(P, cart)
+    search_key, node_idx = tree_search(tree, c, depth + 1)
+    
+    @boundscheck begin
+        search_depth, search_cart = search_key
+        search_depth > depth || ( search_depth == depth && search_cart == cart ) || throw(BoundsError(tree, key))
+    end
 
     n = length(tree.nodes)
     tree.nodes[node_idx] = Node{I}(n+1, n+2)
@@ -149,13 +164,22 @@ end
 
 function subdivide!(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
     node_idxs = find_at_depth(tree, depth)
-    leaf_idxs = union!((leaves(tree, idx) for idx in node_idxs)...)
+
+    if all(idx -> isleaf(tree.nodes[idx]), node_idxs)
+        leaf_idxs = node_idxs
+    else
+        leaf_idxs = union!((leaves(tree, idx) for idx in node_idxs)...)
+    end
+
     n = length(tree.nodes)
+    sizehint!(tree, n + 2*length(leaf_idxs))
+
     for idx in leaf_idxs
         tree.nodes[idx] = Node{I}(n+1, n+2)
         push!(tree.nodes, Node{I}(0,0), Node{I}(0,0))
         n = n + 2
     end
+
     return tree
 end
 

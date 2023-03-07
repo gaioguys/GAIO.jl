@@ -71,7 +71,7 @@ end
 (boxfun::BoxFun)(boxset::Union{Box,BoxSet}) = sum(identity, boxfun, boxset)
 
 function Base.show(io::IO, g::BoxFun)
-    print(io, "BoxFun in $(g.partition) with $(length(g.vals)) stored entries")
+    print(io, "BoxFun in $(g.partition) with $(length(g.vals)) stored weights")
 end
 
 Base.length(fun::BoxFun) = length(fun.vals)

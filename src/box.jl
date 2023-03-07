@@ -24,7 +24,7 @@ struct Box{N,T <: AbstractFloat}
     center::SVector{N,T}
     radius::SVector{N,T}
 
-    @inline function Box{N,T}(center, radius) where {N,T}
+    @propagate_inbounds function Box{N,T}(center, radius) where {N,T}
 
         @boundscheck begin
             if !( N == length(radius) == length(center) )
@@ -48,21 +48,33 @@ function Box{N,T}(int::IntervalBox{N}) where {N,T}
     @inbounds Box{N,T}(c, r)
 end
 
-Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype(radius))}(center, radius)
-Box(int::IntervalBox{N,T}) where {N,T} = Box{N,T}(int)
-Box(ints::Interval...) = Box(IntervalBox(ints...))
-Box(ints::NTuple{N,<:Interval{T}}) where {N,T} = Box(ints...)
-
 function IntervalArithmetic.IntervalBox(box::Box{N,T}) where {N,T}
     c, r = box
     IntervalBox{N,T}(c .± r ...)
 end
 
-function Base.show(io::IO, box::B) where {B<:Box} 
-    print(io, "$(B):\n    center = $(box.center),\n    radii = $(box.radius)")
+Box{T}(box::Box{N}) where {N,T} = Box{N,T}(box.center, box.radius)
+Box{T}(args...) where {T} = Box{T}(Box(args...))
+Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype(radius))}(center, radius)
+Box(int::IntervalBox{N,T}) where {N,T} = Box{N,T}(int)
+Box(ints::Interval...) = Box(IntervalBox(ints...))
+Box(ints::NTuple{N,<:Interval{T}}) where {N,T} = Box(ints...)
+
+Base.show(io::IO, box::Box) = show(io, IntervalBox(box))
+
+function Base.show(io::IO, ::MIME"text/plain", box::B) where {N,T,B<:Box{N,T}}
+    c, r = box
+    println(io, "$B: ")
+    if N ≤ 5
+        println(io, "   center: [$(join(c, ", "))]")
+        println(io, "   radius: [$(join(r, ", "))]")
+    else
+        println(io, "   center: [$(c[1]), $(c[2]), ..., $(c[N-1]), $(c[N])]")
+        println(io, "   radius: [$(r[1]), $(r[2]), ..., $(r[N-1]), $(r[N])]")
+    end
 end
 
-@inline function Base.in(point, box::Box)
+@propagate_inbounds function Base.in(point, box::Box)
     c, r = box
     @boundscheck begin
         M, N = length(point), length(c)
@@ -87,13 +99,14 @@ Base.iterate(b::Box, ::Val{:radius}) = (b.radius, Val(:done))
 Base.iterate(b::Box, ::Val{:done}) = nothing
 
 """
-Computes the volume of a box. 
+    volume(box::Box)
+
+Compute the volume of a box. 
 """
 volume(box::Box) = prod(2 .* box.radius)
 
 """
     vertices(box)
-    vertices(center, radius)
 
 Return an iterator over the vertices of a `box = Box(center, radius)`. 
 """
@@ -118,13 +131,25 @@ end
 
 """
     center(b::Box)
+
+Return the center of a box. 
+"""
+center(box::Box) = box.center
+
+"""
+    radius(b::Box)
+
+Return the radius of a box. 
+"""
+radius(box::Box) = box.radius
+
+"""
     center(center, radius)
 
 Return the center of a box as an iterable. 
 Default function for `image_points` in `SampledBoxMap`s. 
 """
 center(center, radius) = (center,)
-center(box::Box) = (box.center,)
 
 """
     rescale(box, point::Union{<:StaticVector{N,T}, <:NTuple{N,T}})

@@ -78,7 +78,7 @@ end
 Return a rough estimate of how many Newton steps 
 should be taken, given a step size h. 
 """
-function expon(h, ϵ=0.2, σ=1.0, δ=0.1)
+function expon(h, σ=1, ϵ=0.2, δ=0.1)
     n = log( ϵ * (1/2)^σ ) / log( maximum((1 - h, δ)) )
     return Int(ceil(n))
 end
@@ -88,11 +88,11 @@ end
 
 Return one step of the adaptive Newton algorithm for the point `x`. 
 """
-@muladd function adaptive_newton_step(g, g_jacobian, x)
+@muladd function adaptive_newton_step(g, g_jacobian, x, k=1)
     Dg = g_jacobian(x)
     d = Dg \ g(x)
     h = armijo_rule(g, g_jacobian, x, d)
-    n = expon(h)
+    n = expon(h, k)
     for _ in 1:n
         Dg = g_jacobian(x)
         x = x - h * (Dg \ g(x))
@@ -113,9 +113,9 @@ function cover_roots(g, Dg, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     domain = B.partition.domain
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
-        f = x -> adaptive_newton_step(g, Dg, x, k)
-        F_k = BoxMap(f, domain, no_of_points = 40)
-        B = F_k(B)
+        f(x) = adaptive_newton_step(g, Dg, x, k)
+        F = BoxMap(f, domain)
+        B = F(B)
     end
     return B
 end
@@ -176,6 +176,61 @@ function finite_time_lyapunov_exponents(F::SampledBoxMap, B::BoxSet{R,Q,S}; T) w
         @reduce( vals = D() ⊔ (key => ftle) )
     end
     return BoxFun(B.partition, vals)
+end
+
+"""
+    nth_iterate_jacobian(f, Df, x, n; Rfactor=false) -> Z[, R]
+
+Compute the Jacobian of the `n`-times iterated function 
+`f ∘ f ∘ ... ∘ f` at `x` using a QR iteration based on [1]. 
+Requires an approximation `Df` of the jacobian of `f`, e.g. 
+`Df(x) = ForwardDiff.jacobian(f, x)`. 
+Optionally, return the R-factor of the QR decomposition. 
+
+[1] Dieci, L., Russell, R. D., Van Vleck, E. S.: "On the 
+Computation of Lyapunov Exponents for Continuous Dynamical 
+Systems," submitted to SIAM J. Numer. Ana. (1993).
+"""
+function nth_iterate_jacobian(f, Df, x, n; Rfactor=false)
+    N, T = length(x), eltype(x)
+    Z = Matrix{T}(I(N))
+    R = Matrix{T}(I(N))
+    fx = x
+    for i in 1:n
+        decomp = qr(Z)
+        Z = Df(fx) * decomp.Q
+        R = R * decomp.R
+        i < n && (fx = f(fx))
+    end
+    Z = decomp.Q * R
+    return Rfactor ? (Z, R) : Z
+end
+
+Core.@doc raw"""
+    finite_time_lyapunov_exponents(f, Df, μ::BoxFun; n=8) -> σ
+
+Compute the Lyapunov exponents using a spatial integration 
+method [1] based on Birkhoff's ergodic theorem. Computes 
+```math
+\sigma_j = \frac{1}{n} \int \log R_{jj}( Df^n (x) ) \, dμ (x), \quad j = 1, \ldots, d
+```
+with respect to an ergodic invariant measure ``\mu``. 
+
+[1] Beyn, WJ., Lust, A. A hybrid method for computing 
+Lyapunov exponents. Numer. Math. 113, 357–375 (2009). 
+https://doi.org/10.1007/s00211-009-0236-4
+"""
+function finite_time_lyapunov_exponents(f, Df, μ::BoxFun{E}; n=8) where {N,T,E<:Box{N,T}}
+    a = zeros(N)
+    Dfⁿ(x) = nth_iterate_jacobian(f, Df, x, n; Rfactor=true)
+    for (box, val) in μ
+        c, _ = box
+        _, R = Dfⁿ(c)
+        a .+= val .* log.(diag(R))
+    end
+    sort!(a, rev=true)
+    a ./= n
+    return a
 end
 
 # Runge-Kutta scheme of 4th order

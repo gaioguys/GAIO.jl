@@ -1,9 +1,12 @@
 using GAIO
-using ForwardDiff
+using LinearAlgebra
 
 # domain (-40,40)^n, 3^n roots in domain
-g(x) = 100*x + x .^ 2 - x .^ 3 .- sum(x)
-Dg = x -> ForwardDiff.jacobian(g, x)
+g(x) = 100*x + x.^2 - x.^3 .- sum(x)
+function Dg(x)
+    n = length(x)
+    100*I(n) + 2*Diagonal(x) - 3*Diagonal(x.^2) + ones(n,n)
+end
 
 dim = 3
 center, radius = zeros(dim), 40*ones(dim)

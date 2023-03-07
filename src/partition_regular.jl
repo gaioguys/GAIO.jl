@@ -31,10 +31,12 @@ function BoxPartition(domain::Box{N,T}, dims::SVNT{N,I}) where {N,T,I}
     return BoxPartition{N,T,I}(domain, left, scale, dims)
 end
 
-function BoxPartition(domain::Box{N,T}) where {N,T}
-    dims = tuple(ones(Int,N)...)
+function BoxPartition{I}(domain::Box{N,T}) where {N,T,I}
+    dims = ntuple(_->one(I), Val(N))
     BoxPartition(domain, dims)
 end
+
+BoxPartition(domain::Box{N,T}) where {N,T} = BoxPartition{Int}(domain)
 
 function BoxPartition(domain::Box{1}, dims::Integer)
     BoxPartition(domain, (dims,))
@@ -45,6 +47,9 @@ Base.ndims(::BoxPartition{N}) where {N} = N
 Base.size(partition::BoxPartition) = partition.dims.data # .data returns as tuple
 Base.length(partition::BoxPartition) = prod(partition.dims)
 Base.keytype(::Type{<:BoxPartition{N,T,I}}) where {N,T,I} = NTuple{N,I}
+
+center(partition::BoxPartition) = center(partition.domain)
+radius(partition::BoxPartition) = radius(partition.domain)
 
 Base.CartesianIndices(partition::BoxPartition) = CartesianIndices(size(partition))
 Base.LinearIndices(partition::BoxPartition) = LinearIndices(size(partition))
@@ -57,15 +62,6 @@ function Base.keys(partition::P) where {P<:BoxPartition}
 end
 
 function Base.show(io::IO, partition::P) where {N,P<:BoxPartition{N}}
-    if N ≤ 5
-        print(io, join(size(partition), " x "), " - element $P")
-    else
-        sz = size(partition)
-        print(io, sz[1], " x ", sz[2], " ... ", sz[N-1], " x ", sz[N], " - element $P")
-    end
-end
-
-function Base.show(io::IO, ::MIME"text/plain", partition::P) where {N,P<:BoxPartition{N}}
     if N ≤ 5
         print(io, join(size(partition), " x "), " - element BoxPartition")
     else
