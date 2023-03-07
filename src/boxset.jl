@@ -130,7 +130,7 @@ function cover_boxes(partition::P, box_in::Box) where {N,T,I,P<:TreePartition{N,
     queue = Tuple{I,K}[(1, K((1, ntuple(_->1,N))))]
     while !isempty(queue)
         node_idx, key = pop!(queue)
-        node = tree.nodes[node_idx]
+        node = partition.nodes[node_idx]
 
         if isleaf(node)
             keys = keys ⊔ key
@@ -142,7 +142,7 @@ function cover_boxes(partition::P, box_in::Box) where {N,T,I,P<:TreePartition{N,
             key1 = (depth+1, Base.setindex(cart, 2 * cart[dim] - 1, dim))
             key2 = (depth+1, Base.setindex(cart, 2 * cart[dim], dim))
             
-            Q = BoxPartition(partition, depth)
+            Q = BoxPartition(partition, depth+1)
             box1 = key_to_box(Q, key1[2])
             box2 = key_to_box(Q, key2[2])
 
@@ -159,7 +159,7 @@ function cover_boxes(partition::P, boxes) where {N,T,I,P<:TreePartition{N,T,I}}
     for box in boxes
         union!(keys, cover_boxes(partition, box))
     end
-    return keys
+    return BoxSet(partition, keys)
 end
 
 for op in (:union, :intersect, :setdiff, :symdiff)

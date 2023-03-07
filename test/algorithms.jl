@@ -15,13 +15,13 @@ using Test
     n = 10
     dims = (32, 32)
     partition_at_depth_n = BoxPartition(domain, dims)
-    rga = relative_attractor(g, partition[:], steps = n)
-    unstable = unstable_set(g, partition_at_depth_n[:])
+    rga = relative_attractor(g, cover(partition, :), steps = n)
+    unstable = unstable_set(g, cover(partition_at_depth_n, :))
     # ground truths attractor and unstable set
     x_axis = [SVector(0, x) for x in range(-1, 1, length=100)]
     y_axis = [SVector(x, 0) for x in range(-1, 1, length=100)]
-    gt_rga = partition_at_depth_n[y_axis]
-    gt_unstable = partition_at_depth_n[x_axis]
+    gt_rga = cover(partition_at_depth_n, y_axis)
+    gt_unstable = cover(partition_at_depth_n, x_axis)
     # make sure that the algorithms cover the ground truth (we won't have equality)
     @testset "relative attractor" begin
         @test length(gt_rga) > 0

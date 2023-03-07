@@ -15,12 +15,12 @@ using Test
         p1 = SVector(0.0, 0.0)
         p2 = SVector(0.5, 0.0)
         p3 = SVector(0.0, -0.5)
-        boxset = partition[(p1, p2, p3)]
+        boxset = cover(partition, (p1, p2, p3))
         mapped1 = g(boxset)
 
         boxarr = collect(IntervalBox(c .± r ...) for (c,r) in boxset)
         image_arr = collect(Box(f(int)) for int in boxarr)
-        image_set = partition[image_arr]
+        image_set = cover(partition, image_arr)
 
         @test image_set == mapped1
     end

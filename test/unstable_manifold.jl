@@ -13,7 +13,7 @@ using Test
 
     P = BoxPartition(domain, (128,128,128))
     F = BoxMap(:grid, f, domain)
-    W = unstable_set(F, P[x])
+    W = unstable_set(F, cover(P, x))
     @test W isa BoxSet  # passes if no error is thrown
 
     T = TransferOperator(F, W)

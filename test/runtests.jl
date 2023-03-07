@@ -19,7 +19,7 @@ using SafeTestsets
     @safetestset "SampledBoxMap" begin
         include("boxmap.jl")
     end
-    @safetestset "SampledBoxMap :cpu" begin
+    @safetestset "SampledBoxMap :simd" begin
         include("boxmap_simd.jl")
     end
     if CUDA.functional()
@@ -29,6 +29,9 @@ using SafeTestsets
     end
     @safetestset "IntervalBoxMap" begin
         include("boxmap_interval.jl")
+    end
+    @safetestset "BoxFun" begin
+        include("boxfun.jl")
     end
     @safetestset "Algorithms" begin
         include("algorithms.jl")
