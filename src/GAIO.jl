@@ -58,9 +58,9 @@ export IntervalBoxMap
 export rk4, rk4_flow_map
 
 export relative_attractor, unstable_set, chain_recurrent_set
-export cover_roots, finite_time_lyapunov_exponents
+export cover_roots, cover_manifold, finite_time_lyapunov_exponents
 export union_strongly_connected_components
-export SEBA
+export SEBA, partition_unity, partition_disjoint, partition_likelihood
 
 export plotboxes, plotboxes!
 

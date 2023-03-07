@@ -49,33 +49,54 @@ function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where 
     return B
 end
 
+Core.@doc raw"""
+    armijo_rule(g, Dg, x, d, σ=1e-4, ρ=0.8, α₀=0.05, α₁=1.0)
+
+Find a step size multiplier ``\alpha \in (\alpha_0, \alpha_1]`` 
+such that 
+```math
+g(x + \alpha d) - g(x) \leq \alpha \sigma \, Dg(x) \cdot d
+```
+This is done by initializing ``\alpha = 1`` and testing the 
+above condition. If it is not satisfied, scale ``\alpha`` 
+by some constant ``\rho < 1`` (i.e. set 
+``\alpha = \rho \cdot \alpha``), and test the condition 
+again. 
+"""
+@muladd function armijo_rule(g, Dg, x, d, σ=1e-4, ρ=0.8, α₀=0.05, α₁=1.0)
+    gx, Dgx = g(x), Dg(x)
+    α = α₁
+    while any(g(x + α * d) .> gx + σ * α * Dgx' * d) && α > α₀
+        α = ρ * α
+    end
+    return α
+end
+
+"""
+    expon(h, ϵ=0.2, σ=1.0, δ=0.1)
+
+Return a rough estimate of how many Newton steps 
+should be taken, given a step size h. 
+"""
+function expon(h, ϵ=0.2, σ=1.0, δ=0.1)
+    n = log( ϵ * (1/2)^σ ) / log( maximum((1 - h, δ)) )
+    return Int(ceil(n))
+end
+
 """
     adaptive_newton_step(g, g_jacobian, x, k=1)
 
 Return one step of the adaptive Newton algorithm for the point `x`. 
-
-The optional argument `k` is the iteration number, which is 
-used to tune the step size. 
 """
-@muladd function adaptive_newton_step(g, g_jacobian, x, k=1)
-    function armijo_rule(g, x, α, σ, ρ)
-        Dg = g_jacobian(x)
-        d = Dg \ g(x)
-        while any(g(x + α * d) .> g(x) + σ * α * Dg' * d) && α > 0.1
-            α = ρ * α
-        end
-        return α
-    end
-    h = armijo_rule(g, x, 1.0, 1e-4, 0.8)
-
-    expon(ϵ, σ, h, δ) = Int(ceil(log(ϵ * (1/2)^σ)/log(maximum((1 - h, δ)))))
-    n = expon(0.2, k, h, 0.1)
-
+@muladd function adaptive_newton_step(g, g_jacobian, x)
+    Dg = g_jacobian(x)
+    d = Dg \ g(x)
+    h = armijo_rule(g, g_jacobian, x, d)
+    n = expon(h)
     for _ in 1:n
         Dg = g_jacobian(x)
         x = x - h * (Dg \ g(x))
     end
-
     return x
 end
 
@@ -84,8 +105,8 @@ end
 
 Compute a covering of the roots of `g` within the 
 partition `P`. Generally, `B` should be 
-a box set containing the whole partition `P`, ie `B = P[:]`,
-and should contain a root of `g`. 
+a box set containing the whole partition `P`, ie 
+`B = cover(P, :)`, and should contain a root of `g`. 
 """
 function cover_roots(g, Dg, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     B = copy(B₀)
@@ -99,8 +120,39 @@ function cover_roots(g, Dg, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     return B
 end
 
+Core.@doc raw"""
+    cover_manifold(f, B::BoxSet; steps=12)
+
+Use interval arithmetic to compute a covering of 
+an implicitly defined manifold ``M`` of the form 
+```math
+f(M) \equiv 0
+```
+for some function ``f : \mathbb{R}^N \rigtharrow \mathbb{R}``. 
+    
+The starting BoxSet `B` should (coarsely) cover 
+the manifold. 
 """
-    finite_time_lyapunov_exponents(F::BoxMap, boxset::BoxSet) -> BoxFun
+function cover_manifold(f, B₀::BoxSet{Box{N,T},Q,S}; steps=12) where {N,T,Q,S}
+    B = copy(B₀)
+    for k in 1:steps
+        B = subdivide(B, (k % N) + 1)
+        P = B.partition
+        @floop for key in B.set
+            c, r = key_to_box(P, key)
+            box = IntervalBox(c .± r ...)
+            fbox = f(box)
+            if sign(fbox.lo * fbox.hi) ≤ 0
+                @reduce( image = S() ⊔ key )
+            end
+        end
+        B = BoxSet(P, image)
+    end
+    return B
+end
+
+"""
+    finite_time_lyapunov_exponents(F::SampledBoxMap, boxset::BoxSet) -> BoxFun
 
 Compute the Finite Time Lyapunov Exponent for 
 every box in `boxset`, where `F` represents a time-`T` 
@@ -108,7 +160,7 @@ integration of some continuous dynamical system.
 It is assumed that all boxes in `boxset` have radii 
 of some fixed order ϵ. 
 """
-function finite_time_lyapunov_exponents(F::BoxMap, B::BoxSet{R,Q,S}; T) where {N,V,R<:Box{N,V},Q,S}
+function finite_time_lyapunov_exponents(F::SampledBoxMap, B::BoxSet{R,Q,S}; T) where {N,V,R<:Box{N,V},Q,S}
     P, D = B.partition, Dict{keytype(Q),Float64}
     @floop for key in B.set
         c, r = key_to_box(P, key)
@@ -166,24 +218,91 @@ with step size `step_size`.
     return x
 end
 
-function SEBA(V::AbstractArray{<:BoxFun}, Rinit=nothing)
-    P = V[1].partition
-    all(μ -> μ.partition == P, V) || throw(DomainError(V, "Partitions of BoxFuns do not match. "))
-    supp = union((keys(μ) for μ in V)...)
+Core.@doc raw"""
+    SEBA(V::Matrix{<:Real}, Rinit=nothing) -> S, R
 
-    V̄ = [μ[key] for key in supp, μ in V]
+Construct a sparse approximation of the basis V, as described in 
+[1]. Returns matrices ``S``, ``R`` such that
+```math
+\frac{1}{2} \| V - SR \|_F^2 + \mu \| S \|_{1,1}
+```
+where ``\mu \in \mathbb{R}``, ``\|\|_F`` is the Frobenuius-norm, 
+and ``\|\|_{1,1}`` is the element sum norm, and ``R`` 
+is orthogonal. See [1] for further information on the argument 
+`Rinit`, as well as a description of the algorithm. 
+
+    SEBA(V::Matrix{<:BoxFun}, Rinit=nothing; which=partition_unity) -> S, A
+
+Construct a sparse eigenbasis approximation of V, as described in 
+[1]. Returns an `Array` of `BoxFun`s corresponding to the eigenbasis, 
+as well as a maximum-likelihood `BoxFun` that maps a box to the 
+element of S which has the largest value over the support. 
+
+The keyword `which` is used to set the threshholding heuristic, 
+which is used to extract a partition of the supports from the 
+sparse basis. Builtin options are
+```julia
+partition_unity, partition_disjoint, partition_likelihood
+```
+
+[1] Gary Froyland, Christopher P. Rock, and Konstantinos Sakellariou. 
+Sparse eigenbasis approximation: multiple feature extraction 
+across spatiotemporal scales with application to coherent set 
+identification. Communications in Nonlinear Science and Numerical 
+Simulation, 77:81-107, 2019. https://arxiv.org/abs/1812.02787
+"""
+function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D<:OrderedDict,U<:BoxFun{B,K,W,Q,D}}
+    supp = BoxSet(V[1])
+    all(x -> BoxSet(x) == supp, V) || throw(DomainError(V, "Supports of BoxFuns do not match."))
+
+    V̄ = [μ[key] for key in supp.set, μ in V]
     S̄, R = SEBA(V̄, Rinit)
+    S̄, Ā, τ = which(S̄)
 
-    S̄ .= max.(S̄, 0)
-    S_descend = sort(S̄, dims=1, rev=true)
-    τdp = maximum(S_descend[:, 2])
-    S̄[S̄ .< τdp] .= 0
-
-    S = [BoxFun(V[i], S̄[:, i]) for i in 1:size(S̄, 2)]
-    return S
+    S = [BoxFun(supp, S̄[:, i]) for i in 1:size(S̄, 2)]
+    A = BoxFun(supp, Ā)
+    return S, A
 end
 
-function SEBA(V::AbstractMatrix, Rinit=nothing)
+function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D,U<:BoxFun{B,K,W,Q,D}}
+    V = [
+        BoxFun( V[i].partition, OrderedDict(V[i]) )
+        for i in 1:length(V)
+    ]   # convert to ordered collections to guarantee deterministic iteration order
+    return SEBA(V, Rinit; which=which)
+end
+
+function partition_unity(S)
+    S .= max.(S, 0)
+    S_sum = sum(S, dims=2)
+    τᵖᵘ = maximum(S[S_sum .> 1, :])
+    S[S .≤ τᵖᵘ] .= 0
+    A = argmax.(eachrow(S))
+    return S, A, τᵖᵘ
+end
+
+function partition_disjoint(S)
+    S .= max(S, 0)
+    S_descend = sort(S, dims=2, rev=true)
+    τᵈᵖ = maximum(S_descend[:, 2])
+    S[S .≤ τᵈᵖ] .= 0
+    A = argmax.(eachrow(S))
+    return S, A, τᵈᵖ
+end
+
+function partition_likelihood(S)
+    A = argmax.(eachrow(S))
+    M = S[:, A]
+    A[M .≤ 0] .= 0
+    S .= 0
+    r = size(S, 2)
+    for i in 1:r
+        S[A .== i, i] .= M[A .== i]
+    end
+    return S, A, 0.
+end
+
+function SEBA(V::AbstractArray{U}, Rinit=nothing) where {U}
 
     # Inputs: 
     # V is pxr matrix (r vectors of length p as columns)

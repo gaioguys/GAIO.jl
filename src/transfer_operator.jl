@@ -168,7 +168,7 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         function _eigs(g::$type, B=I; nev=1, ritzvec=true, kwargs...)
             λ, ϕ, nconv = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
             S = $gmap.domain
-            b = [BoxFun(S, ϕ[:, i], OrderedDict) for i in 1:nev]
+            b = [BoxFun(S, ϕ[:, i]) for i in 1:nev]
             return ritzvec ? (λ, b, nconv) : (λ, nconv)
         end
 

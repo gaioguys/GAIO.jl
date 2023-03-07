@@ -31,8 +31,8 @@ F(x) = rk4_flow_map(f, x)
 center, radius = (0,0,25), (30,30,30)
 P = BoxPartition(Box(center, radius), (128,128,128))
 
-# All we need to do is pass :cpu to the BoxMap command.
-G = MonteCarloBoxMap(:cpu, F, P)
+# All we need to do is pass :simd to the BoxMap command.
+G = BoxMap(:montecarlo, :simd, F, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
 S = cover(P, x)
