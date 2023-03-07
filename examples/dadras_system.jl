@@ -1,5 +1,4 @@
 using LinearAlgebra, StaticArrays
-using GLMakie: plot
 using GAIO
 
 # Dadras system
@@ -23,10 +22,13 @@ v((x,y,z,w)) = (a*x-y*z+w, x*z-b*y, x*y-c*z+x*w, -y)
 f(x) = rk4_flow_map(v, x, 0.01, 10)
 
 domain = Box((0,0,0,0), (250,150,200,25))
-P = BoxPartition(domain, (96,96,96,96))
-equillibrium = P[Box((0,0,0,0), (0.1,0.1,0.1,0.1))]
-
 F = BoxMap(:montecarlo, f, domain, no_of_points=1024)
 
-W = unstable_set(F, equillibrium)
+P = BoxPartition(domain, (96,96,96,96))
+S = cover(P, Box((0,0,0,0), (0.1,0.1,0.1,0.1)))
+W = unstable_set(F, S)
+
+#using Plots: plot
+using GLMakie: plot
+
 plot(W)

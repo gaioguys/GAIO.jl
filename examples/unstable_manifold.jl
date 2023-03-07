@@ -1,4 +1,3 @@
-using WGLMakie: plot
 using GAIO
 
 # the Lorenz system
@@ -11,6 +10,10 @@ P = BoxPartition(Box(center, radius), (128,128,128))
 F = BoxMap(:adaptive, f, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
-W = unstable_set(F, P[x])
+S = cover(P, x)
+W = unstable_set(F, S)
+
+#using Plots: plot
+using GLMakie: plot
 
 plot(W)

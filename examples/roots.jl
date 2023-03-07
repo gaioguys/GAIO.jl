@@ -9,7 +9,8 @@ dim = 3
 center, radius = zeros(dim), 40*ones(dim)
 P = BoxPartition(Box(center, radius))
 
-R = cover_roots(g, Dg, P[:], steps=dim*8)
+S = cover(P, :)
+R = cover_roots(g, Dg, S, steps=dim*8)
 
 #using Plots: plot       # plot a 2D projection
 using WGLMakie: plot    # plot a 3D projection

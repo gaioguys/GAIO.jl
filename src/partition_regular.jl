@@ -94,10 +94,8 @@ end
 Return the box associated with the index 
 within a `BoxPartition`. 
 """
-@inline function key_to_box(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I}
-    @boundscheck begin
-        checkbounds(Bool, partition, x_ints) || throw(BoundsError(partition, x_ints))
-    end
+@propagate_inbounds function key_to_box(partition::BoxPartition{N,T,I}, x_ints) where {N,T,I}
+    @boundscheck checkbounds(Bool, partition, x_ints) || throw(BoundsError(partition, x_ints))
     radius = partition.domain.radius ./ partition.dims
     left = partition.left
     center = @muladd @. left + radius + (2 * radius) * (x_ints - 1)

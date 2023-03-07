@@ -57,7 +57,7 @@ function Base.sum(f, boxfun::BoxFun{B,K,V}, boxset=nothing) where {B,K,V}
 end
 
 function Base.sum(f, boxfun::BoxFun{B,K,V,P,D}, boxset::Union{Box,BoxSet}) where {B,K,V,P,D}
-    support = boxfun.partition[boxset]
+    support = cover(boxfun.partition, boxset)
     boxfun_new = BoxFun(
         boxfun.partition, 
         D((key=>val) for (key,val) in boxfun.vals if key in support.set)

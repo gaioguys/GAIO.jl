@@ -29,6 +29,7 @@ using MakieCore: @recipe
 using RecipesBase: RecipesBase
 
 import Base: ∘
+import Base: @propagate_inbounds
 
 export Box
 export volume, center, vertices, rescale
@@ -38,7 +39,7 @@ export key_to_box, point_to_key, bounded_point_to_key, point_to_box
 export depth, tree_search
 
 export BoxSet
-export boxset_empty, subdivide, subdivide!
+export cover, subdivide, subdivide!
 
 export BoxFun
 
@@ -58,6 +59,7 @@ export rk4, rk4_flow_map
 
 export relative_attractor, unstable_set, chain_recurrent_set
 export cover_roots, finite_time_lyapunov_exponents
+export union_strongly_connected_components
 export SEBA
 
 export plotboxes, plotboxes!

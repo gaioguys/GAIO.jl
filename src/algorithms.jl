@@ -42,9 +42,9 @@ function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where 
     B = copy(B₀)
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
-        P = TransferOperator(F, B)
+        P = TransferOperator(F, B, B)
         G = Graph(P)
-        B = strongly_connected_components(G)
+        B = union_strongly_connected_components(G)
     end
     return B
 end
@@ -109,11 +109,10 @@ It is assumed that all boxes in `boxset` have radii
 of some fixed order ϵ. 
 """
 function finite_time_lyapunov_exponents(F::BoxMap, B::BoxSet{R,Q,S}; T) where {N,V,R<:Box{N,V},Q,S}
-    P, D = B.partition, Dict{keytype(Q),Float}
+    P, D = B.partition, Dict{keytype(Q),Float64}
     @floop for key in B.set
-        box = key_to_box(P, key)
-        c, r = box.center, box.radius
-        fc = F.map(box.center)
+        c, r = key_to_box(P, key)
+        fc = F.map(c)
         ftle = -Inf
         for p in F.domain_points(c, r)
             ϵ = norm(c .- p)
