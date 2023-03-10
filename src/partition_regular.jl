@@ -55,6 +55,7 @@ Base.CartesianIndices(partition::BoxPartition) = CartesianIndices(size(partition
 Base.LinearIndices(partition::BoxPartition) = LinearIndices(size(partition))
 
 Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I}, key) where {N,T,I} = all(1 .≤ key .≤ size(partition))
+Base.checkbounds(::Type{Bool}, partition::BoxPartition{N,T,I}, ::Nothing) where {N,T,I} = false
 
 function Base.keys(partition::P) where {P<:BoxPartition}
     K = keytype(P)
@@ -108,14 +109,19 @@ Find the index for the box within a `BoxPartition`
 contatining a point, or `nothing` if the point does 
 not lie in the domain. 
 """
-function point_to_key(partition::BoxPartition{N,T,I}, point) where {N,T,I}
+@propagate_inbounds function point_to_key(partition::BoxPartition{N,T,I}, point) where {N,T,I}
     point in partition.domain || return nothing
     xi = (point .- partition.left) .* partition.scale
-    return ntuple( i -> unsafe_trunc(I, xi[i]) + one(I), Val(N) )
+    x_ints = ntuple( i -> unsafe_trunc(I, xi[i]) + one(I), Val(N) )
+    @boundscheck if !checkbounds(Bool, partition, x_ints)
+        @debug "something went wrong in point_to_key" point xi x_ints partition partition.domain
+        x_ints = min.(max.(x_ints, ntuple(_->one(I),Val(N))), size(partition))
+    end
+    return x_ints
 end
 
 """
-    bounded_point_to_key(partition::BoxPartition, point)
+    bounded_point_to_key(P::BoxPartition, point)
 
 Find the cartesian index of the nearest box within a 
 `BoxPartition` to a point. Conicides with `point_to_key` 
@@ -124,7 +130,8 @@ is to set `NaN = Inf` if `NaN`s are present in `point`.
 """
 function bounded_point_to_key(partition::AbstractBoxPartition{B}, point) where {N,T,B<:Box{N,T}}
     center, radius = partition.domain
-    left, right = center .- radius .+ 10*eps(T), center .+ radius .- 10*eps(T)
+    left = center .- radius .+ 10*eps(T)
+    right = center .+ radius .- 10*eps(T)
     p = ifelse.(isnan.(point), convert(T, Inf), point)
     p = min.(max.(p, left), right)
     return point_to_key(partition, p)
@@ -138,5 +145,5 @@ Find the box within a `BoxPartition` containing a point.
 function point_to_box(partition::AbstractBoxPartition, point)
     x_ints = point_to_key(partition, point)
     isnothing(x_ints) && return x_ints
-    return key_to_box(partition, x_ints)
+    return @inbounds key_to_box(partition, x_ints)
 end
