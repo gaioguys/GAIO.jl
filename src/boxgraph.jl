@@ -98,11 +98,11 @@ end
 
 function index_to_row(g::BoxGraph, j)
     g.gstar.domain === g.gstar.codomain && return j
+    m, n = size(g.gstar)
     if j ≤ n
         u = index_to_key(g.gstar.domain, j)
         row = key_to_index(g.gstar.codomain, u)
     else
-        m, n = size(g.gstar)
         row = j - n + g.n_intersections
     end
     return row
