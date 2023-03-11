@@ -2,7 +2,7 @@
 
 ### Mathematical Background
 
-For a smooth function ``h : \mathbb{R}^d \to \mathbb{R}^k`` whose total derivative has full row rank, the set ``\left{ x \in \mathbb{R}^d \vert h(x) = \mathbf{0} \right}`` defines a smooth manifold. 
+For a smooth function ``h : \mathbb{R}^d \to \mathbb{R}^k`` whose total derivative has full row rank, the set ``\left\{ x \in \mathbb{R}^d \vert h(x) = \mathbf{0} \right\}`` defines a smooth manifold. 
 
 One can follow a technique very similar to the root finding technique using Newton's method to obtain an algorithm to cover such implicitly defined manifolds
 1. **subdivision step:** The box set `B` is subdivided once, i.e. every box is bisected along one axis, which gives rise to a new partition of the domain, with double the amount of boxes. This is saved in `B`. 

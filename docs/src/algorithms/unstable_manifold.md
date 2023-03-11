@@ -25,7 +25,7 @@ unstable_set
 
 ### Example
 
-```@example
+```julia
 using GAIO
 
 # the Lorenz system
@@ -45,4 +45,19 @@ W = unstable_set(F, S)
 using GLMakie: plot
 
 plot(W);
+```
+
+### Implementation
+
+```julia
+function unstable_set(F::BoxMap, B::BoxSet)
+    B₀ = B
+    B₁ = B
+    while !isempty(B₁)
+        B₁ = F(B₁)          # map the current interation forward
+        setdiff!(B₁, B₀)    # remove boxes we've already seen
+        union!(B₀, B₁)      # add the new boxes to the collection
+    end
+    return B₀
+end
 ```

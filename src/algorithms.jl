@@ -128,7 +128,7 @@ an implicitly defined manifold ``M`` of the form
 ```math
 f(M) \equiv 0
 ```
-for some function ``f : \mathbb{R}^N \rigtharrow \mathbb{R}``. 
+for some function ``f : \mathbb{R}^N \to \mathbb{R}``. 
     
 The starting BoxSet `B` should (coarsely) cover 
 the manifold. 
@@ -196,8 +196,9 @@ function nth_iterate_jacobian(f, Df, x, n; Rfactor=false)
     Z = Matrix{T}(I(N))
     R = Matrix{T}(I(N))
     fx = x
+    decomp = qr(Z)
     for i in 1:n
-        decomp = qr(Z)
+        i > 1 && (decomp = qr(Z))
         Z = Df(fx) * decomp.Q
         R = R * decomp.R
         i < n && (fx = f(fx))
@@ -224,13 +225,38 @@ function finite_time_lyapunov_exponents(f, Df, μ::BoxFun{E}; n=8) where {N,T,E<
     a = zeros(N)
     Dfⁿ(x) = nth_iterate_jacobian(f, Df, x, n; Rfactor=true)
     for (box, val) in μ
-        c, _ = box
+        @show c, _ = box
         _, R = Dfⁿ(c)
         a .+= val .* log.(diag(R))
     end
     sort!(a, rev=true)
     a ./= n
     return a
+end
+
+"""
+    box_dimension(boxsets) -> D
+
+For an iterator `boxsets` of (successively finer) 
+`BoxSet`s, compute the box dimension `D`. 
+
+#### Example
+```julia
+# F is some BoxMap, S is some BoxSet
+box_dimension( relative_attractor(F, S, steps=k) for k in 1:20 )
+```
+"""
+function box_dimension(boxsets)
+    logϵ, box_dim = Float64[], Float64[]
+    for boxset in boxsets
+        ϵ = 2 * maximum(max_radius(boxset))
+        logϵ_n = 1 / log(1/ϵ)
+        N = length(boxset)
+        push!(logϵ, logϵ_n)
+        push!(box_dim, log(N)*logϵ_n)
+    end
+    logK, D = linreg(logϵ, box_dim)
+    return D
 end
 
 # Runge-Kutta scheme of 4th order
@@ -274,19 +300,7 @@ with step size `step_size`.
 end
 
 Core.@doc raw"""
-    SEBA(V::Matrix{<:Real}, Rinit=nothing) -> S, R
-
-Construct a sparse approximation of the basis `V`, as described in 
-[1]. Returns matrices ``S``, ``R`` such that
-```math
-\frac{1}{2} \| V - SR \|_F^2 + \mu \| S \|_{1,1}
-```
-where ``\mu \in \mathbb{R}``, ``\|\|_F`` is the Frobenuius-norm, 
-and ``\|\|_{1,1}`` is the element sum norm, and ``R`` 
-is orthogonal. See [1] for further information on the argument 
-`Rinit`, as well as a description of the algorithm. 
-
-    SEBA(V::Matrix{<:BoxFun}, Rinit=nothing; which=partition_unity) -> S, A
+    seba(V::Vector{<:BoxFun}, Rinit=nothing; which=partition_disjoint, maxiter=5000) -> S, A
 
 Construct a sparse eigenbasis approximation of `V`, as described in 
 [1]. Returns an `Array` of `BoxFun`s corresponding to the eigenbasis, 
@@ -299,16 +313,12 @@ sparse basis. Builtin options are
 ```julia
 partition_unity, partition_disjoint, partition_likelihood
 ```
-
-[1] Gary Froyland, Christopher P. Rock, and Konstantinos Sakellariou. 
-Sparse eigenbasis approximation: multiple feature extraction 
-across spatiotemporal scales with application to coherent set 
-identification. Communications in Nonlinear Science and Numerical 
-Simulation, 77:81-107, 2019. https://arxiv.org/abs/1812.02787
+which are all exported functions. 
 """
-function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D<:OrderedDict,U<:BoxFun{B,K,W,Q,D}}
-    supp = BoxSet(V[1])
-    all(x -> BoxSet(x) == supp, V) || throw(DomainError(V, "Supports of BoxFuns do not match."))
+function seba(V::AbstractArray{U}, Rinit=nothing; which=partition_disjoint) where {B,K,W,Q,D<:OrderedDict,U<:BoxFun{B,K,W,Q,D}}
+    #supp = BoxSet(V[1])
+    #all(x -> BoxSet(x) == supp, V) || throw(DomainError(V, "Supports of BoxFuns do not match."))
+    supp = union((BoxSet(μ) for μ in V)...)
 
     V̄ = [μ[key] for key in supp.set, μ in V]
     S̄, R = SEBA(V̄, Rinit)
@@ -319,12 +329,12 @@ function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {
     return S, A
 end
 
-function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D,U<:BoxFun{B,K,W,Q,D}}
+function seba(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D,U<:BoxFun{B,K,W,Q,D}}
     V = [
         BoxFun( V[i].partition, OrderedDict(V[i]) )
         for i in 1:length(V)
     ]   # convert to ordered collections to guarantee deterministic iteration order
-    return SEBA(V, Rinit; which=which)
+    return seba(V, Rinit; which=which)
 end
 
 function partition_unity(S)
@@ -357,17 +367,27 @@ function partition_likelihood(S)
     return S, A, 0.
 end
 
-function SEBA(V::AbstractArray{U}, Rinit=nothing) where {U}
+Core.@doc raw"""
+    seba(V::Matrix{<:Real}, Rinit=nothing, maxiter=5000) -> S, R
 
-    # Inputs: 
-    # V is pxr matrix (r vectors of length p as columns)
-    # Rinit is an (optional) initial rotation matrix.
+Construct a sparse approximation of the basis `V`, as described in 
+[1]. Returns matrices ``S``, ``R`` such that
+```math
+\frac{1}{2} \| V - SR \|_F^2 + \mu \| S \|_{1,1}
+```
+is minimized,
+where ``\mu \in \mathbb{R}``, ``\| \cdot \|_F`` is the Frobenuius-norm, 
+and ``\| \cdot \|_{1,1}`` is the element sum norm, and ``R`` 
+is orthogonal. See [1] for further information on the argument 
+`Rinit`, as well as a description of the algorithm. 
 
-    # Outputs:
-    # S is pxr matrix with columns approximately spanning the column space of V
-    # R is the optimal rotation that acts on V, which followed by thresholding, produces S
-
-    maxiter = 5000   #maximum number of iterations allowed
+[1] Gary Froyland, Christopher P. Rock, and Konstantinos Sakellariou. 
+Sparse eigenbasis approximation: multiple feature extraction 
+across spatiotemporal scales with application to coherent set 
+identification. Communications in Nonlinear Science and Numerical 
+Simulation, 77:81-107, 2019. https://arxiv.org/abs/1812.02787
+"""
+function seba(V::AbstractArray{U}, Rinit=nothing, maxiter=5000) where {U}
     F = qr(V) # Enforce orthonormality
     V = Matrix(F.Q)
     p, r = size(V)
@@ -417,5 +437,23 @@ function SEBA(V::AbstractArray{U}, Rinit=nothing) where {U}
     S = S[:, ind]
 
     return S, R
+end
 
+"""
+    linreg(xs, ys)
+
+Simple one-dimensional lunear regression used to 
+approximate box dimension. 
+"""
+function linreg(xs, ys)
+    n = length(xs)
+    n == length(ys) || throw(DimensionMismatch())
+
+    sum_x, sum_y = sum(xs), sum(ys)
+    sum_xy, sum_x2 = xs'ys, xs'xs
+
+    m = ( n*sum_xy - sum_x*sum_y ) / ( n*sum_x2 - sum_x^2 )
+    b = ( sum_x*sum_y - m*sum_x^2 ) / ( n*sum_x )
+
+    return m, b
 end

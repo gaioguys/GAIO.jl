@@ -56,3 +56,20 @@ using WGLMakie: plot    # plot a 3D projection
 
 plot(R)
 ```
+
+### Implementation
+
+```julia
+function cover_roots(g, Dg, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    # B₀ is a set of `N`-dimensional boxes
+    B = B₀
+    domain = B.partition.domain
+    for k in 1:steps
+        B = subdivide(B, (k % N) + 1)       # cycle through dimesions for subdivision
+        f(x) = adaptive_newton_step(g, Dg, x, k)
+        F = BoxMap(f, domain)          # define a BoxMap which performs one newton step
+        B = F(B)                       # map the set forward along the newton step
+    end
+    return B
+end
+```

@@ -227,7 +227,7 @@ Core.@doc raw"""
 
 Find the index in `1..length(iterable)` which holds `key`, 
 or return `nothing`. Used to enumerate `BoxSet`s as 
-``\left{ B_1, B_2, \ldots, B_n \right}`` in 
+``\left\{ B_1, B_2, \ldots, B_n \right\}`` in 
 `TransferOperator`, `BoxGraph`. 
 """
 key_to_index(arr::AbstractArray, i) = findfirst(==(i), arr)
@@ -243,7 +243,7 @@ Core.@doc raw"""
 
 Return the object held in the `i`th position of `iterable`. 
 Used to enumerate `BoxSet`s as 
-``\left{ B_1, B_2, \ldots, B_n \right}`` in 
+``\left\{ B_1, B_2, \ldots, B_n \right\}`` in 
 `TransferOperator`, `BoxGraph`. 
 """
 index_to_key(arr::AbstractArray, i) = arr[i]

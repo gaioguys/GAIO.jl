@@ -11,7 +11,7 @@ The idea of the algorithm is to cover the relative global attractor with boxes a
 
 Mathematically, the algorithm to compute the global attractor relative to ``Q`` takes two input arguments: a compact set ``Q`` as well as a map ``f``, which describes the dynamics. Now in each iteration, two steps happen:
 1. **subdivision step:** The box set `B` is subdivided once, i.e. every box is bisected along one axis, which gives rise to a new partition of the domain, with double the amount of boxes. This is saved in `B`. 
-2. **selection step:** All those boxes `b` in the new box set `B` whose image does not intersect the domain, ie ``f(b) \cap \left( \bigcup_{b' \in B} b' \right) \neq \emptyset``, get discarded. 
+2. **selection step:** All those boxes `b` in the new box set `B` whose image does not intersect the domain, ie ``f(b) \cap \left( \bigcup_{b' \in B} b' \right) = \emptyset``, get discarded. 
 
 If we repeatedly refine the box set `B` through ``k`` subdivision steps, then as ``k \to \infty`` the collection of boxes ``B`` converges to the relative global attractor ``A_Q`` in the Hausdorff metric.
 
@@ -21,7 +21,7 @@ relative_attractor
 
 ### Example
 
-```@example
+```julia
 using GAIO
 
 # the Henon map
@@ -38,4 +38,20 @@ using Plots: plot
 #using WGLMakie: plot    # same result, just interactive
 
 plot(A);
+```
+
+### Implementation
+
+GAIO.jl makes subdivision-based algorithms as the one above very easy to implement. As demonstration, this is the code used for `relative_attractor`:
+
+```julia
+function relative_attractor(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    # B₀ is a set of `N`-dimensional boxes
+    B = B₀
+    for k = 1:steps
+        B = subdivide(B, (k % N) + 1)   # cycle through dimesions for subdivision
+        B = B ∩ F(B)        # map the set forward and only keep boxes already in the set
+    end
+    return B
+end
 ```

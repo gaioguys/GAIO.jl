@@ -13,21 +13,21 @@ This map is _chaotic_ [2,3], it has sensitive dependence on initial conditions. 
 Instead of trying to approximate the attractor by a long forward trajectory, we will capture it by computing a collection of boxes (i.e. cubes) covering the attractor. 
 
 Start by loading the GAIO package
-```@repl
+```@repl 1
 using Plots # hide
 using GAIO
 ```
 A `Box` is descibed by its center and its radius
-```@repl
+```@repl 1
 box_center, box_radius = (0,0), (3,3)
 Q = Box(box_center, box_radius)
 ```
 This box will serve as the domain for our computation.  The box covering which we will compute is a subset of a _partition_ of `Q` into smaller boxes. The command
-```@repl
+```@repl 1
 P = BoxPartition(Q, (4,4)) 
 ```
 yields a partition of `Q` into a grid of 4 x 4 equally sized smaller boxes. From `P`, box sets can be constructed. For example, the commands
-```@repl
+```@repl 1
 test_points = [
     (1, 1),
     (2, 1)
@@ -35,21 +35,24 @@ test_points = [
 B = cover(P, test_points)
 ```
 yields a `BoxSet` containing boxes from the partition `P` which cover each of `test_points`. Similarly, 
-```@repl
+```@repl 1
 B = cover(P, :)
 ```
 yields a `BoxSet` containing all boxes from the partition `P` (i.e. a set containing 16 boxes).
 
 In order to deal with the Hénon map as a map over box sets, we have to turn it into a `BoxMap` on the domain `Q`
-```@repl
+```@repl 1
 a, b = 1.4, 0.3
 f((x,y)) = (1 - a*x^2 + y, b*x) 
 F = BoxMap(f, Q) 
 ```
 We can now compute a covering of the attractor in `Q`, starting with the full box set `B`, by applying 15 steps of the subdivison algorithm described in [4]:
-```@repl
+```@repl 1
 A = relative_attractor(F, B, steps = 15)  
-plot(A);
+```
+
+```julia
+plot(A)
 ```
 
 ![box covering of the Hénon attractor](assets/henon-attractor.svg)

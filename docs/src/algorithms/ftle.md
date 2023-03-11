@@ -68,11 +68,12 @@ Df((x, y)) = SA[1.   1.;
 
 Q = Box((0.5, 0.5), (0.5, 0.5))
 P = BoxPartition(Q, (1000,1000))
-
 S = cover(P, :)
+
+F = BoxMap(f, Q)
 T = TransferOperator(F, S, S)
 λ, ev = eigs(T)   # The Lebesque measure - i.e. the constant-weight measure - is invariant
-μ = real ∘ ev[1]
+μ = abs ∘ ev[1]
 
 σ8 = finite_time_lyapunov_exponents(f, Df, μ; n = 8)
 σ16 = finite_time_lyapunov_exponents(f, Df, μ; n = 16)

@@ -32,7 +32,7 @@ All we need to do is pass `:cpu` as the final argument to one of the box map con
 ```julia
 center, radius = (0,0,25), (30,30,30)
 P = BoxPartition(Box(center, radius), (128,128,128))
-F = BoxMap(f, P, :cpu)
+F = BoxMap(:montecarlo, :simd, f, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
 @time W = unstable_set(F, P[x])

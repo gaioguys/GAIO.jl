@@ -20,6 +20,41 @@ chain_recurrent_set
 
 ### Example
 
-```@example
+```julia
+# Chua's circuit
+const a, b, m0, m1 = 16.0, 33.0, -0.2, 0.01
+v((x,y,z)) = (a*(y-m0*x-m1/3.0*x^3), x-y+z, -b*y)
+f(x) = rk4_flow_map(v, x, 0.05, 10)  # 10 steps of RK4 with step size 0.05
 
+center, radius = (0,0,0), (20,20,120)
+Q = Box(center, radius)
+P = BoxPartition(Q)
+S = cover(P, :)
+
+F = BoxMap(:montecarlo, f, Q, no_of_points=200)
+C = chain_recurrent_set(F, S, steps=18)
+
+using GLMakie: Figure, Axis3, plot!
+fig = Figure();
+ax = Axis3(fig[1,1], aspect=(1, 1.2, 1))
+ms = plot!(ax, C)
+display(fig)
+```
+
+We find an unstable manifold surroundng a fixed point as well as a stable periodic orbit. 
+
+### Implementation
+
+```julia
+function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    # B₀ is a set of `N`-dimensional boxes
+    B = B₀
+    for k in 1:steps
+        B = subdivide(B, (k % N) + 1)    # cycle through dimesions for subdivision
+        P = TransferOperator(F, B, B)    # construct transfer matrix
+        G = Graph(P)                     # view it as a graph
+        B = union_strongly_connected_components(G)  # collect the strongly connected components
+    end
+    return B
+end
 ```

@@ -7,7 +7,7 @@ Core.@doc raw"""
 A generalized box in dimension `N` with element type `T`. 
 Mathematically, this is a set
 ```math
-[center_1 - radius_1,\ center_1 + radius_1) \ \times \ [center_N - radius_N,\ center_N + radius_N)
+[center_1 - radius_1,\ center_1 + radius_1) \ \times \ \ldots \ \times \ [center_N - radius_N,\ center_N + radius_N)
 ```
 
 Fields:
@@ -84,15 +84,15 @@ function Base.show(io::IO, ::MIME"text/plain", box::B) where {N,T,B<:Box{N,T}}
     end
 end
 
-@propagate_inbounds function Base.in(point, box::Box)
+Base.@propagate_inbounds function Base.in(point, box::Box)
     c, r = box
     @boundscheck begin
-        M, N = length(point), length(c)
+        M, N = length(point), ndims(box)
         if M != N
             throw(DimensionMismatch("point has dimension $M but box has dimension $N"))
         end
     end
-    all(c .- r .<= point .< c .+ r)
+    all((c - r) .<= point .< (c + r))
 end
 
 function Base.intersect(b1::Box{N}, b2::Box{N}) where {N}
@@ -103,6 +103,8 @@ function Base.intersect(b1::Box{N}, b2::Box{N}) where {N}
 end
 
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
+Base.length(::Box{N}) where {N} = N
+Base.ndims(::Box{N}) where {N} = N
 
 Base.iterate(b::Box, i...) = (b.center, Val(:radius))
 Base.iterate(b::Box, ::Val{:radius}) = (b.radius, Val(:done))

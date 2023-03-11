@@ -5,7 +5,7 @@ Transforms a ``map: Q → Q`` defined on points in
 the domain ``Q ⊂ ℝᴺ`` to a `SampledBoxMap` defined 
 on `Box`es. 
 
-By default uses a grid of sample points. 
+By default uses adaptive test-point sampling. 
 """
 BoxMap(symb::Symbol, args...; kwargs...) = BoxMap(Val(symb), args...; kwargs...)
 BoxMap(symb::Symbol, accel::Symbol, args...; kwargs...) = BoxMap(symb, Val(accel), args...; kwargs...)

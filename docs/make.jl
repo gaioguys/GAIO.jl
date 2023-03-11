@@ -1,6 +1,8 @@
 using GAIO
 using Documenter, LinearAlgebra, SparseArrays
 
+ci = get(ENV, "CI", nothing) == "true"
+
 makedocs(
     modules = [GAIO],
     sitename = "GAIO.jl",
@@ -8,27 +10,55 @@ makedocs(
         "Home" => "index.md",
         "Getting started" => "getting_started.md",
         "General usage" => "general.md",
+        "BoxMaps" => [
+            "boxmaps/general.md",
+            "boxmaps/montecarlo.md",
+            "boxmaps/grid.md",
+            "boxmaps/adaptive.md",
+            "boxmaps/interval.md",
+            "boxmaps/simd.md",
+            "boxmaps/cuda.md",
+            "boxmaps/pointdiscretized.md",
+            "boxmaps/sampled.md",
+            "boxmaps/new_types.md"
+        ],
+        #"BoxMaps" => "boxmap.md",
         "Algorithms" => [
-            ""
+            "algorithms/relative_attractor.md",
+            "algorithms/unstable_manifold.md",
+            "algorithms/chain_recurrent_set.md",
+            "algorithms/transfer_operator.md",
+            "algorithms/root_covering.md",
+            "algorithms/ftle.md",
+            "algorithms/implicit_manifold.md",
+            "algorithms/seba.md",
+            "algorithms/box_dimension.md",
+            "algorithms/almost_invariant_coherent_sets.md",
+            "algorithms/entropy.md",
+            "algorithms/pareto_set.md",
+            "algorithms/control.md"
         ],
         #"Algorithms" => "algorithms.md",
-        "BoxMaps" => "boxmap.md",
+        "Plotting" => "plotting.md",
         "Maximizing Performance" => [
             "simd.md",
             "cuda.md"
         ],
-        "Plotting" => "plotting.md",
         "Examples" => "examples.md",
         "Reference" => [
             "data_structures.md",
             "library_reference.md"
         ]
     ],
-    doctest = false
+    doctest = false,
+    format = Documenter.HTML(prettyurls = ci)
+    #format = Documenter.LaTeX()
 )
 
-deploydocs(
-    repo = "github.com/gaioguys/GAIO.jl.git",
-    push_preview = true,
-    versions = nothing
-)
+if ci
+    deploydocs(
+        repo = "github.com/gaioguys/GAIO.jl.git",
+        push_preview = true,
+        versions = nothing
+    )
+end

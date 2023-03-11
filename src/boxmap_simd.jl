@@ -145,7 +145,7 @@ function CPUSampledBoxMap(boxmap::SampledBoxMap{N,T}) where {N,T}
 end
 
 """
-    BoxMap(:pointdiscretized, :cpu, map, domain, points) -> CPUSampledBoxMap
+    BoxMap(:pointdiscretized, :simd, map, domain, points) -> CPUSampledBoxMap
 
 Construct a `CPUSampledBoxMap` that uses the iterator 
 `points` as test points. `points` must have eltype 
@@ -169,7 +169,7 @@ function PointDiscretizedBoxMap(c::Val{:simd}, map, P::Q, points) where {N,T,Q<:
 end
 
 """
-    BoxMap(:grid, :cpu, map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
+    BoxMap(:grid, :simd, map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
 
 Construct a `CPUSampledBoxMap` that uses a grid of test points. 
 The size of the grid is defined by `no_of_points`, which is 
@@ -193,7 +193,7 @@ function GridBoxMap(c::Val{:simd}, map, P::Q; no_of_points=ntuple(_->n_default(T
 end
 
 """
-    BoxMap(:montecarlo, :cpu, map, domain; no_of_points=16*N) -> SampledBoxMap
+    BoxMap(:montecarlo, :simd, map, domain; no_of_points=16*N) -> SampledBoxMap
 
 Construct a `CPUSampledBoxMap` that uses `no_of_points` 
 Monte-Carlo test points. The number of points is rounded 

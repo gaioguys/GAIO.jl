@@ -4,17 +4,18 @@
 Internal data structure to hold boxes within a partition. 
 
 Constructors (all constructors work with box sets as well):
-* For all boxes in a partition: 
+* set of all boxes in partition / box set `P`:
 ```julia
-partition[:]
+B = cover(P, :)    
 ```
-* For one box containing a point `x`: 
+* cover the point `x`, or points `x = [x_1, x_2, x_3] # etc ...` using boxes from `P`
 ```julia
-partition[x]
-```
-* For a covering of an iterable `S = [Box(c_1, r_1), Box(c_2, r_r)] # etc...`: 
+B = cover(P, x)
+```    
+* a covering of `S` using boxes from `P`
 ```julia
-partition[S]
+S = [Box(center_1, radius_1), Box(center_2, radius_2), Box(center_3, radius_3)] # etc... 
+B = cover(P, S)
 ```
 
 Fields:
@@ -106,6 +107,7 @@ function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
     keys = Set{K}()
     vertex_keys = Matrix{I}(undef, N, 2)
     for box_in in boxes
+        isnothing(box_in) && continue
         (any(isnan, box_in.center) || any(isnan, box_in.radius)) && continue
         box = Box{N,T}(box_in.center .- 10*eps(T), box_in.radius .- 10*eps(T))
         vertex_keys[:, 1] .= vertex_keys[:, 2] .= bounded_point_to_key(partition, box.center)
@@ -189,6 +191,14 @@ for op in (:issubset, :isdisjoint, :issetequal, :(==))
     @eval Base.$op(b1::BoxSet, b2::BoxSet) = b1.partition == b2.partition && $op(b1.set, b2.set)
 end
 
+function max_radius(boxset::BoxSet{B,P,S}) where {N,T,I,B,P<:TreePartition{N,T,I},S}
+    min_depth = minimum(depth for (depth, cart) in boxset.set)
+    Q = BoxPartition(boxset.partition, min_depth)
+    _, r = key_to_box(Q, ntuple(_->one(I), Val(N)))
+    return r
+end
+
+max_radius(boxset::BoxSet{B,P,S}) where {B,P<:BoxPartition,S} = first(boxset).radius
 Base.isempty(boxset::BoxSet) = isempty(boxset.set)
 Base.empty!(boxset::BoxSet) = (empty!(boxset.set); boxset)
 Base.copy(boxset::BoxSet) = BoxSet(boxset.partition, copy(boxset.set))
