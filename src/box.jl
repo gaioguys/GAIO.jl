@@ -70,7 +70,15 @@ function IntervalArithmetic.IntervalBox(box::Box{N,T}) where {N,T}
     IntervalBox{N,T}(c .± r)
 end
 
-Base.show(io::IO, box::Box) = show(io, IntervalBox(box))
+function Base.show(io::IO, box::B) where {N,T,B<:Box{N,T}}
+    c, r = box
+    lo, hi = c - r, c + r
+    if N ≤ 5
+        join(io, ("[$l, $h)" for (l, h) in zip(lo, hi)), " × ")
+    else
+        print(io, "[$(lo[1]), $(hi[1])) × ... × [$(lo[end]), $(hi[end]))")
+    end
+end
 
 function Base.show(io::IO, ::MIME"text/plain", box::B) where {N,T,B<:Box{N,T}}
     c, r = box
