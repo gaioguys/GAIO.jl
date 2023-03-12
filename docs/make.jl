@@ -2,6 +2,7 @@ using GAIO
 using Documenter, LinearAlgebra, SparseArrays
 import Plots, GLMakie
 
+ENV["JULIA_DEBUG"] = Documenter
 ENV["GKSwstype"] = "100"
 ci = get(ENV, "CI", nothing) == "true"
 
@@ -13,13 +14,13 @@ makedocs(
         "Getting started" => "getting_started.md",
         "General usage" => "general.md",
         "BoxMaps" => [
-            "boxmaps/general.md",
+            "boxmaps/boxmaps_general.md",
             "boxmaps/montecarlo.md",
             "boxmaps/grid.md",
             "boxmaps/adaptive.md",
             "boxmaps/interval.md",
-            "boxmaps/simd.md",
-            "boxmaps/cuda.md",
+            "boxmaps/boxmaps_simd.md",
+            "boxmaps/boxmaps_cuda.md",
             "boxmaps/pointdiscretized.md",
             "boxmaps/sampled.md",
             "boxmaps/new_types.md"
@@ -54,7 +55,7 @@ makedocs(
     ],
     doctest = false,
     format = Documenter.HTML(prettyurls = ci)
-    #format = Documenter.LaTeX()
+    #format = Documenter.LaTeX(platform = "none")
 )
 
 if ci

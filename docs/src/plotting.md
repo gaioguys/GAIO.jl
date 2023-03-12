@@ -52,7 +52,7 @@ f(x) = rk4_flow_map(v, x, 0.01, 5)
 
 cen, rad = (0,0,0,0), (250,150,200,25)
 P = BoxPartition(Box(cen, rad), (128,128,128,128))
-F = AdaptiveBoxMap(f, P.domain)
+F = BoxMap(f, P.domain)
 
 x = zeros(4)        # equilibrium
 W = unstable_set(F, P[x])

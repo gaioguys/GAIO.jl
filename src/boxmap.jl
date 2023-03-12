@@ -6,9 +6,13 @@ the domain ``Q ⊂ ℝᴺ`` to a `SampledBoxMap` defined
 on `Box`es. 
 
 By default uses adaptive test-point sampling. 
+For SIMD- and GPU-accelerated `BoxMap`s, uses
+MonteCarlo test point sampling by default. 
 """
 BoxMap(symb::Symbol, args...; kwargs...) = BoxMap(Val(symb), args...; kwargs...)
 BoxMap(symb::Symbol, accel::Symbol, args...; kwargs...) = BoxMap(symb, Val(accel), args...; kwargs...)
+BoxMap(accel::Val{:simd}, args...; kwargs...) = BoxMap(Val(:montecarlo), accel, args...; kwargs...)
+BoxMap(accel::Val{:gpu}, args...; kwargs...) = BoxMap(Val(:montecarlo), accel, args...; kwargs...)
 
 # default BoxMap behavior
 BoxMap(args...; kwargs...) = AdaptiveBoxMap(args...; kwargs...)

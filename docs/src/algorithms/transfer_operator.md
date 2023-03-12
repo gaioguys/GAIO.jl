@@ -35,9 +35,45 @@ sum(::Any, ::BoxFun)
 ∘(f, boxfun::BoxFun)
 ```
 
-### Example
+### Example : Invariant Measure of the Lorenz Attractor
 
-```@repl
+```@example 1
+using GAIO
+
+# the Lorenz system
+const σ, ρ, β = 10.0, 28.0, 0.4
+v((x,y,z)) = (σ*(y-x), ρ*x-y-x*z, x*y-β*z)
+f(x) = rk4_flow_map(v, x)
+
+center, radius = (0,0,25), (30,30,30)
+P = BoxPartition(Box(center, radius), (256,256,256))
+F = BoxMap(f, P)
+
+x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
+S = cover(P, x)
+W = unstable_set(F, S)
+
+T = TransferOperator(F, W, W)
+(λ, ev) = eigs(T)
+μ = log ∘ abs ∘ ev[1]
+```
+
+```@example 1
+using GLMakie: Figure, Axis3, plot!, Colorbar
+fig = Figure();
+ax = Axis3(fig[1,1], azimuth=pi/10);
+ms = plot!(ax, μ, colormap=:jet);
+Colorbar(fig[1,2], ms);
+
+using GLMakie: save # hide
+save("transfer_operator.png", fig); nothing # hide
+```
+
+![Invariant Measure of the Lorenz Attractor](transfer_operator.png)
+
+### Example 2: Showcase of `BoxFun` Functionalities
+
+```julia
 using GAIO
 
 # the unit box [-1, 1]²
@@ -56,11 +92,11 @@ n = length(left)
 μ_full  = BoxFun(full, ones(2n))
 
 # vector space operations are supported for measures
-μ_left + μ_right == μ_full
-μ_full - μ_left == μ_right
-μ_left - μ_full == -μ_right
-2*μ_left + 2*μ_right == μ_full + μ_full
-μ_left/2 + μ_right/2 == μ_full/2
+μ_left + μ_right     ==  μ_full
+μ_full - μ_left      ==  μ_right
+μ_left - μ_full      == -μ_right
+2*μ_left + 2*μ_right ==  μ_full + μ_full
+μ_left/2 + μ_right/2 ==  μ_full/2
 
 # horizontal translation map
 f((x, y)) = (x+1, y)
@@ -86,41 +122,3 @@ sum(g, μ_full) == 2*volume(domain)
 μ_full2 = (x -> 2x) ∘ μ_full
 μ_full2(domain) == 2*volume(domain)
 ```
-
-### Example 2: Invariant Measure of the Lorenz Attractor
-
-```@example
-using GAIO
-
-# the Lorenz system
-const σ, ρ, β = 10.0, 28.0, 0.4
-v((x,y,z)) = (σ*(y-x), ρ*x-y-x*z, x*y-β*z)
-f(x) = rk4_flow_map(v, x)
-
-center, radius = (0,0,25), (30,30,30)
-P = BoxPartition(Box(center, radius), (256,256,256))
-F = BoxMap(f, P)
-
-x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
-S = cover(P, x)
-W = unstable_set(F, S)
-
-T = TransferOperator(F, W, W)
-(λ, ev) = eigs(T)
-μ = log ∘ abs ∘ ev[1]
-
-using GLMakie: plot, Colorbar
-fig, ax, ms = plot(μ)
-Colorbar(fig[1,2], ms)
-
-using GLMakie: Figure, Axis3, plot!, Colorbar # hide
-fig = Figure() # hide
-ax = Axis3(fig[1,1], azimuth=pi/10) # hide
-ms = plot!(ax, μ, colormap=:jet) # hide
-Colorbar(fig[1,2], ms) # hide
-
-using GLMakie: save # hide
-save("transfer_operator.png", fig); nothing # hide
-```
-
-![Invariant Measure of the Lorenz Attractor](transfer_operator.png)

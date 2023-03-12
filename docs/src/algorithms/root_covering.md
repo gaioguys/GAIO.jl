@@ -44,7 +44,7 @@ function Dg(x)  # jacobian
     100*I(n) + 2*Diagonal(x) - 3*Diagonal(x.^2) + ones(n,n)
 end
 
-dim = 6
+dim = 3
 center, radius = zeros(dim), 40*ones(dim)
 P = BoxPartition(Box(center, radius))
 
@@ -54,7 +54,7 @@ R = cover_roots(g, Dg, S, steps=dim*8)
 #using Plots: plot       # plot a 2D projection
 using GLMakie: plot    # plot a 3D projection
 
-fig, ax, ms = plot(R)
+fig, ax, ms = plot(R);
 
 using GLMakie: save # hide
 save("roots.png", fig); nothing # hide

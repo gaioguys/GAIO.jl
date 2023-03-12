@@ -340,7 +340,7 @@ function seba(V::AbstractArray{U}, Rinit=nothing; which=partition_disjoint) wher
     supp = union((BoxSet(μ) for μ in V)...)
 
     V̄ = [μ[key] for key in supp.set, μ in V]
-    S̄, R = SEBA(V̄, Rinit)
+    S̄, R = seba(V̄, Rinit)
     S̄, Ā, τ = which(S̄)
 
     S = [BoxFun(supp, S̄[:, i]) for i in 1:size(S̄, 2)]
@@ -358,17 +358,18 @@ end
 
 function partition_unity(S)
     S .= max.(S, 0)
-    S_sum = sum(S, dims=2)
-    τᵖᵘ = maximum(S[S_sum .> 1, :])
+    S_descend = sort(S, dims=2, rev=true)
+    S_sum = cumsum(S_descend, dims=2)
+    τᵖᵘ = maximum(S_descend[S_sum .> 1], init=zero(eltype(S)))
     S[S .≤ τᵖᵘ] .= 0
     A = argmax.(eachrow(S))
     return S, A, τᵖᵘ
 end
 
 function partition_disjoint(S)
-    S .= max(S, 0)
+    S .= max.(S, 0)
     S_descend = sort(S, dims=2, rev=true)
-    τᵈᵖ = maximum(S_descend[:, 2])
+    τᵈᵖ = maximum(S_descend[:, 2], init=zero(eltype(S)))
     S[S .≤ τᵈᵖ] .= 0
     A = argmax.(eachrow(S))
     return S, A, τᵈᵖ

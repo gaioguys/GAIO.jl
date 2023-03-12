@@ -38,7 +38,7 @@ A = relative_attractor(F, S, steps = 18)
 using Plots: plot
 #using WGLMakie: plot    # same result, just interactive
 
-p = plot(A)
+p = plot(A);
 
 savefig("relative_attractor.svg"); nothing # hide
 ```

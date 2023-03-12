@@ -29,7 +29,7 @@ P = BoxPartition(domain)
 S = cover(P, :)
 
 M = cover_manifold(H, S; steps=16)
-p = plot(M)
+p = plot(M);
 
 savefig("implicit_manifold.svg"); nothing # hide
 ```

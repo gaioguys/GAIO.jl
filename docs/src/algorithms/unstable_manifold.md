@@ -34,17 +34,19 @@ v((x,y,z)) = (σ*(y-x), ρ*x-y-x*z, x*y-β*z)
 f(x) = rk4_flow_map(v, x)
 
 center, radius = (0,0,25), (30,30,30)
-P = BoxPartition(Box(center, radius), (128,128,128))
-F = BoxMap(:adaptive, f, P)
+P = BoxPartition(Box(center, radius), (256,256,256))
+F = BoxMap(f, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
 S = cover(P, x)
 W = unstable_set(F, S)
+```
 
+```@example 1
 #using Plots: plot
 using GLMakie: plot
 
-fig, ax, ms = plot(W)
+fig, ax, ms = plot(W);
 
 using GLMakie: save # hide
 save("unstable_manifold.png", fig); nothing # hide
