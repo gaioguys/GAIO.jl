@@ -14,7 +14,6 @@ Instead of trying to approximate the attractor by a long forward trajectory, we 
 
 Start by loading the GAIO package
 ```@repl 1
-using Plots # hide
 using GAIO
 ```
 A `Box` is descibed by its center and its radius
@@ -51,11 +50,13 @@ We can now compute a covering of the attractor in `Q`, starting with the full bo
 A = relative_attractor(F, B, steps = 15)  
 ```
 
-```julia
-plot(A)
+```@repl 1
+using Plots
+p = plot(A)
+savefig("henon.svg"); nothing # hide
 ```
 
-![box covering of the Hénon attractor](assets/henon-attractor.svg)
+![box covering of the Hénon attractor](henon.svg)
 
 In addition to covering the attractor, this box collection also covers an unstable fixed point near (-1,-0.3) and its unstabe manifold (cf. [4]).
 

@@ -16,8 +16,9 @@ cover_manifold
 
 ### Example
 
-```julia
+```@example 1
 using GAIO
+using Plots
 
 # Devil's curve
 const a, b = 0.9, 1.0
@@ -28,9 +29,9 @@ P = BoxPartition(domain)
 S = cover(P, :)
 
 M = cover_manifold(H, S; steps=16)
+p = plot(M)
 
-using Plots: plot
-#using WGLMakie: plot
-
-plot(M)
+savefig("implicit_manifold.svg"); nothing # hide
 ```
+
+![Devil's curve](implicit_manifold.svg)

@@ -1,6 +1,8 @@
 using GAIO
 using Documenter, LinearAlgebra, SparseArrays
+import Plots, GLMakie
 
+ENV["GKSwstype"] = "100"
 ci = get(ENV, "CI", nothing) == "true"
 
 makedocs(

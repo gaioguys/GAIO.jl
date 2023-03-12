@@ -21,8 +21,9 @@ relative_attractor
 
 ### Example
 
-```julia
+```@example 1
 using GAIO
+using Plots
 
 # the Henon map
 a, b = 1.4, 0.3
@@ -32,13 +33,17 @@ center, radius = (0, 0), (3, 3)
 P = BoxPartition(Box(center, radius))
 F = BoxMap(f, P)
 S = cover(P, :)
-A = relative_attractor(F, S, steps = 16)
+A = relative_attractor(F, S, steps = 18)
 
 using Plots: plot
 #using WGLMakie: plot    # same result, just interactive
 
-plot(A);
+p = plot(A)
+
+savefig("relative_attractor.svg"); nothing # hide
 ```
+
+![Relative attractor](relative_attractor.svg)
 
 ### Implementation
 

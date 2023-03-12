@@ -179,32 +179,53 @@ function finite_time_lyapunov_exponents(F::SampledBoxMap, B::BoxSet{R,Q,S}; T) w
 end
 
 """
-    nth_iterate_jacobian(f, Df, x, n; Rfactor=false) -> Z[, R]
+    nth_iterate_jacobian(f, Df, x, n; return_QR=false) -> Z[, R]
 
 Compute the Jacobian of the `n`-times iterated function 
 `f ∘ f ∘ ... ∘ f` at `x` using a QR iteration based on [1]. 
 Requires an approximation `Df` of the jacobian of `f`, e.g. 
 `Df(x) = ForwardDiff.jacobian(f, x)`. 
-Optionally, return the R-factor of the QR decomposition. 
+Optionally, return the QR decomposition. 
 
 [1] Dieci, L., Russell, R. D., Van Vleck, E. S.: "On the 
 Computation of Lyapunov Exponents for Continuous Dynamical 
 Systems," submitted to SIAM J. Numer. Ana. (1993).
 """
-function nth_iterate_jacobian(f, Df, x, n; Rfactor=false)
+function nth_iterate_jacobian(f, Df, x, n; return_QR=false)
     N, T = length(x), eltype(x)
-    Z = Matrix{T}(I(N))
-    R = Matrix{T}(I(N))
     fx = x
-    decomp = qr(Z)
+
+    Z = Matrix{T}(I(N))
+    ZR = Matrix{T}(I(N))
+
+    Q = Matrix{T}(I(N))
+    R = Matrix{T}(I(N))
+
     for i in 1:n
-        i > 1 && (decomp = qr(Z))
-        Z = Df(fx) * decomp.Q
-        R = R * decomp.R
+        decomp = qr(Z)
+        Q .= decomp.Q
+        R .= decomp.R
+        fixqr!(Q, R)
+        Z = Df(fx) * Q
+        ZR = ZR * R
         i < n && (fx = f(fx))
     end
-    Z = decomp.Q * R
-    return Rfactor ? (Z, R) : Z
+
+    Z = Q * ZR
+    return return_QR ? (Z, Q, R) : Z
+end
+
+"""
+    fixqr!(Q, R)
+
+Adjust a QR-decomposition such that the 
+R-factor has positive diagonal entries. 
+"""
+function fixqr!(Q, R)
+    d = diag(R)
+    Q[:, d .< 0] .*= -1
+    R[d .< 0, :] .*= -1
+    return Q, R
 end
 
 Core.@doc raw"""
@@ -222,12 +243,10 @@ Lyapunov exponents. Numer. Math. 113, 357–375 (2009).
 https://doi.org/10.1007/s00211-009-0236-4
 """
 function finite_time_lyapunov_exponents(f, Df, μ::BoxFun{E}; n=8) where {N,T,E<:Box{N,T}}
-    a = zeros(N)
-    Dfⁿ(x) = nth_iterate_jacobian(f, Df, x, n; Rfactor=true)
-    for (box, val) in μ
-        @show c, _ = box
-        _, R = Dfⁿ(c)
-        a .+= val .* log.(diag(R))
+    Dfⁿ(x) = nth_iterate_jacobian(f, Df, x, n; return_QR=true)
+    a = sum(μ; init=zeros(N)) do x
+        _, _, R = Dfⁿ(x)
+        log.(diag(R))
     end
     sort!(a, rev=true)
     a ./= n

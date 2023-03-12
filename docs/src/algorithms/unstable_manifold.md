@@ -25,7 +25,7 @@ unstable_set
 
 ### Example
 
-```julia
+```@example 1
 using GAIO
 
 # the Lorenz system
@@ -44,8 +44,13 @@ W = unstable_set(F, S)
 #using Plots: plot
 using GLMakie: plot
 
-plot(W);
+fig, ax, ms = plot(W)
+
+using GLMakie: save # hide
+save("unstable_manifold.png", fig); nothing # hide
 ```
+
+![Unstable manifold](unstable_manifold.png)
 
 ### Implementation
 
