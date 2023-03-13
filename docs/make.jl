@@ -1,5 +1,5 @@
 using GAIO
-using Documenter, LinearAlgebra, SparseArrays
+using Documenter, LinearAlgebra, SparseArrays, StaticArrays
 import Plots, GLMakie
 
 ENV["JULIA_DEBUG"] = Documenter
