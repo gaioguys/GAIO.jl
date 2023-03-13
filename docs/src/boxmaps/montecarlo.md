@@ -41,12 +41,12 @@ p = plot!(p, boundary[:, 1], boundary[:, 2], linewidth=4, fill=(0, RGBA(0.,0.,1.
 ```
 
 ```@repl 1
-no_of_points = 128
-F = BoxMap(:montecarlo, f, domain, no_of_points=no_of_points)
+n_points = 128
+F = BoxMap(:montecarlo, f, domain, n_points = n_points)
 p = plot!(
     p, F(B), 
     color=RGBA(1.,0.,0.,0.5), 
-    lab="$no_of_points MonteCarlo test points"
+    lab="$n_points MonteCarlo test points"
 )
 
 savefig("montecarlo.svg"); nothing # hide

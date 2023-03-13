@@ -83,8 +83,8 @@ t₀, τ, t₁ = 0, 0.1, 2
 domain = Box((1.0, 0.5), (1.0, 0.5))
 P = BoxPartition(domain, (256, 128))
 S = cover(P, :)
-F = BoxMap(:montecarlo, Φₜ₀ᵗ¹, domain)
 
+F = BoxMap(:montecarlo, Φₜ₀ᵗ¹, domain)
 F = BoxMap(:pointdiscretized, Φₜ₀ᵗ¹, domain, test_points) # hide
 
 T = SymmetricTransferOperator(F, S, S)  # (TODO)

@@ -1,6 +1,6 @@
 # Creating you own BoxMap type
 
-Subtypes of the abstract type `BoxMap` must have three restrictions:
+Subtypes of the abstract type `BoxMap` must have four restrictions:
 1. There must be a `domain` field within the type, i.e.
    ```julia
    struct MyBoxMap{N,T}

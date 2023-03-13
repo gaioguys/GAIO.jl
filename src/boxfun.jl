@@ -53,7 +53,7 @@ The notation `μ(B)` is offered to compute
 ``\mu (\bigcup_{b \in B} b)``. 
 """
 function Base.sum(f, boxfun::BoxFun{B,K,V,P,D}, boxset=nothing; init=zero(V)) where {B,K,V,P,D}
-    sum(boxfun; init=init) do pair
+    mapreduce(+, boxfun; init=init) do pair
         box, val = pair
         f(box.center) * volume(box) * val
     end

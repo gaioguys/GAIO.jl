@@ -128,37 +128,35 @@ end
 PointDiscretizedBoxMap(map, P::AbstractBoxPartition, points) = PointDiscretizedBoxMap(map, P.domain, points)
 
 """
-    BoxMap(:grid, map, domain::Box{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
-    GridBoxMap(:grid, P::BoxPartition{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
+    BoxMap(:grid, map, domain::Box{N}; n_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
 
 Construct a `SampledBoxMap` that uses a grid of test points. 
-The size of the grid is defined by `no_of_points`, which is 
+The size of the grid is defined by `n_points`, which is 
 a tuple of length equal to the dimension of the domain. 
 """
-function GridBoxMap(map, domain::Box{N,T}; no_of_points::NTuple{N}=ntuple(_->n_default(T),N)) where {N,T}
-    Δp = 2 ./ no_of_points
-    points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(no_of_points) ]
+function GridBoxMap(map, domain::Box{N,T}; n_points::NTuple{N}=ntuple(_->n_default(T),N)) where {N,T}
+    Δp = 2 ./ n_points
+    points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(n_points) ]
     return PointDiscretizedBoxMap(map, domain, points)
 end
 
-function GridBoxMap(map, P::Q; no_of_points=ntuple(_->n_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
-    GridBoxMap(map, P.domain; no_of_points=no_of_points)
+function GridBoxMap(map, P::Q; n_points=ntuple(_->n_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    GridBoxMap(map, P.domain; n_points=n_points)
 end
 
 """
-    BoxMap(:montecarlo, map, domain::Box{N,T}; no_of_points=16*N) -> SampledBoxMap
-    BoxMap(:montecarlo, map, P::BoxPartition{N,T}; no_of_points=16*N) -> SampledBoxMap
+    BoxMap(:montecarlo, map, domain::Box{N}; n_points=16*N) -> SampledBoxMap
 
-Construct a `SampledBoxMap` that uses `no_of_points` 
+Construct a `SampledBoxMap` that uses `n_points` 
 Monte-Carlo test points. 
 """
-function MonteCarloBoxMap(map, domain::Box{N,T}; no_of_points=n_default(N,T)) where {N,T}
-    points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:no_of_points ] 
+function MonteCarloBoxMap(map, domain::Box{N,T}; n_points=n_default(N,T)) where {N,T}
+    points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:n_points ] 
     return PointDiscretizedBoxMap(map, domain, points) 
 end 
 
-function MonteCarloBoxMap(map, P::Q; no_of_points=n_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
-    MonteCarloBoxMap(map, P.domain; no_of_points=no_of_points)
+function MonteCarloBoxMap(map, P::Q; n_points=n_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    MonteCarloBoxMap(map, P.domain; n_points=n_points)
 end
 
 """

@@ -1,4 +1,4 @@
-# Transfer Operator
+# Transfer Operator and Box Measures
 
 ### Mathematical Background
 The transition matrix is the discretization of the _transfer operator ``P`` w.r.t. ``f``_. Formally, the transfer operator w.r.t. ``f`` is defined for measures ``μ`` through the equation
@@ -73,7 +73,7 @@ save("transfer_operator.png", fig); nothing # hide
 
 ### Example 2: Showcase of `BoxFun` Functionalities
 
-```julia
+```@example 2
 using GAIO
 
 # the unit box [-1, 1]²

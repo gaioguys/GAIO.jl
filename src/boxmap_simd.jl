@@ -1,5 +1,5 @@
 """
-    BoxMap(:cpu, map, domain; no_of_points) -> CPUSampledBoxMap
+    BoxMap(:cpu, map, domain; n_points) -> CPUSampledBoxMap
 
 Transforms a ``map: Q → Q`` defined on points in 
 the domain ``Q ⊂ ℝᴺ`` to a `CPUSampledBoxMap` defined 
@@ -11,7 +11,6 @@ By default uses a grid of sample points.
 
 
     BoxMap(:sampled, :cpu, boxmap, idx_base, temp_vec, temp_points)
-    CPUSampledBoxMap(boxmap, idx_base, temp_vec, temp_points)
 
 Type representing a discretization of a map using 
 sample points which are explicitly vectorized. This 
@@ -169,46 +168,46 @@ function PointDiscretizedBoxMap(c::Val{:simd}, map, P::Q, points) where {N,T,Q<:
 end
 
 """
-    BoxMap(:grid, :simd, map, domain; no_of_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
+    BoxMap(:grid, :simd, map, domain::Box{N}; n_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
 
 Construct a `CPUSampledBoxMap` that uses a grid of test points. 
-The size of the grid is defined by `no_of_points`, which is 
+The size of the grid is defined by `n_points`, which is 
 a tuple of length equal to the dimension of the domain. 
 The number of points is rounded up to the nearest mutiple 
 of the cpu's SIMD capacity. 
 """
-function GridBoxMap(c::Val{:simd}, map, domain::Box{N,T}; no_of_points=ntuple(_->n_default(T),N)) where {N,T}
+function GridBoxMap(c::Val{:simd}, map, domain::Box{N,T}; n_points=ntuple(_->n_default(T),N)) where {N,T}
     simd = n_default(T)
-    no_of_points = ntuple(N) do i
-        rem = no_of_points[i] % simd
-        no_of_points[i] + (rem == 0 ? rem : simd - rem)
+    n_points = ntuple(N) do i
+        rem = n_points[i] % simd
+        n_points[i] + (rem == 0 ? rem : simd - rem)
     end
-    Δp = 2 ./ no_of_points
-    points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(no_of_points) ]
+    Δp = 2 ./ n_points
+    points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(n_points) ]
     PointDiscretizedBoxMap(c, map, domain, points)
 end
 
-function GridBoxMap(c::Val{:simd}, map, P::Q; no_of_points=ntuple(_->n_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
-    GridBoxMap(c, map, P.domain; no_of_points=no_of_points)
+function GridBoxMap(c::Val{:simd}, map, P::Q; n_points=ntuple(_->n_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    GridBoxMap(c, map, P.domain; n_points=n_points)
 end
 
 """
-    BoxMap(:montecarlo, :simd, map, domain; no_of_points=16*N) -> SampledBoxMap
+    BoxMap(:montecarlo, :simd, map, domain::Box{N}; n_points=16*N) -> SampledBoxMap
 
-Construct a `CPUSampledBoxMap` that uses `no_of_points` 
+Construct a `CPUSampledBoxMap` that uses `n_points` 
 Monte-Carlo test points. The number of points is rounded 
 up to the nearest multiple of the cpu's SIMD capacity. 
 """
-function MonteCarloBoxMap(c::Val{:simd}, map, domain::Box{N,T}; no_of_points=n_default(N,T)) where {N,T}
+function MonteCarloBoxMap(c::Val{:simd}, map, domain::Box{N,T}; n_points=n_default(N,T)) where {N,T}
     simd = n_default(T)
-    rem = no_of_points % simd
-    no_of_points = no_of_points + (rem == 0 ? rem : simd - rem)
-    points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:no_of_points ] 
+    rem = n_points % simd
+    n_points = n_points + (rem == 0 ? rem : simd - rem)
+    points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:n_points ] 
     PointDiscretizedBoxMap(c, map, domain, points)
 end 
 
-function MonteCarloBoxMap(c::Val{:simd}, map, P::Q; no_of_points=n_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
-    MonteCarloBoxMap(c, map, P.domain; no_of_points=no_of_points)
+function MonteCarloBoxMap(c::Val{:simd}, map, P::Q; n_points=n_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    MonteCarloBoxMap(c, map, P.domain; n_points=n_points)
 end
 
 # helper + compatibility functions

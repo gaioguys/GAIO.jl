@@ -2,7 +2,7 @@
     relative_attractor(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
 
 Compute the attractor relative to `B`. Generally, `B` should be 
-a box set containing the whole partition `P`, ie `B = P[:]`.
+a box set containing the whole partition `P`, ie `B = cover(P, :)`.
 """
 function relative_attractor(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     B = copy(B₀)
@@ -36,7 +36,7 @@ end
 
 Compute the chain recurrent set over the box set `B`. Generally, 
 `B` should be a box set containing the whole partition `P`, 
-ie `B = P[:]`. 
+ie `B = cover(P, :)`. 
 """
 function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     B = copy(B₀)
@@ -73,13 +73,13 @@ again.
 end
 
 """
-    expon(h, ϵ=0.2, σ=1.0, δ=0.1)
+    expon(h, k=1, ϵ=0.2, δ=0.1)
 
 Return a rough estimate of how many Newton steps 
 should be taken, given a step size h. 
 """
-function expon(h, σ=1, ϵ=0.2, δ=0.1)
-    n = log( ϵ * (1/2)^σ ) / log( maximum((1 - h, δ)) )
+function expon(h, k=1, ϵ=0.2, δ=0.1)
+    n = log( ϵ * (1/2)^k ) / log( maximum((1 - h, δ)) )
     return Int(ceil(n))
 end
 

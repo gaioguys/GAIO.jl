@@ -41,12 +41,12 @@ p = plot!(p, boundary[:, 1], boundary[:, 2], linewidth=4, fill=(0, RGBA(0.,0.,1.
 ```
 
 ```@repl 1
-no_of_points = (8, 8)
-F = BoxMap(:grid, f, domain, no_of_points=no_of_points)
+n_points = (8, 8)
+F = BoxMap(:grid, f, domain, n_points = n_points)
 p = plot!(
     p, F(B), 
     color=RGBA(0.,1.,0.,0.5), 
-    lab="$(join(no_of_points, "x")) grid of test points"
+    lab="$(join(n_points, "x")) grid of test points"
 )
 
 savefig("grid.svg"); nothing # hide

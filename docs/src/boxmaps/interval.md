@@ -41,12 +41,12 @@ p = plot!(p, boundary[:, 1], boundary[:, 2], linewidth=4, fill=(0, RGBA(0.,0.,1.
 ```
 
 ```@repl 1
-no_subintervals = (4, 4)
-F = BoxMap(:interval, f, domain, no_subintervals=no_subintervals)
+n_subintervals = (4, 4)
+F = BoxMap(:interval, f, domain, n_subintervals = n_subintervals)
 p = plot!(
     p, F(B), 
     color=RGBA(1.,0.5,0.,0.5), 
-    lab="interval arithmetic with $(join(no_subintervals, "x")) subinterval grid"
+    lab="interval arithmetic with $(join(n_subintervals, "x")) subinterval grid"
 )
 
 savefig("interval.svg"); nothing # hide

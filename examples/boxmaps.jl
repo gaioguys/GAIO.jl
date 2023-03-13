@@ -32,17 +32,17 @@ p = plot!(p, boundary[:, 1], boundary[:, 2], linewidth=4, fill=(0, RGBA(0.,0.,1.
 # Plot the discretized images, using various discretization techniques.
 # Play around with the paramters! 
 # See how many points are needed for a satisfying covering!
-no_of_points = 32
-F = BoxMap(:montecarlo, f, domain, no_of_points=no_of_points)
-p = plot!(p, F(B), color=RGBA(1.,0.,0.,0.5), lab="$no_of_points MonteCarlo test points")
+n_points = 32
+F = BoxMap(:montecarlo, f, domain, n_points = n_points)
+p = plot!(p, F(B), color=RGBA(1.,0.,0.,0.5), lab="$n_points MonteCarlo test points")
 
-no_of_points = (6, 6)
-F = BoxMap(:grid, f, domain, no_of_points=no_of_points)
-p = plot!(p, F(B), color=RGBA(0.,1.,0.,0.5), lab="$(join(no_of_points, "x")) grid of test points")
+n_points = (6, 6)
+F = BoxMap(:grid, f, domain, n_points = n_points)
+p = plot!(p, F(B), color=RGBA(0.,1.,0.,0.5), lab="$(join(n_points, "x")) grid of test points")
 
 F = BoxMap(:adaptive, f, domain)
 p = plot!(p, F(B), color=RGBA(1.,0.,1.,0.5), lab="adaptive")
 
-no_subintervals = (2, 2)
-F = BoxMap(:interval, f, domain, no_subintervals=no_subintervals)
-p = plot!(p, F(B), color=RGBA(1.,0.5,0.,0.5), lab="interval arithmetic with $(join(no_subintervals, "x")) subinterval grid")
+n_subintervals = (2, 2)
+F = BoxMap(:interval, f, domain, n_subintervals = n_subintervals)
+p = plot!(p, F(B), color=RGBA(1.,0.5,0.,0.5), lab="interval arithmetic with $(join(n_subintervals, "x")) subinterval grid")

@@ -55,7 +55,7 @@ F = BoxMap(:pointdiscretized, f, domain, global_test_points)
 p = plot!(
     p, F(B), 
     color=RGBA(1.,0.,0.,0.5), 
-    lab="Test points along the vertices"
+    lab="Images of test points along the vertices"
 )
 
 savefig("pointdiscretized.svg"); nothing # hide
