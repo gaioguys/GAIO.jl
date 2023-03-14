@@ -80,7 +80,11 @@ end
 Graphs.Graph(gstar::TransferOperator) = BoxGraph(gstar)
 Graphs.Graph(g::BoxMap, boxset::BoxSet) = Graph(TransferOperator(g, boxset, boxset))
 
-function Base.show(io::IO, g::BoxGraph)
+function Base.show(io::IO, g::BoxGraph{B,T,P}) where {B,T,P}
+    print(io, "{$(nv(g)), $(ne(g))} directed simple $Int graph representation of TransferOperator")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", g::BoxGraph{B,T,P}) where {B,T,P}
     print(io, "{$(nv(g)), $(ne(g))} directed simple $Int graph representation of TransferOperator")
 end
 
@@ -98,11 +102,11 @@ end
 
 function index_to_row(g::BoxGraph, j)
     g.gstar.domain === g.gstar.codomain && return j
+    m, n = size(g.gstar)
     if j ≤ n
         u = index_to_key(g.gstar.domain, j)
         row = key_to_index(g.gstar.codomain, u)
     else
-        m, n = size(g.gstar)
         row = j - n + g.n_intersections
     end
     return row

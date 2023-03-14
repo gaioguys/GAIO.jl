@@ -2,7 +2,7 @@
     relative_attractor(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
 
 Compute the attractor relative to `B`. Generally, `B` should be 
-a box set containing the whole partition `P`, ie `B = P[:]`.
+a box set containing the whole partition `P`, ie `B = cover(P, :)`.
 """
 function relative_attractor(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     B = copy(B₀)
@@ -36,7 +36,7 @@ end
 
 Compute the chain recurrent set over the box set `B`. Generally, 
 `B` should be a box set containing the whole partition `P`, 
-ie `B = P[:]`. 
+ie `B = cover(P, :)`. 
 """
 function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     B = copy(B₀)
@@ -73,13 +73,13 @@ again.
 end
 
 """
-    expon(h, ϵ=0.2, σ=1.0, δ=0.1)
+    expon(h, k=1, ϵ=0.2, δ=0.1)
 
 Return a rough estimate of how many Newton steps 
 should be taken, given a step size h. 
 """
-function expon(h, σ=1, ϵ=0.2, δ=0.1)
-    n = log( ϵ * (1/2)^σ ) / log( maximum((1 - h, δ)) )
+function expon(h, k=1, ϵ=0.2, δ=0.1)
+    n = log( ϵ * (1/2)^k ) / log( maximum((1 - h, δ)) )
     return Int(ceil(n))
 end
 
@@ -128,7 +128,7 @@ an implicitly defined manifold ``M`` of the form
 ```math
 f(M) \equiv 0
 ```
-for some function ``f : \mathbb{R}^N \rigtharrow \mathbb{R}``. 
+for some function ``f : \mathbb{R}^N \to \mathbb{R}``. 
     
 The starting BoxSet `B` should (coarsely) cover 
 the manifold. 
@@ -139,10 +139,10 @@ function cover_manifold(f, B₀::BoxSet{Box{N,T},Q,S}; steps=12) where {N,T,Q,S}
         B = subdivide(B, (k % N) + 1)
         P = B.partition
         @floop for key in B.set
-            c, r = key_to_box(P, key)
-            box = IntervalBox(c .± r ...)
-            fbox = f(box)
-            if sign(fbox.lo * fbox.hi) ≤ 0
+            box = key_to_box(P, key)
+            int = IntervalBox(box)
+            fint = f(int)
+            if contains_zero(fint)
                 @reduce( image = S() ⊔ key )
             end
         end
@@ -179,31 +179,53 @@ function finite_time_lyapunov_exponents(F::SampledBoxMap, B::BoxSet{R,Q,S}; T) w
 end
 
 """
-    nth_iterate_jacobian(f, Df, x, n; Rfactor=false) -> Z[, R]
+    nth_iterate_jacobian(f, Df, x, n; return_QR=false) -> Z[, R]
 
 Compute the Jacobian of the `n`-times iterated function 
 `f ∘ f ∘ ... ∘ f` at `x` using a QR iteration based on [1]. 
 Requires an approximation `Df` of the jacobian of `f`, e.g. 
 `Df(x) = ForwardDiff.jacobian(f, x)`. 
-Optionally, return the R-factor of the QR decomposition. 
+Optionally, return the QR decomposition. 
 
 [1] Dieci, L., Russell, R. D., Van Vleck, E. S.: "On the 
 Computation of Lyapunov Exponents for Continuous Dynamical 
 Systems," submitted to SIAM J. Numer. Ana. (1993).
 """
-function nth_iterate_jacobian(f, Df, x, n; Rfactor=false)
+function nth_iterate_jacobian(f, Df, x, n; return_QR=false)
     N, T = length(x), eltype(x)
-    Z = Matrix{T}(I(N))
-    R = Matrix{T}(I(N))
     fx = x
+
+    Z = Matrix{T}(I(N))
+    ZR = Matrix{T}(I(N))
+
+    Q = Matrix{T}(I(N))
+    R = Matrix{T}(I(N))
+
     for i in 1:n
         decomp = qr(Z)
-        Z = Df(fx) * decomp.Q
-        R = R * decomp.R
+        Q .= decomp.Q
+        R .= decomp.R
+        fixqr!(Q, R)
+        Z = Df(fx) * Q
+        ZR = ZR * R
         i < n && (fx = f(fx))
     end
-    Z = decomp.Q * R
-    return Rfactor ? (Z, R) : Z
+
+    Z = Q * ZR
+    return return_QR ? (Z, Q, R) : Z
+end
+
+"""
+    fixqr!(Q, R)
+
+Adjust a QR-decomposition such that the 
+R-factor has positive diagonal entries. 
+"""
+function fixqr!(Q, R)
+    d = diag(R)
+    Q[:, d .< 0] .*= -1
+    R[d .< 0, :] .*= -1
+    return Q, R
 end
 
 Core.@doc raw"""
@@ -221,12 +243,10 @@ Lyapunov exponents. Numer. Math. 113, 357–375 (2009).
 https://doi.org/10.1007/s00211-009-0236-4
 """
 function finite_time_lyapunov_exponents(f, Df, μ::BoxFun{E}; n=8) where {N,T,E<:Box{N,T}}
-    a = zeros(N)
-    Dfⁿ(x) = nth_iterate_jacobian(f, Df, x, n; Rfactor=true)
-    for (box, val) in μ
-        c, _ = box
-        _, R = Dfⁿ(c)
-        a .+= val .* log.(diag(R))
+    Dfⁿ(x) = nth_iterate_jacobian(f, Df, x, n; return_QR=true)
+    a = sum(μ; init=zeros(N)) do x
+        _, _, R = Dfⁿ(x)
+        log.(diag(R))
     end
     sort!(a, rev=true)
     a ./= n
@@ -274,24 +294,12 @@ with step size `step_size`.
 end
 
 Core.@doc raw"""
-    SEBA(V::Matrix{<:Real}, Rinit=nothing) -> S, R
+    seba(V::Vector{<:BoxFun}, Rinit=nothing; which=partition_disjoint, maxiter=5000) -> S, A
 
-Construct a sparse approximation of the basis V, as described in 
-[1]. Returns matrices ``S``, ``R`` such that
-```math
-\frac{1}{2} \| V - SR \|_F^2 + \mu \| S \|_{1,1}
-```
-where ``\mu \in \mathbb{R}``, ``\|\|_F`` is the Frobenuius-norm, 
-and ``\|\|_{1,1}`` is the element sum norm, and ``R`` 
-is orthogonal. See [1] for further information on the argument 
-`Rinit`, as well as a description of the algorithm. 
-
-    SEBA(V::Matrix{<:BoxFun}, Rinit=nothing; which=partition_unity) -> S, A
-
-Construct a sparse eigenbasis approximation of V, as described in 
+Construct a sparse eigenbasis approximation of `V`, as described in 
 [1]. Returns an `Array` of `BoxFun`s corresponding to the eigenbasis, 
 as well as a maximum-likelihood `BoxFun` that maps a box to the 
-element of S which has the largest value over the support. 
+element of `S` which has the largest value over the support. 
 
 The keyword `which` is used to set the threshholding heuristic, 
 which is used to extract a partition of the supports from the 
@@ -299,19 +307,15 @@ sparse basis. Builtin options are
 ```julia
 partition_unity, partition_disjoint, partition_likelihood
 ```
-
-[1] Gary Froyland, Christopher P. Rock, and Konstantinos Sakellariou. 
-Sparse eigenbasis approximation: multiple feature extraction 
-across spatiotemporal scales with application to coherent set 
-identification. Communications in Nonlinear Science and Numerical 
-Simulation, 77:81-107, 2019. https://arxiv.org/abs/1812.02787
+which are all exported functions. 
 """
-function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D<:OrderedDict,U<:BoxFun{B,K,W,Q,D}}
-    supp = BoxSet(V[1])
-    all(x -> BoxSet(x) == supp, V) || throw(DomainError(V, "Supports of BoxFuns do not match."))
+function seba(V::AbstractArray{U}, Rinit=nothing; which=partition_disjoint) where {B,K,W,Q,D<:OrderedDict,U<:BoxFun{B,K,W,Q,D}}
+    #supp = BoxSet(V[1])
+    #all(x -> BoxSet(x) == supp, V) || throw(DomainError(V, "Supports of BoxFuns do not match."))
+    supp = union((BoxSet(μ) for μ in V)...)
 
     V̄ = [μ[key] for key in supp.set, μ in V]
-    S̄, R = SEBA(V̄, Rinit)
+    S̄, R = seba(V̄, Rinit)
     S̄, Ā, τ = which(S̄)
 
     S = [BoxFun(supp, S̄[:, i]) for i in 1:size(S̄, 2)]
@@ -319,27 +323,28 @@ function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {
     return S, A
 end
 
-function SEBA(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D,U<:BoxFun{B,K,W,Q,D}}
+function seba(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D,U<:BoxFun{B,K,W,Q,D}}
     V = [
         BoxFun( V[i].partition, OrderedDict(V[i]) )
         for i in 1:length(V)
     ]   # convert to ordered collections to guarantee deterministic iteration order
-    return SEBA(V, Rinit; which=which)
+    return seba(V, Rinit; which=which)
 end
 
 function partition_unity(S)
     S .= max.(S, 0)
-    S_sum = sum(S, dims=2)
-    τᵖᵘ = maximum(S[S_sum .> 1, :])
+    S_descend = sort(S, dims=2, rev=true)
+    S_sum = cumsum(S_descend, dims=2)
+    τᵖᵘ = maximum(S_descend[S_sum .> 1], init=zero(eltype(S)))
     S[S .≤ τᵖᵘ] .= 0
     A = argmax.(eachrow(S))
     return S, A, τᵖᵘ
 end
 
 function partition_disjoint(S)
-    S .= max(S, 0)
+    S .= max.(S, 0)
     S_descend = sort(S, dims=2, rev=true)
-    τᵈᵖ = maximum(S_descend[:, 2])
+    τᵈᵖ = maximum(S_descend[:, 2], init=zero(eltype(S)))
     S[S .≤ τᵈᵖ] .= 0
     A = argmax.(eachrow(S))
     return S, A, τᵈᵖ
@@ -357,17 +362,27 @@ function partition_likelihood(S)
     return S, A, 0.
 end
 
-function SEBA(V::AbstractArray{U}, Rinit=nothing) where {U}
+Core.@doc raw"""
+    seba(V::Matrix{<:Real}, Rinit=nothing, maxiter=5000) -> S, R
 
-    # Inputs: 
-    # V is pxr matrix (r vectors of length p as columns)
-    # Rinit is an (optional) initial rotation matrix.
+Construct a sparse approximation of the basis `V`, as described in 
+[1]. Returns matrices ``S``, ``R`` such that
+```math
+\frac{1}{2} \| V - SR \|_F^2 + \mu \| S \|_{1,1}
+```
+is minimized,
+where ``\mu \in \mathbb{R}``, ``\| \cdot \|_F`` is the Frobenuius-norm, 
+and ``\| \cdot \|_{1,1}`` is the element sum norm, and ``R`` 
+is orthogonal. See [1] for further information on the argument 
+`Rinit`, as well as a description of the algorithm. 
 
-    # Outputs:
-    # S is pxr matrix with columns approximately spanning the column space of V
-    # R is the optimal rotation that acts on V, which followed by thresholding, produces S
-
-    maxiter = 5000   #maximum number of iterations allowed
+[1] Gary Froyland, Christopher P. Rock, and Konstantinos Sakellariou. 
+Sparse eigenbasis approximation: multiple feature extraction 
+across spatiotemporal scales with application to coherent set 
+identification. Communications in Nonlinear Science and Numerical 
+Simulation, 77:81-107, 2019. https://arxiv.org/abs/1812.02787
+"""
+function seba(V::AbstractArray{U}, Rinit=nothing, maxiter=5000) where {U}
     F = qr(V) # Enforce orthonormality
     V = Matrix(F.Q)
     p, r = size(V)

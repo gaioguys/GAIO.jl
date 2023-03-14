@@ -41,7 +41,7 @@ function map_boxes(g::IntervalBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
     P = source.partition
     @floop for box in source
         c, r = box
-        int = IntervalBox(c .± r ...)
+        int = IntervalBox(box)
         for subint in mince(int, g.no_subintervals(c, r))
             fint = g.map(subint)
             fbox = Box(fint)
@@ -59,8 +59,9 @@ function construct_transfers(
 
     P, D = domain.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
     @floop for key in domain.set
-        c, r = key_to_box(P, key)
-        int = IntervalBox(c .± r ...)
+        box = key_to_box(P, key)
+        c, r = box
+        int = IntervalBox(box)
         for subint in mince(int, g.no_subintervals(c, r))
             fint = g.map(subint)
             fbox = Box(fint)
@@ -72,8 +73,8 @@ function construct_transfers(
             end
         end
     end
-    variant_set = BoxSet(P, variant_keys)
-    return mat, variant_set
+    image_set = BoxSet(P, image)
+    return mat, image_set
 end
 
 function construct_transfers(
@@ -83,8 +84,9 @@ function construct_transfers(
     P1, P2 = domain.partiiton, codomain.partition
     D = Dict{Tuple{keytype(H),keytype(Q)},T}
     @floop for key in domain.set
-        c, r = key_to_box(P1, key)
-        int = IntervalBox(c .± r ...)
+        box = key_to_box(P1, key)
+        c, r = box
+        int = IntervalBox(box)
         for subint in mince(int, g.no_subintervals(c, r))
             fint = g.map(subint)
             fbox = Box(fint)
