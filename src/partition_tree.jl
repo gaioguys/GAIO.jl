@@ -162,7 +162,7 @@ the node is subdivided depends on the depth of the node.
     return tree
 end
 
-function subdivide!(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
+function subdivide!(tree::TreePartition{N,T,I}, depth::Integer=1) where {N,T,I}
     node_idxs = find_at_depth(tree, depth)
 
     if all(idx -> isleaf(tree.nodes[idx]), node_idxs)

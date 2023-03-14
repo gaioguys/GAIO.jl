@@ -46,7 +46,7 @@ export BoxFun
 export TransferOperator
 export construct_transfers, eigs
 
-export BoxGraph
+export BoxGraph, Graph
 
 export BoxMap, map_boxes
 export SampledBoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap
@@ -61,7 +61,7 @@ export relative_attractor, unstable_set, chain_recurrent_set
 export cover_roots, cover_manifold
 export nth_iterate_jacobian, finite_time_lyapunov_exponents
 export union_strongly_connected_components
-export SEBA, partition_unity, partition_disjoint, partition_likelihood
+export seba, partition_unity, partition_disjoint, partition_likelihood
 
 export plotboxes, plotboxes!
 

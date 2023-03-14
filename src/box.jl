@@ -7,7 +7,7 @@ Core.@doc raw"""
 A generalized box in dimension `N` with element type `T`. 
 Mathematically, this is a set
 ```math
-[center_1 - radius_1,\ center_1 + radius_1) \ \times \ [center_N - radius_N,\ center_N + radius_N)
+[center_1 - radius_1,\ center_1 + radius_1) \ \times \ \ldots \ \times \ [center_N - radius_N,\ center_N + radius_N)
 ```
 
 Fields:
@@ -40,10 +40,25 @@ struct Box{N,T <: AbstractFloat}
     end
 end
 
-function Box{N,T}(int::IntervalBox{N}) where {N,T}
-    mat = reinterpret(reshape, T, collect(int))
-    c = ( (mat[1, :] .+ mat[2, :]) ./ 2 ) .- eps(T)
-    r = ( (mat[2, :] .- mat[1, :]) ./ 2 ) .- eps(T)
+Box{T}(box::Box{N}) where {N,T} = Box{N,T}(box.center, box.radius)
+Box{T}(args...) where {T} = Box{T}(Box(args...))
+Box(c, r) = Box{length(c), F}(c, r)
+Box(c::Number, r::Number) = Box((c,), (r,))
+
+Box(int::IntervalBox{N}) where {N} = Box{N,F}(int)
+Box(ints::Interval...) = Box(IntervalBox(ints...))
+Box(ints::NTuple{N,<:Interval{T}}) where {N,T} = Box(ints...)
+
+function Box{N,T}(intbox::IntervalBox{N}) where {N,T}
+    ϵ = eps(T)
+    c = ntuple(Val(N)) do i
+        int = intbox.v[i]
+        (int.hi .+ int.lo) ./ 2 .- ϵ
+    end
+    r = ntuple(Val(N)) do i
+        int = intbox.v[i]
+        (int.hi .- int.lo) ./ 2 .- ϵ
+    end
     all(>(0), r) || return nothing
     @inbounds Box{N,T}(c, r)
 end
@@ -55,14 +70,15 @@ function IntervalArithmetic.IntervalBox(box::Box{N,T}) where {N,T}
     IntervalBox{N,T}(c .± r)
 end
 
-Box{T}(box::Box{N}) where {N,T} = Box{N,T}(box.center, box.radius)
-Box{T}(args...) where {T} = Box{T}(Box(args...))
-Box(center, radius) = Box{length(center), promote_type(F, eltype(center), eltype(radius))}(center, radius)
-Box(int::IntervalBox{N,T}) where {N,T} = Box{N,T}(int)
-Box(ints::Interval...) = Box(IntervalBox(ints...))
-Box(ints::NTuple{N,<:Interval{T}}) where {N,T} = Box(ints...)
-
-Base.show(io::IO, box::Box) = show(io, IntervalBox(box))
+function Base.show(io::IO, box::B) where {N,T,B<:Box{N,T}}
+    c, r = box
+    lo, hi = c - r, c + r
+    if N ≤ 5
+        join(io, ("[$l, $h)" for (l, h) in zip(lo, hi)), " × ")
+    else
+        print(io, "[$(lo[1]), $(hi[1])) × ... × [$(lo[end]), $(hi[end]))")
+    end
+end
 
 function Base.show(io::IO, ::MIME"text/plain", box::B) where {N,T,B<:Box{N,T}}
     c, r = box
@@ -76,15 +92,15 @@ function Base.show(io::IO, ::MIME"text/plain", box::B) where {N,T,B<:Box{N,T}}
     end
 end
 
-@propagate_inbounds function Base.in(point, box::Box)
+Base.@propagate_inbounds function Base.in(point, box::Box)
     c, r = box
     @boundscheck begin
-        M, N = length(point), length(c)
+        M, N = length(point), ndims(box)
         if M != N
             throw(DimensionMismatch("point has dimension $M but box has dimension $N"))
         end
     end
-    all(c .- r .<= point .< c .+ r)
+    all((c - r) .<= point .< (c + r))
 end
 
 function Base.intersect(b1::Box{N}, b2::Box{N}) where {N}
@@ -95,6 +111,8 @@ function Base.intersect(b1::Box{N}, b2::Box{N}) where {N}
 end
 
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
+Base.length(::Box{N}) where {N} = N
+Base.ndims(::Box{N}) where {N} = N
 
 Base.iterate(b::Box, i...) = (b.center, Val(:radius))
 Base.iterate(b::Box, ::Val{:radius}) = (b.radius, Val(:done))

@@ -36,7 +36,7 @@ OrderedCollections.OrderedDict(boxfun::BoxFun) = OrderedDict( zip( keys(boxfun),
 Core.@doc raw"""
     sum(f, μ::BoxFun)
     sum(f, μ::BoxFun, B::BoxSet)
-    μ(B) = sum(identity, μ, B)
+    μ(B) = sum(x->1, μ, B)
 
 Integrate a function `f` using `μ` as a density, that is,
 if `boxfun` is the discretization of a measure ``\mu`` over the domain 
@@ -52,20 +52,20 @@ integration is restricted to the boxes in `B`
 The notation `μ(B)` is offered to compute 
 ``\mu (\bigcup_{b \in B} b)``. 
 """
-function Base.sum(f, boxfun::BoxFun{B,K,V,P,D}, boxset=nothing) where {B,K,V,P,D}
-    sum(boxfun; init=zero(V)) do pair
+function Base.sum(f, boxfun::BoxFun{B,K,V,P,D}; init...) where {B,K,V,P,D}
+    sum(pairs(boxfun); init...) do pair
         box, val = pair
         f(box.center) * volume(box) * val
     end
 end
 
-function Base.sum(f, boxfun::BoxFun{B,K,V,P,D}, boxset::Union{Box,BoxSet}) where {B,K,V,P,D}
+function Base.sum(f, boxfun::BoxFun{B,K,V,P,D}, boxset::Union{Box,BoxSet}; init...) where {B,K,V,P,D}
     support = cover(boxfun.partition, boxset)
     boxfun_new = BoxFun(
         boxfun.partition, 
         D((key=>val) for (key,val) in boxfun.vals if key in support.set)
     )
-    sum(f, boxfun_new)
+    sum(f, boxfun_new; init...)
 end
 
 (boxfun::BoxFun)(boxset::Union{Box,BoxSet}) = sum(_->1, boxfun, boxset)
@@ -80,6 +80,7 @@ Base.keytype(::BoxFun{B,K,V}) where {B,K,V} = K
 Base.eltype(::BoxFun{B,K,V}) where {B,K,V} = V
 Base.keys(fun::BoxFun) = keys(fun.vals)
 Base.values(fun::BoxFun) = values(fun.vals)
+Base.pairs(fun::BoxFun) = ( (key_to_box(fun.partition, key), val) for (key,val) in fun.vals )
 Base.show(io::IO, ::MIME"text/plain", fun::BoxFun) = show(io, fun)
 Base.maximum(fun::BoxFun) = maximum(values(fun))
 Base.minimum(fun::BoxFun) = minimum(values(fun))
