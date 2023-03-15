@@ -47,11 +47,8 @@ makedocs(
             "simd.md",
             "cuda.md"
         ],
-        "Examples" => "examples.md",
-        "Reference" => [
-            "data_structures.md",
-            "library_reference.md"
-        ]
+        "Other Examples" => "examples.md",
+        "Library Reference" => "library_reference.md"
     ],
     doctest = false,
     format = Documenter.HTML(prettyurls = ci)
