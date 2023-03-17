@@ -58,7 +58,8 @@ export IntervalBoxMap
 export rk4, rk4_flow_map
 
 export relative_attractor, unstable_set, chain_recurrent_set
-export cover_roots, cover_manifold
+export box_dimension
+export armijo_rule, adaptive_newton_step, cover_roots, cover_manifold
 export nth_iterate_jacobian, finite_time_lyapunov_exponents
 export union_strongly_connected_components
 export seba, partition_unity, partition_disjoint, partition_likelihood

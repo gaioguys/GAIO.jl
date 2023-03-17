@@ -253,6 +253,31 @@ function finite_time_lyapunov_exponents(f, Df, μ::BoxFun{E}; n=8) where {N,T,E<
     return a
 end
 
+"""
+    box_dimension(boxsets) -> D
+
+For an iterator `boxsets` of (successively finer) 
+`BoxSet`s, compute the box dimension `D`. 
+
+#### Example
+```julia
+# F is some BoxMap, S is some BoxSet
+box_dimension( relative_attractor(F, S, steps=k) for k in 1:20 )
+```
+"""
+function box_dimension(boxsets)
+    logϵ, box_dim = Float64[], Float64[]
+    for boxset in boxsets
+        ϵ = 2 * maximum(max_radius(boxset))
+        logϵ_n = 1 / log(1/ϵ)
+        N = length(boxset)
+        push!(logϵ, logϵ_n)
+        push!(box_dim, log(N)*logϵ_n)
+    end
+    logK, D = linreg(logϵ, box_dim)
+    return D
+end
+
 # Runge-Kutta scheme of 4th order
 const half, sixth, third = Float32.((1/2, 1/6, 1/3))
 
@@ -432,5 +457,23 @@ function seba(V::AbstractArray{U}, Rinit=nothing, maxiter=5000) where {U}
     S = S[:, ind]
 
     return S, R
+end
 
+"""
+    linreg(xs, ys)
+
+Simple one-dimensional lunear regression used to 
+approximate box dimension. 
+"""
+function linreg(xs, ys)
+    n = length(xs)
+    n == length(ys) || throw(DimensionMismatch())
+
+    sum_x, sum_y = sum(xs), sum(ys)
+    sum_xy, sum_x2 = xs'ys, xs'xs
+
+    m = ( n*sum_xy - sum_x*sum_y ) / ( n*sum_x2 - sum_x^2 )
+    b = ( sum_x*sum_y - m*sum_x^2 ) / ( n*sum_x )
+
+    return m, b
 end

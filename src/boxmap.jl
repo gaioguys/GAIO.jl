@@ -5,10 +5,14 @@ Transforms a ``map: Q → Q`` defined on points in
 the domain ``Q ⊂ ℝᴺ`` to a `SampledBoxMap` defined 
 on `Box`es. 
 
-By default uses a grid of sample points. 
+By default uses adaptive test-point sampling. 
+For SIMD- and GPU-accelerated `BoxMap`s, uses
+a grid of test points by default. 
 """
 BoxMap(symb::Symbol, args...; kwargs...) = BoxMap(Val(symb), args...; kwargs...)
 BoxMap(symb::Symbol, accel::Symbol, args...; kwargs...) = BoxMap(symb, Val(accel), args...; kwargs...)
+BoxMap(accel::Val{:simd}, args...; kwargs...) = BoxMap(Val(:grid), accel, args...; kwargs...)
+BoxMap(accel::Val{:gpu}, args...; kwargs...) = BoxMap(Val(:grid), accel, args...; kwargs...)
 
 # default BoxMap behavior
 BoxMap(args...; kwargs...) = AdaptiveBoxMap(args...; kwargs...)
