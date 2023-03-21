@@ -33,7 +33,7 @@ center, radius = (0, 0), (3, 3)
 P = BoxPartition(Box(center, radius))
 F = BoxMap(f, P)
 S = cover(P, :)
-A = relative_attractor(F, S, steps = 18)
+A = relative_attractor(F, S, steps = 22)
 
 using Plots: plot
 #using WGLMakie: plot    # same result, just interactive

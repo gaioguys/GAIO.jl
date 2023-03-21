@@ -126,8 +126,8 @@ We notice there are two "blobs" defining the second eigenmeasure. These correspo
 ev_seba, feature_vec = seba(real .∘ ev, which=partition_unity)
 μ1, μ2 = ev_seba[1], ev_seba[2]
 
-S1 = BoxSet(P, Set(key for key in keys(μ1) if μ1[key] > 0))
-S2 = BoxSet(P, Set(key for key in keys(μ2) if μ2[key] > 0))
+S1 = BoxSet(P, Set(key for key in keys(μ1) if μ1[key] > 0.01))
+S2 = BoxSet(P, Set(key for key in keys(μ2) if μ2[key] > 0.01))
 
 setdiff!(S1, S2) # hide
 setdiff!(S2, S1) # hide

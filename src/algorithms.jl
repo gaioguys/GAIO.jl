@@ -201,7 +201,7 @@ function nth_iterate_jacobian(f, Df, x, n; return_QR=false)
     Q = Matrix{T}(I(N))
     R = Matrix{T}(I(N))
 
-    for i in 1:n
+    for i in 0:n
         decomp = qr(Z)
         Q .= decomp.Q
         R .= decomp.R

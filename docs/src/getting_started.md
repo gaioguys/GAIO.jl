@@ -47,7 +47,7 @@ F = BoxMap(f, Q)
 ```
 We can now compute a covering of the attractor in `Q`, starting with the full box set `B`, by applying 15 steps of the subdivison algorithm described in [4]:
 ```@repl 1
-A = relative_attractor(F, B, steps = 15)  
+A = relative_attractor(F, B, steps = 19)  
 ```
 
 ```@repl 1

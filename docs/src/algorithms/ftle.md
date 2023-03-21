@@ -167,7 +167,6 @@ gif(anim, "ftle_field.gif", fps=Tspan÷(2τ));
 
 ### Example 2: An Ergodic System
 
-
 ```julia
 using GAIO
 using Plots
@@ -183,11 +182,11 @@ center, radius = (0, 0), (3, 3)
 P = BoxPartition(Box(center, radius))
 F = BoxMap(f, P)
 S = cover(P, :)
-A = relative_attractor(F, S, steps = 28)
+A = relative_attractor(F, S, steps = 20)
 
 T = TransferOperator(F, A, A)
 (λ, ev) = eigs(T)
-μ = ev[1]
+μ = real ∘ ev[1]
 
 σ16 = finite_time_lyapunov_exponents(f, Df, μ, n=16)
 σ8  = finite_time_lyapunov_exponents(f, Df, μ, n=8)

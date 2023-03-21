@@ -23,29 +23,26 @@ chain_recurrent_set
 ```@example 1
 using GAIO
 
-# Chua's circuit
-const a, b, m0, m1 = 16.0, 33.0, -0.2, 0.01
-v((x,y,z)) = (a*(y-m0*x-m1/3.0*x^3), x-y+z, -b*y)
-f(x) = rk4_flow_map(v, x, 0.05, 10)  # 10 steps of RK4 with step size 0.05
+# Van der Pol system
+const ϵ = 1.5
+v((x,y)) = (y, ϵ*y*(1-x^2) - x)
+f(x) = rk4_flow_map(v, x)
 
-center, radius = (0,0,0), (20,20,120)
-Q = Box(center, radius)
+c, r = (0., 0.), (3.5, 3.5)
+Q = Box(c, r)
 P = BoxPartition(Q)
 S = cover(P, :)
 
 F = BoxMap(f, Q)
-C = chain_recurrent_set(F, S, steps=21)
+C = chain_recurrent_set(F, S, steps=18)
 
-using GLMakie: Figure, Axis3, plot!
-fig = Figure();
-ax = Axis3(fig[1,1], aspect=(1, 1.2, 1), azimuth=pi/10);
-ms = plot!(ax, C);
+using Plots
+plot(C)
 
-using GLMakie: save # hide
-save("chain_recurrent_set.png", fig); nothing # hide
+savefig("chain_recurrent_set.svg"); nothing # hide
 ```
 
-![Chain recurrent set](chain_recurrent_set.png)
+![Chain recurrent set](chain_recurrent_set.svg)
 
 We find an unstable manifold surroundng a fixed point as well as a stable periodic orbit. 
 
