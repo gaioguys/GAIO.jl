@@ -163,7 +163,7 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
 
         LinearAlgebra.issymmetric(g::$type) = issymmetric($gmap.mat)
 
-        function _eigs(g::$type, B=I; nev=1, ritzvec=true, kwargs...)
+        function _eigs(g::$type, B=I; nev=3, ritzvec=true, kwargs...)
             λ, ϕ, ext... = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
             S = $gmap.domain
             b = [BoxFun(S, ϕ[:, i]) for i in 1:nev]

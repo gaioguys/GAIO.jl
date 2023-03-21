@@ -18,7 +18,7 @@ using Test
         @test W isa BoxSet  # passes if no error is thrown
     
         T = TransferOperator(F, W)
-        λ, ev, nconv = eigs(T)
+        λ, ev, nconv = eigs(T, nev=1)
         @test ev[1] isa BoxFun  # passes if no error is thrown
     end
     @testset "grid" begin
@@ -27,7 +27,7 @@ using Test
         @test W isa BoxSet  # passes if no error is thrown
     
         T = TransferOperator(F, W)
-        λ, ev, nconv = eigs(T)
+        λ, ev, nconv = eigs(T, nev=1)
         @test ev[1] isa BoxFun  # passes if no error is thrown
     end
     @testset "adaptive" begin
@@ -36,7 +36,7 @@ using Test
         @test W isa BoxSet  # passes if no error is thrown
     
         T = TransferOperator(F, W)
-        λ, ev, nconv = eigs(T)
+        λ, ev, nconv = eigs(T, nev=1)
         @test ev[1] isa BoxFun  # passes if no error is thrown
     end
     @testset "simd montecarlo" begin
@@ -45,7 +45,7 @@ using Test
         @test W isa BoxSet  # passes if no error is thrown
     
         T = TransferOperator(F, W)
-        λ, ev, nconv = eigs(T)
+        λ, ev, nconv = eigs(T, nev=1)
         @test ev[1] isa BoxFun  # passes if no error is thrown
     end
     @testset "simd grid" begin
@@ -54,7 +54,7 @@ using Test
         @test W isa BoxSet  # passes if no error is thrown
     
         T = TransferOperator(F, W)
-        λ, ev, nconv = eigs(T)
+        λ, ev, nconv = eigs(T, nev=1)
         @test ev[1] isa BoxFun  # passes if no error is thrown
     end
 

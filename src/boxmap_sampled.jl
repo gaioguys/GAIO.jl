@@ -112,6 +112,9 @@ function Base.show(io::IO, g::SampledBoxMap)
     print(io, "SampledBoxMap with $(n) sample points")
 end
 
+n_default(T) = Int(pick_vector_width(T))
+n_default(N, T) = 4 * N * n_default(T)
+
 """
     BoxMap(:pointdiscretized, map, domain, points) -> SampledBoxMap
 
@@ -199,19 +202,13 @@ function approx_lipschitz(f, center::SVNT{N,T}, radius::SVNT{N,T}) where {N,T}
         y[dim] = zero(T)
     end
     if !all(isfinite, L)
-        throw(DomainError(
-            Inf,
-            """The dynamical system diverges within the box. 
-            Cannot calculate Lipschitz constant.
-            $(Box{N,T}(center, radius))
-            """
-        ))
+        throw(NumericalError(center, radius, DIVERGED_MSG))
     end
     return L
 end
 
 """
-    sample_adaptive(f, center::SVector, radius::SVector, accel=nothing)
+    sample_adaptive(f, center::SVector, radius::SVector)
 
 Create a grid of test points using the adaptive technique 
 described in 
@@ -220,21 +217,54 @@ Oliver Junge. “Rigorous discretization of subdivision techniques”. In:
 _International Conference on Differential Equations_. Ed. by B. Fiedler, K.
 Gröger, and J. Sprekels. 1999. 
 """
-function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}, alg=LinearAlgebra.QRIteration()) where {N,T}
+function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}; alg=LinearAlgebra.QRIteration()) where {N,T}
     L = approx_lipschitz(f, center, radius)
     _, σ, Vt = svd(L, alg=alg)
-    n = ntuple(i->ceil(Int, σ[i]), Val(N))
-    h = 2.0 ./ (n .- 1)
+
+    if !all(typemin(Int) .< σ .< typemax(Int))
+        throw(NumericalError(center, radius, SVD_MSG))
+    end
+
+    n = ntuple(i -> ceil(Int, σ[i]), Val(N))
+    h = convert(T, 2) ./ (n .- 1)
     points = Iterators.map(CartesianIndices(n)) do i
         p  = T[ n[k] == 1 ? 0 : (i[k] - 1) * h[k] - 1 for k in 1:N ]
         p .= Vt'p
         @muladd p .= center .+ radius .* p
         sp = SVector{N,T}(p)
     end
+
     return points
 end
 
-sample_adaptive(f) = (center, radius) -> sample_adaptive(f, center, radius)
+function sample_adaptive(f)
+    domain_points(center, radius) = sample_adaptive(f, center, radius)
+end
 
-n_default(T) = Int(pick_vector_width(T))
-n_default(N, T) = 4 * N * n_default(T)
+struct NumericalError{B} <: Exception
+    box::B
+    msg::String
+end
+
+function NumericalError(center, radius::SVNT{N,T}, msg) where {N,T}
+    NumericalError(Box{N,T}(center, radius), msg)
+end
+
+function Base.showerror(io::IO, err::NumericalError)
+    println(io, "NumericalError within the box $(err.box): ")
+    println(io, err.msg)
+end
+
+const DIVERGED_MSG = """
+The dynamical system diverges. 
+Cannot calculate Lipschitz constant.  
+Make sure that the dynamical system is well-defined 
+or use a different `BoxMap` discretization. 
+"""
+
+const SVD_MSG = """
+The dynamical system is too expansive. 
+Cannot calculate a test point grid. 
+Make sure that the dynamical system is well-defined 
+or use a different `BoxMap` discretization. 
+"""
