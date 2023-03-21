@@ -24,29 +24,7 @@ subdivide!
 ```
 
 ```@docs
-BoxMap
-MonteCarloBoxMap
-GridBoxMap
-PointDiscretizedBoxMap
-AdaptiveBoxMap
-SampledBoxMap
-IntervalBoxMap
-CPUSampledBoxMap
-GPUSampledBoxMap
-```
-
-```@docs
 BoxSet
-```
-
-```@docs
-TransferOperator
-```
-
-```@docs
-BoxFun
-Base.sum(f, boxfun::BoxFun)
-∘(f, boxfun::BoxFun)
 ```
 
 ```@docs
