@@ -27,7 +27,7 @@ pkg> add https://github.com/gaioguys/GAIO.jl.git
 
 ## Getting started
 
-The following script computes the chain recurrent set of the Hénon map within the box [-3,3]²: 
+The following script computes the chain recurrent set of the Hénon map within the box [-3,3)²: 
 
 ```julia
 using GAIO
@@ -35,11 +35,13 @@ using WGLMakie: plot
 
 center, radius = (0,0), (3,3)
 Q = Box(center, radius)                       # domain for the computation
-P = BoxPartition(Q)                           # 1 x 1 partition of Q
+P = BoxPartition(Q, (2, 2))                   # 2 x 2 partition of Q
+S = cover(P, :)                               # Set of all boxes in P
 
 f((x,y)) = (1 - 1.4*x^2 + y, 0.3*x)           # the Hénon map
 F = BoxMap(f, P)                              # ... turned into a map on boxes
-R = relative_attractor(F, P[:], steps = 14)   # subdivison algorithm computing
+
+R = relative_attractor(F, S, steps = 12)      # subdivison algorithm computing
                                               # the attractor relative to Q
 plot(R)                                       # plot R
 ```
