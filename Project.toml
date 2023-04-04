@@ -1,7 +1,7 @@
 name = "GAIO"
 uuid = "33d280d1-ac47-4b0f-9c2e-fa6a385d0226"
 authors = ["The GAIO.jl Team"]
-version = "0.3.0"
+version = "0.4.0"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
