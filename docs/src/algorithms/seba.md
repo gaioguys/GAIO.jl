@@ -123,7 +123,8 @@ savefig("second_eigvec.svg"); nothing # hide
 We notice there are two "blobs" defining the second eigenmeasure. These correspond to the almost invariant sets; there are two "vortices" where mass flows in a circular pattern and doesn't mix with the rest of the domain. We wish to isolate these blobs using `seba`
 
 ```@example 1
-ev_seba, feature_vec = seba(real .∘ ev, which=partition_unity)
+re_ev = real .∘ ev  # seba expects real numbers, ev is complex
+ev_seba, feature_vec = seba(re_ev, which=partition_unity)
 μ1, μ2 = ev_seba[1], ev_seba[2]
 
 S1 = BoxSet(P, Set(key for key in keys(μ1) if μ1[key] > 0.01))

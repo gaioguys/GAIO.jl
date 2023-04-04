@@ -158,6 +158,10 @@ Since a measure ``\mu`` is a function defined over measurable sets, composite me
 ```@repl 1
 η = exp ∘ μ
 ```
+For multiple BoxFuns, e.g. as the result of calling `eigs(T)`, the concatenation operator `∘` can be applied to each one using julia's broadcasting functionality
+```@repl 1
+real_ev = real .∘ ev
+```
 Similarly probability measures can be given a vector space structure. This is also supported in GAIO.jl
 ```@repl 1
 ν + μ
