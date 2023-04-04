@@ -191,6 +191,14 @@ for op in (:issubset, :isdisjoint, :issetequal, :(==))
     @eval Base.$op(b1::BoxSet, b2::BoxSet) = b1.partition == b2.partition && $op(b1.set, b2.set)
 end
 
+function max_radius(boxset::BoxSet{B,P,S}) where {N,T,I,B,P<:TreePartition{N,T,I},S}
+    min_depth = minimum(depth for (depth, cart) in boxset.set)
+    Q = BoxPartition(boxset.partition, min_depth)
+    _, r = key_to_box(Q, ntuple(_->one(I), Val(N)))
+    return r
+end
+
+max_radius(boxset::BoxSet{B,P,S}) where {B,P<:BoxPartition,S} = first(boxset).radius
 Base.isempty(boxset::BoxSet) = isempty(boxset.set)
 Base.empty!(boxset::BoxSet) = (empty!(boxset.set); boxset)
 Base.copy(boxset::BoxSet) = BoxSet(boxset.partition, copy(boxset.set))

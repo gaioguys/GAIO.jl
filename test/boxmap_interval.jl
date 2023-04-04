@@ -8,7 +8,7 @@ using Test
     center = SVector(0.0, 0.0)
     radius = SVector(1.0, 1.0)
     domain = Box(center, radius)
-    g = BoxMap(:interval, f, domain, no_subintervals=(1,1))
+    g = BoxMap(:interval, f, domain, n_subintervals=(1,1))
     @testset "basics" begin
         @test typeof(g) <: IntervalBoxMap
         partition = BoxPartition(domain, (32,32))

@@ -112,6 +112,9 @@ function Base.show(io::IO, g::SampledBoxMap)
     print(io, "SampledBoxMap with $(n) sample points")
 end
 
+n_default(T) = Int(pick_vector_width(T))
+n_default(N, T) = 4 * N * n_default(T)
+
 """
     BoxMap(:pointdiscretized, map, domain, points) -> SampledBoxMap
 
@@ -128,37 +131,35 @@ end
 PointDiscretizedBoxMap(map, P::AbstractBoxPartition, points) = PointDiscretizedBoxMap(map, P.domain, points)
 
 """
-    BoxMap(:grid, map, domain::Box{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
-    GridBoxMap(:grid, P::BoxPartition{N,T}; no_of_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
+    BoxMap(:grid, map, domain::Box{N}; n_points::NTuple{N} = ntuple(_->16, N)) -> SampledBoxMap
 
 Construct a `SampledBoxMap` that uses a grid of test points. 
-The size of the grid is defined by `no_of_points`, which is 
+The size of the grid is defined by `n_points`, which is 
 a tuple of length equal to the dimension of the domain. 
 """
-function GridBoxMap(map, domain::Box{N,T}; no_of_points::NTuple{N}=ntuple(_->n_default(T),N)) where {N,T}
-    Δp = 2 ./ no_of_points
-    points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(no_of_points) ]
+function GridBoxMap(map, domain::Box{N,T}; n_points::NTuple{N}=ntuple(_->n_default(T),N)) where {N,T}
+    Δp = 2 ./ n_points
+    points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(n_points) ]
     return PointDiscretizedBoxMap(map, domain, points)
 end
 
-function GridBoxMap(map, P::Q; no_of_points=ntuple(_->n_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
-    GridBoxMap(map, P.domain; no_of_points=no_of_points)
+function GridBoxMap(map, P::Q; n_points=ntuple(_->n_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    GridBoxMap(map, P.domain; n_points=n_points)
 end
 
 """
-    BoxMap(:montecarlo, map, domain::Box{N,T}; no_of_points=16*N) -> SampledBoxMap
-    BoxMap(:montecarlo, map, P::BoxPartition{N,T}; no_of_points=16*N) -> SampledBoxMap
+    BoxMap(:montecarlo, map, domain::Box{N}; n_points=16*N) -> SampledBoxMap
 
-Construct a `SampledBoxMap` that uses `no_of_points` 
+Construct a `SampledBoxMap` that uses `n_points` 
 Monte-Carlo test points. 
 """
-function MonteCarloBoxMap(map, domain::Box{N,T}; no_of_points=n_default(N,T)) where {N,T}
-    points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:no_of_points ] 
+function MonteCarloBoxMap(map, domain::Box{N,T}; n_points=n_default(N,T)) where {N,T}
+    points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:n_points ] 
     return PointDiscretizedBoxMap(map, domain, points) 
 end 
 
-function MonteCarloBoxMap(map, P::Q; no_of_points=n_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
-    MonteCarloBoxMap(map, P.domain; no_of_points=no_of_points)
+function MonteCarloBoxMap(map, P::Q; n_points=n_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    MonteCarloBoxMap(map, P.domain; n_points=n_points)
 end
 
 """
@@ -201,19 +202,13 @@ function approx_lipschitz(f, center::SVNT{N,T}, radius::SVNT{N,T}) where {N,T}
         y[dim] = zero(T)
     end
     if !all(isfinite, L)
-        throw(DomainError(
-            Inf,
-            """The dynamical system diverges within the box. 
-            Cannot calculate Lipschitz constant.
-            $(Box{N,T}(center, radius))
-            """
-        ))
+        throw(NumericalError(center, radius, DIVERGED_MSG))
     end
     return L
 end
 
 """
-    sample_adaptive(f, center::SVector, radius::SVector, accel=nothing)
+    sample_adaptive(f, center::SVector, radius::SVector)
 
 Create a grid of test points using the adaptive technique 
 described in 
@@ -222,21 +217,54 @@ Oliver Junge. “Rigorous discretization of subdivision techniques”. In:
 _International Conference on Differential Equations_. Ed. by B. Fiedler, K.
 Gröger, and J. Sprekels. 1999. 
 """
-function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}, alg=LinearAlgebra.QRIteration()) where {N,T}
+function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}; alg=LinearAlgebra.QRIteration()) where {N,T}
     L = approx_lipschitz(f, center, radius)
     _, σ, Vt = svd(L, alg=alg)
-    n = ntuple(i->ceil(Int, σ[i]), Val(N))
-    h = 2.0 ./ (n .- 1)
+
+    if !all(typemin(Int) .< σ .< typemax(Int))
+        throw(NumericalError(center, radius, SVD_MSG))
+    end
+
+    n = ntuple(i -> ceil(Int, σ[i]), Val(N))
+    h = convert(T, 2) ./ (n .- 1)
     points = Iterators.map(CartesianIndices(n)) do i
         p  = T[ n[k] == 1 ? 0 : (i[k] - 1) * h[k] - 1 for k in 1:N ]
         p .= Vt'p
         @muladd p .= center .+ radius .* p
         sp = SVector{N,T}(p)
     end
+
     return points
 end
 
-sample_adaptive(f) = (center, radius) -> sample_adaptive(f, center, radius)
+function sample_adaptive(f)
+    domain_points(center, radius) = sample_adaptive(f, center, radius)
+end
 
-n_default(T) = Int(pick_vector_width(T))
-n_default(N, T) = 4 * N * n_default(T)
+struct NumericalError{B} <: Exception
+    box::B
+    msg::String
+end
+
+function NumericalError(center, radius::SVNT{N,T}, msg) where {N,T}
+    NumericalError(Box{N,T}(center, radius), msg)
+end
+
+function Base.showerror(io::IO, err::NumericalError)
+    println(io, "NumericalError within the box $(err.box): ")
+    println(io, err.msg)
+end
+
+const DIVERGED_MSG = """
+The dynamical system diverges. 
+Cannot calculate Lipschitz constant.  
+Make sure that the dynamical system is well-defined 
+or use a different `BoxMap` discretization. 
+"""
+
+const SVD_MSG = """
+The dynamical system is too expansive. 
+Cannot calculate a test point grid. 
+Make sure that the dynamical system is well-defined 
+or use a different `BoxMap` discretization. 
+"""

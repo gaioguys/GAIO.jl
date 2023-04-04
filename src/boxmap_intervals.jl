@@ -1,22 +1,22 @@
 """
-    BoxMap(:interval, map, domain; no_subintervals::NTuple{N} = ntuple(_->4, N)) -> IntervalBoxMap
-    BoxMap(:interval, map, domain; no_subintervals::Function) -> IntervalBoxMap
+    BoxMap(:interval, map, domain::Box{N}; n_subintervals::NTuple{N} = ntuple(_->4, N)) -> IntervalBoxMap
+    BoxMap(:interval, map, domain::Box{N}; n_subintervals::Function) -> IntervalBoxMap
 
 Type representing a discretization of a map using 
 interval arithmetic to construct rigorous outer coverings 
-of map images. `no_subintervals` describes how many times 
+of map images. `n_subintervals` describes how many times 
 a given box will be subdivided before mapping. 
-`no_subintervals` is a Function which 
-has the signature `no_subintervals(center, radius)` and 
+`n_subintervals` is a Function which 
+has the signature `n_subintervals(center, radius)` and 
 returns a tuple. If a tuple is passed directly for 
-`no_subintervals`, then this is converted to a constant
-Function `(_, _) -> no_subintervals`
+`n_subintervals`, then this is converted to a constant
+Function `(_, _) -> n_subintervals`
 
 Fields:
 * `map`:              Map that defines the dynamical system.
 * `domain`:           Domain of the map, `B`.
-* `no_subintervals`:  Function with the signature 
-                      `no_subintervals(center, radius)` which 
+* `n_subintervals`:   Function with the signature 
+                      `n_subintervals(center, radius)` which 
                       returns a tuple describing how many 
                       times a box is subdivided in each 
                       dimension before mapping. 
@@ -26,14 +26,14 @@ Fields:
 struct IntervalBoxMap{N,T,I,F} <: BoxMap
     map::F
     domain::Box{N,T}
-    no_subintervals::I
+    n_subintervals::I
 
-    function IntervalBoxMap(map::F, domain::Box{N,T}, no_subintervals::I) where {N,T,I,F}
-        new{N,T,I,F}(map, domain, no_subintervals)
+    function IntervalBoxMap(map::F, domain::Box{N,T}, n_subintervals::I) where {N,T,I,F}
+        new{N,T,I,F}(map, domain, n_subintervals)
     end
-    function IntervalBoxMap(map::F, domain::Box{N,T}, no_subintervals::I) where {N,T,I<:NTuple{N},F}
-        new_no_subintervals = (c, r) -> no_subintervals
-        new{N,T,typeof(new_no_subintervals),F}(map, domain, new_no_subintervals)
+    function IntervalBoxMap(map::F, domain::Box{N,T}, n_subintervals::I) where {N,T,I<:NTuple{N},F}
+        new_n_subintervals = (c, r) -> n_subintervals
+        new{N,T,typeof(new_n_subintervals),F}(map, domain, new_n_subintervals)
     end
 end
 
@@ -42,7 +42,7 @@ function map_boxes(g::IntervalBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
     @floop for box in source
         c, r = box
         int = IntervalBox(box)
-        for subint in mince(int, g.no_subintervals(c, r))
+        for subint in mince(int, g.n_subintervals(c, r))
             fint = g.map(subint)
             fbox = Box(fint)
             isnothing(fbox) && continue
@@ -62,7 +62,7 @@ function construct_transfers(
         box = key_to_box(P, key)
         c, r = box
         int = IntervalBox(box)
-        for subint in mince(int, g.no_subintervals(c, r))
+        for subint in mince(int, g.n_subintervals(c, r))
             fint = g.map(subint)
             fbox = Box(fint)
             isnothing(fbox) && continue
@@ -87,7 +87,7 @@ function construct_transfers(
         box = key_to_box(P1, key)
         c, r = box
         int = IntervalBox(box)
-        for subint in mince(int, g.no_subintervals(c, r))
+        for subint in mince(int, g.n_subintervals(c, r))
             fint = g.map(subint)
             fbox = Box(fint)
             isnothing(fbox) && continue
@@ -101,15 +101,15 @@ function construct_transfers(
     return mat
 end
 
-function IntervalBoxMap(map, domain::Box{N,T}; no_subintervals=ntuple(_->4,N)) where {N,T}
-    IntervalBoxMap(map, domain, no_subintervals)
+function IntervalBoxMap(map, domain::Box{N,T}; n_subintervals=ntuple(_->4,N)) where {N,T}
+    IntervalBoxMap(map, domain, n_subintervals)
 end
 
-function IntervalBoxMap(map, P::Q; no_subintervals=ntuple(_->4,N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
-    IntervalBoxMap(map, P.domain; no_subintervals=no_subintervals)
+function IntervalBoxMap(map, P::Q; n_subintervals=ntuple(_->4,N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+    IntervalBoxMap(map, P.domain; n_subintervals=n_subintervals)
 end
 
 function Base.show(io::IO, g::IntervalBoxMap)
-    n = g.no_subintervals(g.domain...)
+    n = g.n_subintervals(g.domain...)
     print(io, "IntervalBoxMap with $(n) subintervals")
 end
