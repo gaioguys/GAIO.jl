@@ -93,7 +93,7 @@ mat_of_centers = reinterpret(reshape, eltype(arr_of_centers[1]), arr_of_centers)
 
 ## BoxMap
 
-A BoxMap is a function which maps boxes to boxes. Given a pointmap `f`, 
+A BoxMap is a function which maps boxes to boxes. Given a pointmap `f : ℝᵈ → ℝᵈ` which accepts an `SVector` from `StaticArrays.jl` (or just an `NTuple`) and returns the same, 
 ```@repl 1
 function f(u)   # the Baker transformation
     x, y = u
