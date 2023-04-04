@@ -55,9 +55,15 @@ makedocs(
     #format = Documenter.LaTeX(platform = "none")
 )
 
+username = get(ENV, "GITHUB_REPOSITORY", nothing)
+
+if !( username in ["gaioguys/GAIO.jl", "April-Hannah-Lena/GAIO.jl"] )
+    username = "gaioguys/GAIO.jl"
+end
+
 if ci
     deploydocs(
-        repo = "github.com/gaioguys/GAIO.jl.git",
+        repo = "github.com/" * username * ".git",
         push_preview = true,
         versions = nothing
     )
