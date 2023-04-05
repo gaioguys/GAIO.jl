@@ -27,7 +27,7 @@ pkg> add https://github.com/gaioguys/GAIO.jl.git
 
 ## Getting started
 
-The following script computes the chain recurrent set of the Hénon map within the box [-3,3)²: 
+The following script computes the attractor of the Hénon map within the box [-3,3)²: 
 
 ```julia
 using GAIO
