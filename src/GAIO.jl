@@ -44,7 +44,7 @@ export cover, subdivide, subdivide!
 export BoxFun
 
 export TransferOperator
-export construct_transfers, eigs
+export construct_transfers, eigs, svds
 
 export BoxGraph, Graph
 

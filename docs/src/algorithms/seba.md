@@ -24,7 +24,7 @@ seba
 
 ### Example
 
-We will continue using the periodically driven double-gyre introduced in the section on [Finite Time Lyapunov Exponents](https://gaioguys.github.io/GAIO.jl/ftle/). See that code block for the definition of the map. 
+We will continue using the periodically driven double-gyre introduced in the section on [Sparse Eigenbasis Approximation (SEBA)](@ref). See that code block for the definition of the map. 
 
 ```@setup 1
 using StaticArrays # hide
@@ -95,6 +95,8 @@ end
 ```
 
 ```@example 1
+using GAIO
+
 t₀, τ, t₁ = 0, 0.1, 2
 Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, t₁)
 
@@ -111,7 +113,11 @@ T = TransferOperator(F, S, S)
 # see the Arpack docs for explanations of keywords
 tol, maxiter, v0 = eps()^(1/4), 1000, ones(size(T, 2))
 λ, ev = eigs(T; nev=2, which=:LR, maxiter=maxiter, tol=tol, v0=v0)
-μ = abs ∘ ev[2]
+μ = real ∘ ev[2]
+```
+
+```@example 1
+using Plots
 
 p = plot(μ);
 
@@ -124,6 +130,7 @@ We notice there are two "blobs" defining the second eigenmeasure. These correspo
 
 ```@example 1
 re_ev = real .∘ ev  # seba expects real numbers, ev is complex
+
 ev_seba, feature_vec = seba(re_ev, which=partition_unity)
 μ1, μ2 = ev_seba[1], ev_seba[2]
 

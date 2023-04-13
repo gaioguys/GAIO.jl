@@ -25,7 +25,7 @@ This box will serve as the domain for our computation.  The box covering which w
 ```@repl 1
 P = BoxPartition(Q, (4,4)) 
 ```
-yields a partition of `Q` into a grid of 4 x 4 equally sized smaller boxes. From `P`, box sets can be constructed. For example, the commands
+yields a partition of `Q` into a grid of 4 x 4 equally sized smaller boxes. Note that this command does not explicitly construct the partition (as a set of subsets covering the domain `Q`) but rather serves as a ``\sigma``-algebra for constructing sets of boxes later. For example, the commands
 ```@repl 1
 test_points = [
     (1, 1),

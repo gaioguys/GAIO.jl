@@ -36,7 +36,7 @@ For partitions of ``Q`` into variably sized boxes, one can use `TreePartition`:
 ```@repl 1
 P2 = TreePartition(Q)
 ```
-A `TreePartition` is a binary tree structure partitioning the domain. It can be split in half using the command 
+A `TreePartition` uses a binary tree structure to store a partition of the domain. Every Box of a `TreePartition` can be split using the command 
 ```@repl 1
 subdivide!(P2)
 subdivide!(P2)
@@ -56,7 +56,7 @@ key_to_box( P, (4, 2) ) == key_to_box( P2, (4, (4, 2)) )
 
 ## BoxSet
 
-The core idea behind GAIO.jl is to approximate an subset of the domain via a collection of small boxes. To construct `BoxSet`s, there are two main options: getting all boxes in the partition, or locating a box surrounding a point ``x \in Q``
+The core idea behind GAIO.jl is to approximate a subset of the domain via a collection of small boxes. To construct `BoxSet`s, there are two main options: getting all boxes in the partition, or locating a box surrounding a point ``x \in Q``
 ```@repl 1
 B = cover(P, x)    # one box surrounding the point x
 B = cover(P, :)    # set of all boxes in P
@@ -125,11 +125,11 @@ The _Perron-Frobenius operator_ (or _transfer operator_) [2] is discretized in G
 B = cover(P, :)
 T = TransferOperator(F, B)   # T operates on the domain covered by the box set B
 ```
-In this case, the codomain is generated automatically. This is not always ideal, so the codomain can be specified as an argument
+In this case, the codomain is generated automatically. This is not always ideal (e.g. in eigenvalue calculations), so the codomain can be specified as the third argument
 ```@repl 1
 T = TransferOperator(F, B, B)
 ```
-To convert this to the underlying transfer matrix described in [3], one cal simply type 
+To convert this to the underlying transfer matrix described in [3], one can simply type 
 ```@repl 1
 Matrix(T)
 ```
@@ -146,7 +146,7 @@ This can also be done with the adjoint _Koopman operator_ `T'`.
 
 ## BoxFun
 
-The return type of `eigs(T)` is a discretization of a measure over the domain. Specifically, it is a stepwise constant function defined on the boxes in `B`, which is called a `BoxFun`. One can let `T` act on a `BoxFun` simply through multiplication
+The return type of the second output of `eigs(T)` is a discretization of a measure over the domain. Specifically, it is a piecewise constant function defined on boxes in `B`, which is called a `BoxFun`. One can let `T` act on a `BoxFun` simply through multiplication
 ```@repl 1
 ν = T*μ
 ```
@@ -162,7 +162,7 @@ For multiple BoxFuns, e.g. as the result of calling `eigs(T)`, the concatenation
 ```@repl 1
 real_ev = real .∘ ev
 ```
-Similarly probability measures can be given a vector space structure. This is also supported in GAIO.jl
+Similarly, finite signed measures can be given a vector space structure. This is also supported in GAIO.jl
 ```@repl 1
 ν + μ
 2ν - μ/2

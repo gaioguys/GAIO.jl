@@ -58,7 +58,7 @@ finite_time_lyapunov_exponents
 
 ### Example
 
-We will consider the periodically driven double-gyre map
+We will continue using the periodically driven double-gyre introduced in the section on [Sparse Eigenbasis Approximation (SEBA)](@ref). See that code block for the definition of the map. 
 
 ```@setup 1
 using StaticArrays # hide
@@ -96,9 +96,7 @@ test_points = SVector{2,Float64}[               # hide
  (-0.7224409142472934, 0.9945315869571947),     # hide
  (0.49288810186172594, -0.8347990196625026)     # hide
 ] # hide
-```
 
-```@example 1
 using GAIO
 using Plots
 
@@ -128,6 +126,10 @@ function Φ((x₀, y₀), t₀, τ, t₁)
     (x₁, y₁, t₁) = z
     return (x₁, y₁)
 end
+```
+
+```@example 1
+using GAIO
 
 t₀, τ, t₁ = 0, 0.1, 2
 Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, t₁)
@@ -141,6 +143,11 @@ F = BoxMap(:pointdiscretized, Φₜ₀ᵗ¹, domain, test_points) # hide
 
 Tspan = t₁ - t₀
 γ = finite_time_lyapunov_exponents(F, S; T=Tspan)
+```
+
+```@example 1
+using Plots
+
 p = plot(γ, clims=(0,2));
 
 savefig("ftle1.svg"); nothing # hide

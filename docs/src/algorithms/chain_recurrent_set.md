@@ -26,6 +26,8 @@ using GAIO
 # Van der Pol system
 const ϵ = 1.5
 v((x,y)) = (y, ϵ*y*(1-x^2) - x)
+
+# time-0.2 flow map
 f(x) = rk4_flow_map(v, x)
 
 c, r = (0., 0.), (3.5, 3.5)

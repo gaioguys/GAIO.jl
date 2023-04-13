@@ -7,6 +7,10 @@ GridBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
 MonteCarloBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
 ```
 
+Using the gpu, a speed increase of up to 200x can be achieved. 
+
+![performance metrics](../assets/flops_gpu_loglog.png)
+
 ### Example
 
 ```@setup 1

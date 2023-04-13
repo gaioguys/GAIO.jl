@@ -5,9 +5,9 @@ The set
 ```math
 A_Q = \bigcap_{k \geq 0} f^k(Q)
 ```
-is called the global attractor relative to ``Q``.
+is called the global attractor relative to ``Q`` [1].
 The relative global attractor can be seen as the set which is eventually approached by every orbit originating in ``Q``. In particular, ``A_Q`` contains each invariant set in ``Q`` and therefore all the potentially interesting dynamics. 
-The idea of the algorithm is to cover the relative global attractor with boxes and recursively tighten the covering by refining appropriately selected boxes.
+The idea of the algorithm [1] is to cover the relative global attractor with boxes and recursively tighten the covering by refining appropriately selected boxes.
 
 Mathematically, the algorithm to compute the global attractor relative to ``Q`` takes two input arguments: a compact set ``Q`` as well as a map ``f``, which describes the dynamics. Now in each iteration, two steps happen:
 1. **subdivision step:** The box set `B` is subdivided once, i.e. every box is bisected along one axis, which gives rise to a new partition of the domain, with double the amount of boxes. This is saved in `B`. 
@@ -60,3 +60,8 @@ function relative_attractor(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {
     return B
 end
 ```
+
+### References
+
+[1] Michael Dellnitz and Adreas Hohmann. “The Computation of Unstable Manifolds Using Subdivision”. In: _Nonlinear Systems and Chaos_. Ed. by Haim Brezis. Vol. 19. Progress in Nonlinear Differential Equations and their Applications. 1996, pp. 449–459. doi: https://doi.org/10.1007/978-3-0348-7518-9.
+

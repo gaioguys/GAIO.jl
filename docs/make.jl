@@ -3,6 +3,7 @@ using Documenter, LinearAlgebra, SparseArrays, StaticArrays
 import Plots, GLMakie
 
 ENV["JULIA_DEBUG"] = Documenter
+#ENV["JULIA_DEBUG"] = nothing
 ENV["GKSwstype"] = "100"
 ci = get(ENV, "CI", nothing) == "true"
 
@@ -26,6 +27,28 @@ makedocs(
             "boxmaps/new_types.md"
         ],
         #"BoxMaps" => "boxmap.md",
+        "Invariant Sets" => [
+            "Maximal Invariant Set" => "algorithms/relative_attractor.md",
+            "Chain Reccurent Set" => "algorithms/chain_recurrent_set.md",
+            "Stable and Unstable Manifold" => "algorithms/unstable_manifold.md"
+        ],
+        "Transfer- and Koopman Operators" => [
+            "Ulam's method and Invariant Measures" => "algorithms/transfer_operator.md",
+            "Almost Invariant (metastable) Sets" => "algorithms/almost_invariant.md",
+            "Cyclic Sets" => "algorithms/cyclic.md",
+            "Coherent Sets" => "algorithms/coherent.md",
+            "Extracting Multiple Sets via SEBA" => "algorithms/seba.md"
+        ],
+        "Scalar Diagnostics" => [
+            "Fractal Dimension" => "algorithms/box_dimension.md",
+            "Lyapunov Exponents / FTLEs" => "algorithms/ftle.md",
+            #"Topological Entropy" => "algorithms/entropy.md"
+        ],
+        "Misceallenous Algorithms" => [
+            "Root Covering" => "algorithms/root_covering.md",
+            "Covering Implicitly Defined Manifolds" => "algorithms/implicit_manifold.md"
+        ],
+        #=
         "Algorithms" => [
             "algorithms/relative_attractor.md",
             "algorithms/unstable_manifold.md",
@@ -41,7 +64,8 @@ makedocs(
             "algorithms/pareto_set.md",
             "algorithms/control.md"
         ],
-        #"Algorithms" => "algorithms.md",
+        "Algorithms" => "algorithms.md",
+        =#
         "Plotting" => "plotting.md",
         "Maximizing Performance" => [
             "simd.md",
