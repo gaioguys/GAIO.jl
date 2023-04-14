@@ -8,7 +8,7 @@ Recalling the section on [Almost Invariant (metastable) Sets](@ref), we wish to 
 
 If the sets ``A_t`` and ``A_{t+\tau}`` satisfy ``A_t \approx f_{t+\tau} (A_{t+\tau})`` then the set of points currently in ``A_t`` will be transported to ``A_{t+\tau}`` with little mixing, i.e. 
 ```math
-\frac{m( A_t \cap f_{t+\tau}^{-1} (A_{t+\tau}) )}{m(A_t)} .
+\frac{m( A_t \cap f_{t+\tau}^{-1} (A_{t+\tau}) )}{m(A_t)} \approx 1 .
 ```
 As in the previous sections, we will summarize this as an eigenproblem. We would like to translate this problem to one of the form 
 ```math

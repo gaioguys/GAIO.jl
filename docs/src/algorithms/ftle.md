@@ -58,7 +58,7 @@ finite_time_lyapunov_exponents
 
 ### Example
 
-We will continue using the periodically driven double-gyre introduced in the section on [Sparse Eigenbasis Approximation (SEBA)](@ref). See that code block for the definition of the map. 
+We will continue using the periodically driven double-gyre introduced in the section on [Coherent Sets](@ref). See that code block for the definition of the map. 
 
 ```@setup 1
 using StaticArrays # hide
