@@ -30,7 +30,7 @@ domain = Box(midpoint, midpoint)
 P = BoxPartition(domain, 2 .* midpoint)
 p = plot(
     cover(P, :), 
-    linecolor=:black, fillcolor=nothing, lab="", 
+    linewidth=0.5, fillcolor=nothing, lab="", 
     leg=:outerbottom
 )
 

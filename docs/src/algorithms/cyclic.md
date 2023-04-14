@@ -105,7 +105,7 @@ A = [BoxSet(P, Set(key for key in keys(μi) if μi[key] > 0.01)) for μi in μ]
 p = plot();
 for (Ai, color) in zip(A, [:red, :green, :blue, :yellow, :pink, :cyan])
     global p;
-    p = plot!(p, Ai, fillcolor=color, fillalpha=0.5);
+    p = plot!(p, Ai, fillcolor=color);
 end
 
 savefig(p, "supps.svg"); nothing # hide
