@@ -6,16 +6,12 @@ In applied dynamical systems research we often wish to determine regions of phas
 
 In the context of autonomous dynamics these sets which mitigate transport between their interior and the surrounding phase space are referred to as _almost invariant_ or _metastable_. Mathematically, we wish to find sets ``A \subset Q`` of the domain ``Q`` which satisfy ``A \approx f^{-1} (A)`` or in the context of ``\mu``-measure satisfy 
 ```math
-\frac{\mu (A \cap f^{-1} (A))}{\mu (A)} \approx 1 . 
+p(A) := \frac{\mu (A \cap f^{-1} (A))}{\mu (A)} \approx 1 . 
 ```
 Recalling the section on [Transfer Operator and Box Measures](@ref), this can be solved by considering the eigenproblem ``f_{\#}\,\mu \approx \mu``. Specifically, we wish to 
 1. find a `BoxFun` `μ` corresponding to an eigenvalue `λ ≈ 1`,
-2. split the partition ``P`` into `Boxset`s where ``A^+ = \left\{ C \in P \vert \mu (C) \geq \tau \right\}`` and ``A^- = \left\{ C \in P \vert \mu (C) < \tau \right\}`` for some threshhold ``\tau`` (typically ``\tau = 0``). 
-Then we have that the transition probability
-```math
-p(A^\pm) := \frac{\mu (A^\pm \cap f^{-1} (A^\pm))}{\mu (A^\pm)}
-```
-is close to ``1``. 
+2. split the partition ``P`` into `Boxset`s where ``A^+ = \left\{ C \in P : \mu (C) \geq \tau \right\}`` and ``A^- = \left\{ C \in P : \mu (C) < \tau \right\}`` for some threshhold ``\tau`` (typically ``\tau = 0``). 
+Then we have that the transition probability ``p(A^\pm) \approx 1``. 
 
 ### Example
 

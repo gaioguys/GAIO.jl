@@ -2,19 +2,19 @@
 
 ### Mathematical Background
 
-We can extend the idea of almost invariant sets to sets which are _cyclic_ in nature. We wish to find sets ``A_0, ldots, A_{r-1}`` such that 
+We can extend the idea of almost invariant sets to sets which are _cyclic_ in nature. We wish to find sets ``A_0, \ldots, A_{r-1}`` such that 
 ```math
-A_{k \mod r} \approx f^{-1} ( A_{k+1 \mod r} ) , 
+A_{k \, \text{mod} \, r} \approx f^{-1} ( A_{k+1 \, \text{mod} \, r} ) , 
 ```
 or in the context of the transfer operator, signed measures ``\mu_0, \ldots, \mu_{r-1}`` with 
 ```math
-f_{\#}\,\mu_{k \mod r} \approx \mu_{k+1 \mod r} 
+f_{\#}\,\mu_{k \, \text{mod} \, r} \approx \mu_{k+1 \, \text{mod} \, r} 
 ```
 and supports on ``A_0, \ldots, A_{r-1}``, respectively. 
 
 We can approximate a solution to this problem again as an eigenproblem, finding eigenmeasures ``\nu_0, \ldots, \nu_{r-1}`` corresponding to the ``r``-th roots of unity ``\omega_r^k = e^{2 \pi k / r},\ k = 0, \ldots, r-1``. We have a theorem from [1]:
 
-Suppose there exist sets ``A_0, \ldots, A_{r-1}\, \subset Q`` with ``A_{k \mod r} \approx f^{-1} ( A_{k+1 \mod r} )``. Then the rth power
+Suppose there exist sets ``A_0, \ldots, A_{r-1}\, \subset Q`` with ``A_{k \, \text{mod} \, r} \approx f^{-1} ( A_{k+1 \, \text{mod} \, r} )``. Then the rth power
 ```math
 (f_{\#})^r = \underbrace{f_{\#} \circ \ldots \circ f_{\#}}_{r\ \text{times}}
 ```
@@ -105,7 +105,7 @@ A = [BoxSet(P, Set(key for key in keys(μi) if μi[key] > 0.01)) for μi in μ]
 p = plot();
 for (Ai, color) in zip(A, [:red, :green, :blue, :yellow, :pink, :cyan])
     global p;
-    p = plot!(p, Ai, fillcolor=color, fillalpha=0.5, linewidth=0.);
+    p = plot!(p, Ai, fillcolor=color, fillalpha=0.5);
 end
 
 savefig(p, "supps.svg"); nothing # hide

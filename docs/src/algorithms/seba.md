@@ -141,7 +141,7 @@ setdiff!(S1, S2) # hide
 setdiff!(S2, S1) # hide
 
 p = plot(S1, xlims=(0,2), ylims=(0,1), color=:red);
-p = plot!(p, S2, color=:blue, linecolor=:blue);
+p = plot!(p, S2, color=:blue);
 
 savefig("seba.svg"); nothing # hide
 ```

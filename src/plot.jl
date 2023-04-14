@@ -180,6 +180,7 @@ RecipesBase.@recipe function plot!(boxset::BoxSet{Box{N,T}}; projection=x->x[1:2
     seriestype := :shape
     color --> default_box_color
     linecolor --> default_box_color
+    linewidth --> 0.
     
     xs, ys
 end

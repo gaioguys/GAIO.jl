@@ -83,7 +83,7 @@ save("unstable_manifold.png", fig); nothing # hide
 
 ```@example 1
 # integrate in reverse time: 
-# 10 steps of rk4 method with step size -0.01
+# 5 steps of rk4 method with step size -0.01
 f(x) = rk4_flow_map(v, x, -0.01, 5)
 
 center, radius = (0,0,25), (120,180,160)

@@ -1,34 +1,34 @@
 # Finite Time Lyapunov Exponents
 
 ### Mathematical Background
-We change focus now to a continuous dynamical system, e.g. an ODE ``\dot{u} = g(t, u)`` with solution ``\Phi^{t,t_0} (x)``. Since ``\Phi^{t,t_0} (x)`` is continuously dependent on the initial condition ``x``, there exists an ``\tilde{x}`` near ``x`` with ``sup_{t \in [t_0 , t_0 + T]} \| \Phi^{t,t_0} (\tilde{x}) - \Phi^{t,t_0} (x) \| < \epsilon`` for any fixed ``\epsilon > 0`` and ``T`` small enough. We wish to characterize this expansion term. We write ``y = x + \delta x_0`` where ``\delta x_0 \in \mathbb{R}^d`` is infinitesimal. Then if ``g`` is ``\mathcal{C}^1`` w.r.t. ``x``,
+We change focus now to a continuous dynamical system, e.g. an ODE ``\dot{u} = g(t, u)`` with solution ``\Phi^{t,t_0} (x)``. Since ``\Phi^{t,t_0} (x)`` is continuously dependent on the initial condition ``x``, there exists an ``\tilde{x}`` near ``x`` with ``sup_{t \in [t_0 , t_0 + T]} \| \Phi^{t,t_0} (\tilde{x}) - \Phi^{t,t_0} (x) \| < \epsilon`` for any fixed ``\epsilon > 0`` and ``T`` small enough. We wish to characterize this expansion term. We write ``\Phi = \Phi^{t_0+T,t_0}`` and ``y = x + \delta x_0`` where ``\delta x_0 \in \mathbb{R}^d`` is infinitesimal. Then if ``g`` is ``\mathcal{C}^1`` w.r.t. ``x``,
 ```math
-\delta x (t_0 + T) := \Phi^{t_0 + T, t_0} (y) - \Phi^{t_0 + T, t_0} (x)
-= D_x \Phi^{t_0 + T, t_0} (x) \cdot \delta x_0 + \mathcal{O}(\| \delta x_0 \|^2)
+\delta x (t_0 + T) := \Phi (y) - \Phi (x)
+= D_x \Phi (x) \cdot \delta x_0 + \mathcal{O}(\| \delta x_0 \|^2)
 ```
 Hence we can write 
 ```math
-\| \delta x (t_0 + T) \|_2 = \| D_x \Phi^{t_0 + T, t_0} (x) \cdot \delta x_0 \|_2 \leq \| D_x \Phi^{t_0 + T, t_0} (x) \|_2 \cdot \| \delta x_0 \|_2
+\| \delta x (t_0 + T) \|_2 = \| D_x \Phi (x) \cdot \delta x_0 \|_2 \leq \| D_x \Phi (x) \|_2 \cdot \| \delta x_0 \|_2
 ```
 or equivalently
 ```math
-\frac{ \| \delta x (t_0 + T) \|_2 }{ \| \delta x_0 \|_2 } \leq \| D_x \Phi^{t_0 + T, t_0} (x) \|_2
+\frac{ \| \delta x (t_0 + T) \|_2 }{ \| \delta x_0 \|_2 } \leq \| D_x \Phi (x) \|_2
 ```
 where equality holds if ``\delta x_0`` is the eigenvector corresponding to the largest eigenvalue of 
 ```math
-\Delta = \left( D_x \Phi^{t_0 + T, t_0} (x) \right)^T \left( D_x \Phi^{t_0 + T, t_0} (x) \right) . 
+\Delta = \left( D_x \Phi (x) \right)^T \left( D_x \Phi (x) \right) . 
 ```
 Hence if we define 
 ```math
-\sigma^{t_0 + T, t_0} (x) = \frac{1}{T} \ln \left( \sqrt{\lambda_{\text{max}}} (\Delta) \right) = \frac{1}{T} \ln \left( \sup_{\delta x_0} \frac{ \| \delta x (t_0 + T) \|_2 }{ \| \delta x_0 \|_2 } \right)
+\sigma (x) = \sigma^{t_0 + T, t_0} (x) := \frac{1}{T} \ln \left( \sqrt{\lambda_{\text{max}}} (\Delta) \right) = \frac{1}{T} \ln \left( \sup_{\delta x_0} \frac{ \| \delta x (t_0 + T) \|_2 }{ \| \delta x_0 \|_2 } \right)
 ```
 then 
 ```math
-\| \delta x (t_0 + T) \|_2 \leq e^{T \cdot \sigma^{t_0 + T, t_0} (x)} \cdot \| \delta x_0 \|_2 . 
+\| \delta x (t_0 + T) \|_2 \leq e^{T \cdot \sigma (x)} \cdot \| \delta x_0 \|_2 . 
 ```
-From this we see why ``\sigma^{t_0 + T, t_0} (x)`` is called the _maximal finite-time lyapunov exponent (FTLE)_. 
+From this we see why ``\sigma (x)`` is called the _maximal finite-time lyapunov exponent (FTLE)_. 
 
-The definition of ``\sigma^{t_0 + T, t_0} (x)`` leads to a natural _ansatz_ for approximating the FTLE: compute ``\frac{1}{T} \ln \left( \sup_{\delta x_0} \frac{ \| \delta x (t_0 + T) \|_2 }{ \| \delta x_0 \|_2 } \right)`` for each of a set of test points ``\| \delta x_0 \|`` of fixed order ``\epsilon > 0`` and set ``\sigma^{t_0 + T, t_0} (x)`` to be the maximum over this set of test points. 
+The definition of ``\sigma (x)`` leads to a natural _ansatz_ for approximating the FTLE: compute ``\frac{1}{T} \ln \left( \sup_{\delta x_0} \frac{ \| \delta x (t_0 + T) \|_2 }{ \| \delta x_0 \|_2 } \right)`` for each of a set of test points ``\| \delta x_0 \|`` of fixed order ``\epsilon > 0`` and set ``\sigma (x)`` to be the maximum over this set of test points. 
 
 An extension of this technique can be made for _ergodic_ systems, as shown in [1]: 
 

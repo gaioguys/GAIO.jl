@@ -4,22 +4,22 @@
 
 The following description is given in [1].
 
-The _transfer operator ``f_{\#}`` w.r.t. ``f``_ is defined for measures ``μ`` through the equation
+The _transfer operator_ ``f_{\#}`` _w.r.t._ ``f`` is defined for measures ``μ`` through the equation
 ```math
 (f_{\#}\,\mu) (A) = \mu (f^{-1}(A)) \quad \text{for any} \ \ A \ \ \text{measurable}
 ```
 This is a bounded linear operator on the space of finite signed measures. 
 We will use an approximation for ``f_{\#}`` which maintains the eigenvalues and cyclic behavior of ``f_{\#}`` commonly known as _Ulam's method_. In particular we are interested in measures which satisfy ``f_{\#}\,\mu = \mu``, called _invariant_ under ``f``. 
 
-We enumerate the box set ``B = {b_1, b_2, ..., b_n}`` with integer indices and parameterize an _approximate_ invariant measure
+We enumerate the box set ``B = \{ b_1, b_2, ..., b_n \}`` with integer indices and parameterize an _approximate_ invariant measure
 ```math
     \mu(C) = \sum_{j = 1}^n h_j \frac{m(b_j \cap C)}{m(b_j)} \quad
     \text{for nonnegative coefficients}\ h_1, \ldots, h_n
 ```
-where ``m`` is the lebesgue measure. We enforce the condition ``f_{\#}\,\mu = \mu`` on the box set ``B``:
+where ``m`` is the Lebesgue measure. We enforce the condition ``f_{\#}\,\mu = \mu`` on the box set ``B``:
 ```math
-    h_j = \mu (b_j) = (f_{\#}\,\mu) (b_j) = \sum_{j=1}^n P_{jk} \cdot h_k \quad
-    \text{for coefficients}\ P_{jk} := \frac{m(b_k \cap f^{-1} (b_j))}{m(b_k)}. 
+    h_j = \mu (b_j) \overset{!}{=} (f_{\#}\,\mu) (b_j) = \sum_{j=1}^n P_{jk} \cdot h_k \quad
+    \Rightarrow \quad \text{coefficients}\ P_{jk} := \frac{m(b_k \cap f^{-1} (b_j))}{m(b_k)} . 
 ```
 The resulting matrix elements ``P_{jk}`` gives the (conditional) probability that ``f`` maps a point from ``b_k`` to ``b_j``.
 
@@ -65,7 +65,7 @@ S = cover(P, x)
 W = unstable_set(F, S)
 
 T = TransferOperator(F, W, W)
-(λ, ev) = eigs(T)
+λ, ev = eigs(T)
 
 λ
 ```
