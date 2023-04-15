@@ -6,9 +6,9 @@ The following approach is decribed in [1].
 
 Recalling the section on [Almost Invariant (metastable) Sets](@ref), we wish to understand sets which resist mixing over time. In the constext of autonomous dynamics, these are _almost invariant_ sets. However, in the context of nonautonomous dynamics these are often referred to as _coherent_ sets. To distinguish the maps for different times `t` we will write ``f_t`` to denote the dynamics at time ``t``. 
 
-If the sets ``A_t`` and ``A_{t+\tau}`` satisfy ``A_t \approx f_{t+\tau}^{-1} (A_{t+\tau})`` then the set of points currently in ``A_t`` will be transported to ``A_{t+\tau}`` with little mixing, i.e. 
+If the sets ``A_t`` and ``A_{t+\tau}`` satisfy ``A_t \approx f_{t}^{-1} (A_{t+\tau})`` then the set of points currently in ``A_t`` will be transported to ``A_{t+\tau}`` with little mixing, i.e. 
 ```math
-\frac{m( A_t \cap f_{t+\tau}^{-1} (A_{t+\tau}) )}{m(A_t)} \approx 1 .
+\frac{m( A_t \cap f_{t}^{-1} (A_{t+\tau}) )}{m(A_t)} \approx 1 .
 ```
 As in the previous sections, we will summarize this as an eigenproblem. We would like to translate this problem to one of the form 
 ```math

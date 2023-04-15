@@ -84,28 +84,26 @@ savefig(p, "evs.svg"); nothing # hide
 We see that the ``6``th roots of unity clearly seem to be part of the spectrum. We therefore can conclude that there is an approximate 6-cycle, and can extract the sets corresponding to the cycle. 
 
 ```@example 1
-ν = similar(ev, 0)
-
-for k in 0:5
-    # index of k-th root of unity
-    ind = argmin( abs.(λ .- exp(2pi*im*k/6)) )
-    push!(ν, ev[ind])
-end
+# by inspection we see that λ[1:6] are ω₆ᵏ, k = 0, ..., 5
+ω = λ[1:6]
+ν = ev[1:6]
 
 # perform the sum described in the theorem
-μ = [sum( 1/6 .* exp.((0:5) .* 2pi*im*l/6) .* ν ) for l in 0:5]
+μ = [sum( 1/6 .* ω.^l .* ν ) for l in 0:5]
 
 # grab the positive real components
-μ = (x -> (xr = real(x)) > 0 ? xr : zero(xr)) .∘ μ
+μ = ( x -> (xr = real(x)) > 0 ? xr : zero(xr) ) .∘ μ
 
-A = [BoxSet(P, Set(key for key in keys(μi) if μi[key] > 0.01)) for μi in μ]
+# threshhold to extract support of each μᵢ
+τ = eps()
+A = [BoxSet(P, Set(key for key in keys(μᵢ) if μᵢ[key] > τ)) for μᵢ in μ]
 ```
 
 ```@example 1
 p = plot();
 for (Ai, color) in zip(A, [:red, :green, :blue, :yellow, :pink, :cyan])
     global p;
-    p = plot!(p, Ai, fillcolor=color);
+    p = plot!(p, Ai, color=color, fillalpha=0.6);
 end
 
 savefig(p, "supps.svg"); nothing # hide
