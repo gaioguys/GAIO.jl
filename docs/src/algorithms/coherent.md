@@ -6,7 +6,7 @@ The following approach is decribed in [1].
 
 Recalling the section on [Almost Invariant (metastable) Sets](@ref), we wish to understand sets which resist mixing over time. In the constext of autonomous dynamics, these are _almost invariant_ sets. However, in the context of nonautonomous dynamics these are often referred to as _coherent_ sets. To distinguish the maps for different times `t` we will write ``f_t`` to denote the dynamics at time ``t``. 
 
-If the sets ``A_t`` and ``A_{t+\tau}`` satisfy ``A_t \approx f_{t+\tau} (A_{t+\tau})`` then the set of points currently in ``A_t`` will be transported to ``A_{t+\tau}`` with little mixing, i.e. 
+If the sets ``A_t`` and ``A_{t+\tau}`` satisfy ``A_t \approx f_{t+\tau}^{-1} (A_{t+\tau})`` then the set of points currently in ``A_t`` will be transported to ``A_{t+\tau}`` with little mixing, i.e. 
 ```math
 \frac{m( A_t \cap f_{t+\tau}^{-1} (A_{t+\tau}) )}{m(A_t)} \approx 1 .
 ```
@@ -14,9 +14,11 @@ As in the previous sections, we will summarize this as an eigenproblem. We would
 ```math
 (f_t)_{\#}\,\mu_t \approx \mu_{t+\tau}
 ``` 
-for some measures ``\mu_t,\ \mu_{t+\tau}`` with supports on ``A_t,\ A_{t+\tau}``, respectively. However, in general we cannot expect ``A_t = A_{t+\tau}`` and hence cannot expect ``\mu_t = \mu_{t+\tau}`` either. Therefore, the above equation is not an eigenproblem. Instead, our heuristic will be to push forward ``\mu_t`` using ``(f_{t})_{\#}`` to obtain something close to ``\mu_{t+\tau}``, and then pull back with the adjoint operator ``\left( (f_{t})_{\#} \right)^*`` to return something close to ``\mu_t``. (Analogously we could push forward ``\mu_{t+\tau}`` with ``\left( (f_{t})_{\#} \right)^*`` and then pull back with ``(f_{t})_{\#}``.) 
+for some measures ``\mu_t,\ \mu_{t+\tau}`` with supports on ``A_t,\ A_{t+\tau}``, respectively. However, in general we cannot expect ``A_t = A_{t+\tau}`` and hence cannot expect ``\mu_t = \mu_{t+\tau}`` either. Therefore, the above equation is not an eigenproblem. 
 
-This leaves a new eigenproblem of the form ``\left( (f_{t})_{\#} \right)^* \left( (f_{t})_{\#} \right)`` (or ``\left( (f_{t})_{\#} \right) \left( (f_{t})_{\#} \right)^*``). These eigenvalues are precisely the right (or left) singular vectors of the operator ``(f_t)_{\#}``. 
+Instead, our heuristic will be to push forward ``\mu_t`` using ``(f_{t})_{\#}`` to obtain something close to ``\mu_{t+\tau}``, and then pull back with the adjoint operator ``(f_{t})_{\#}^{\,*}`` to return something close to ``\mu_t``. (Analogously we could pull back ``\mu_{t+\tau}`` with ``(f_{t})_{\#}^{\,*}`` and then push forward with ``(f_{t})_{\#}``.) 
+
+This leaves a new eigenproblem of the form ``(f_{t})_{\#}^{\,*} \, (f_{t})_{\#}`` (or ``(f_{t})_{\#} \, (f_{t})_{\#}^{\,*}``). These eigenvalues are precisely the right (or left) singular vectors of the operator ``(f_t)_{\#}``. 
 
 ### Example
 
@@ -114,7 +116,7 @@ U, σ, V = svds(T; nsv=32, maxiter=maxiter, tol=tol, v0=v0)
 ```
 
 ```@example 1
-μ = log ∘ abs ∘ U[1]
+μ = U[2]
 ```
 
 ```@example 1

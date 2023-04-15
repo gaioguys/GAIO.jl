@@ -18,7 +18,7 @@ We enumerate the box set ``B = \{ b_1, b_2, ..., b_n \}`` with integer indices a
 ```
 where ``m`` is the Lebesgue measure. We enforce the condition ``f_{\#}\,\mu = \mu`` on the box set ``B``:
 ```math
-    h_j = \mu (b_j) \overset{!}{=} (f_{\#}\,\mu) (b_j) = \sum_{k=1}^n P_{jk} \cdot h_k \quad
+    h_j = \mu (b_j) \overset{!}{=} (f_{\#}\,\mu) (b_j) = \sum_{k=1}^n T_{jk} \cdot h_k \quad
     \Rightarrow \quad \text{coefficients}\ T_{jk} := \frac{m(b_k \cap f^{-1} (b_j))}{m(b_k)} . 
 ```
 The resulting matrix elements ``T_{jk}`` gives the (conditional) probability that ``f`` maps a point from ``b_k`` to ``b_j``.
