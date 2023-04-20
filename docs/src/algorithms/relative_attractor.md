@@ -6,7 +6,7 @@ The set
 A_Q = \bigcap_{k \geq 0} f^k(Q)
 ```
 is called the global attractor relative to ``Q`` [1].
-The relative global attractor can be seen as the set which is eventually approached by every orbit originating in ``Q``. In particular, ``A_Q`` contains each invariant set in ``Q`` and therefore all the potentially interesting dynamics. 
+The relative global attractor can be seen as the set which is eventually approached by every orbit originating in ``Q``. In particular, ``A_Q`` contains each backward invariant set in ``Q``. 
 The idea of the algorithm [1] is to cover the relative global attractor with boxes and recursively tighten the covering by refining appropriately selected boxes.
 
 Mathematically, the algorithm to compute the global attractor relative to ``Q`` takes two input arguments: a compact set ``Q`` as well as a map ``f``, which describes the dynamics. Now in each iteration, two steps happen:

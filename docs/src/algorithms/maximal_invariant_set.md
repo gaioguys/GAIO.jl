@@ -2,11 +2,32 @@
 
 ### Mathematical Background
 
-(TODO)
 
-Defs: forward- backward- invariant, invariant
+We say that a set ``A`` is _forward invariant_ under the dynamics of ``f`` if 
+```math
+f (A) \subset A . 
+```
+Analogously we can define a _backward invariant_ set ``A`` as a set which satisfies
+```math
+f^{-1} (A) \subset A . 
+```
+Finally, a set which is both forward- and backward invariant, i.e. satisfying
+```math
+f^{-1} (A) = A
+```
+is called _invariant_. 
 
-The following is an intuitive explanation of the method used to compute maximal invairant sets. Inspiration for this description is due to [1]. 
+A natural question to ask is "given a dynamical system, what is the maximal (in the sense of inclusion) set which is invariant?" The answer is given by the set ``\text{Inv} (Q)`` defined as follows. 
+
+Let ``\mathcal{O}(x) = \left\{\ \ldots,ß, f^{-1}(x),\, x,\, f(x),\, \ldots right\}`` denote the _full orbit_ of a point ``x`` in the domain ``Q``. Then the set 
+```math
+\text{Inv} (Q) = \left\{ x \in Q : \mathcal{O} (x) \subset Q \right\}
+```
+is the set of all orbits contained entirely in ``Q``. This is precisely the maximal invariant set. 
+
+```@docs
+maximal_invariant_set
+```
 
 ### Example
 

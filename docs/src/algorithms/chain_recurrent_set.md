@@ -38,6 +38,7 @@ using Plots: plot
 
 p = plot(A);
 
+using Plots: savefig
 savefig("henon_chain_rec.svg"); nothing # hide
 ```
 
