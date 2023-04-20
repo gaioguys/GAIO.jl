@@ -80,7 +80,7 @@ end
 
 preimage(F::BoxMap, B::BoxSet) = preimage(F, B, B)
 
-"""
+Core.@doc raw"""
     symmetric_image(F::BoxMap, B::BoxSet, Q::BoxSet) -> BoxSet
     symmetric_image(F::BoxMap, B::BoxSet) = symmetric_image(F, B, B)
 
