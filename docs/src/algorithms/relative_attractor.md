@@ -39,6 +39,7 @@ using Plots: plot
 
 p = plot(A);
 
+using Plots: savefig # hide
 savefig("relative_attractor.svg"); nothing # hide
 ```
 

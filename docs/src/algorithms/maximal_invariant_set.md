@@ -28,6 +28,7 @@ using Plots: plot
 
 p = plot(A);
 
+using Plots: savefig # hide
 savefig("max_inv_set.svg"); nothing # hide
 ```
 
