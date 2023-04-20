@@ -1,8 +1,9 @@
 """
     relative_attractor(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
 
-Compute the attractor relative to `B`. Generally, `B` should be 
-a box set containing the whole partition `P`, ie `B = cover(P, :)`.
+Compute the attractor relative to `B`. `B` should be 
+a (coarse) covering of the relative attractor, e.g. 
+`B = cover(P, :)` for a partition `P`.
 """
 function relative_attractor(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     B = copy(B₀)
@@ -17,7 +18,7 @@ end
     unstable_set(F::BoxMap, B::BoxSet) -> BoxSet
 
 Compute the unstable set for a box set `B`. Generally, `B` should be 
-a small box surrounding a fixed point of `F`. The partition should 
+a small box surrounding a fixed point of `F`. The partition must 
 be fine enough, since no subdivision occurs in this algorithm. 
 """
 function unstable_set(F::BoxMap, B::BoxSet)
@@ -34,9 +35,9 @@ end
 """
     chain_recurrent_set(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
 
-Compute the chain recurrent set over the box set `B`. Generally, 
-`B` should be a box set containing the whole partition `P`, 
-ie `B = cover(P, :)`. 
+Compute the chain recurrent set over the box set `B`. 
+`B` should be a (coarse) covering of the relative attractor, 
+e.g. `B = cover(P, :)` for a partition `P`.
 """
 function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     B = copy(B₀)
@@ -45,6 +46,103 @@ function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where 
         P = TransferOperator(F, B, B)
         G = Graph(P)
         B = union_strongly_connected_components(G)
+    end
+    return B
+end
+
+Core.@doc raw"""
+    preimage(F::BoxMap, B::BoxSet, Q::BoxSet) -> BoxSet
+    preimage(F, B) = preimage(F, B, B)
+
+Compute the (restricted to `Q`) preimage of `B` under `F`, i.e.
+```math
+F^{-1} (B) \cap Q
+```
+Note that the larger `Q` is, the more calculation time required. 
+A similar computation could (less efficiently) be performed via
+```julia
+# create a measure with support over B
+μ = BoxFun(B)
+
+# compute transfer weights (restricted to Q)
+T = TransferOperator(F, Q, B)
+
+C⁻ = BoxSet(T'μ)    # support of pullback measure
+```
+"""
+function preimage(F::BoxMap, B::BoxSet, Q::BoxSet)
+    T = TransferOperator(F, Q, B)
+    G = Graph(T)
+    C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = Q ∩ F⁻¹(B)
+    C = findall(C⁻)
+    return BoxSet(G, C)
+end
+
+preimage(F::BoxMap, B::BoxSet) = preimage(F, B, B)
+
+"""
+    symmetric_image(F::BoxMap, B::BoxSet, Q::BoxSet) -> BoxSet
+    symmetric_image(F::BoxMap, B::BoxSet) = symmetric_image(F, B, B)
+
+Efficiently compute 
+```math
+F (B) \cap Q \cap F^{-1} (B)
+```
+Note that the larger `Q` is, the more calculation time required.
+A similar computation could (less efficiently) be performed via
+```julia
+# create a measure with support over B
+μ = BoxFun(B)
+
+# compute transfer weights (restricted to Q)
+T = TransferOperator(F, Q, B)
+
+C⁺ = BoxSet(T*μ)    # support of pushforward measure
+C⁻ = BoxSet(T'μ)    # support of pullback measure
+
+C = C⁺ ∩ C⁻
+```
+"""
+function symmetric_image(F::BoxMap, B::BoxSet, Q::BoxSet)
+    P = TransferOperator(F, Q, B)
+    G = Graph(P)
+    C⁺ = vec( sum(P.mat, dims=1) .> 0 ) # C⁺ = Q ∩ F(B)
+    C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = Q ∩ F⁻¹(B)
+    C = findall(C⁺ .& C⁻)   # C  =  C⁺ ∩ C⁻  =  F(B) ∩ Q ∩ F⁻¹(B)
+    B = BoxSet(G, C)
+end
+
+symmetric_image(F::BoxMap, B::BoxSet) = symmetric_image(F, B, B)
+
+"""
+    maximal_forward_invariant_set(F::BoxMap, B.:BoxSet; steps=12)
+
+Compute the maximal forward invariant set contained in `B`. 
+`B` should be a (coarse) covering of a forward invariant set, 
+e.g. `B = cover(P, :)` for a partition `P`.
+"""
+function maximal_forward_invariant_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    F⁻¹(B) = preimage(F, B, B)
+    B = copy(B₀)
+    for k in 1:steps
+        B = subdivide(B, (k % N) + 1)
+        B = F⁻¹(B)  # is technically B ∩ F⁻¹(B)
+    end
+    return B
+end
+
+"""
+    maximal_forward_invariant_set(F::BoxMap, B.:BoxSet; steps=12)
+
+Compute the maximal invariant set contained in `B`. 
+`B` should be a (coarse) covering of an invariant set, 
+e.g. `B = cover(P, :)` for a partition `P`.
+"""
+function maximal_invariant_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+    B = copy(B₀)
+    for k in 1:steps
+        B = subdivide(B, (k % N) + 1)
+        B = symmetric_image(F, B, B)    # F(B) ∩ B ∩ F⁻¹(B)
     end
     return B
 end

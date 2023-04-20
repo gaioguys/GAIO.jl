@@ -23,10 +23,9 @@ relative_attractor
 
 ```@example 1
 using GAIO
-using Plots
 
 # the Henon map
-a, b = 1.4, 0.3
+const a, b = 1.4, 0.3
 f((x,y)) = (1 - a*x^2 + y, b*x)
 
 center, radius = (0, 0), (3, 3)
@@ -47,15 +46,13 @@ savefig("relative_attractor.svg"); nothing # hide
 
 ### Implementation
 
-GAIO.jl makes subdivision-based algorithms as the one above very easy to implement. As demonstration, this is the code used for `relative_attractor`:
-
 ```julia
 function relative_attractor(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     # B₀ is a set of `N`-dimensional boxes
     B = B₀
     for k = 1:steps
         B = subdivide(B, (k % N) + 1)   # cycle through dimesions for subdivision
-        B = B ∩ F(B)        # map the set forward and only keep boxes already in the set
+        B = B ∩ F(B)
     end
     return B
 end

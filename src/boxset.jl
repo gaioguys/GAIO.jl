@@ -3,7 +3,7 @@
 
 Internal data structure to hold boxes within a partition. 
 
-Constructors (all constructors work with box sets as well):
+Constructors:
 * set of all boxes in partition / box set `P`:
 ```julia
 B = cover(P, :)    

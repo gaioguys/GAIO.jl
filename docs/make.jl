@@ -28,7 +28,8 @@ makedocs(
         ],
         #"BoxMaps" => "boxmap.md",
         "Invariant Sets" => [
-            "Maximal Invariant Set" => "algorithms/relative_attractor.md",
+            "Maximal Invariant Set" => "algorithms/maximal_invariant_set.md",
+            "Relative Attractor" => "algorithms/relative_attractor.md",
             "Chain Reccurent Set" => "algorithms/chain_recurrent_set.md",
             "Stable and Unstable Manifold" => "algorithms/unstable_manifold.md"
         ],

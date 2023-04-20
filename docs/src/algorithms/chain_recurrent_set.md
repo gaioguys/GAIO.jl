@@ -23,6 +23,31 @@ chain_recurrent_set
 ```@example 1
 using GAIO
 
+# the Henon map
+const a, b = 1.4, 0.3
+f((x,y)) = (1 - a*x^2 + y, b*x)
+
+center, radius = (0, 0), (3, 3)
+P = BoxPartition(Box(center, radius))
+F = BoxMap(f, P)
+S = cover(P, :)
+A = chain_recurrent_set(F, S, steps = 22)
+
+using Plots: plot
+#using WGLMakie: plot    # same result, just interactive
+
+p = plot(A);
+
+savefig("henon_chain_rec.svg"); nothing # hide
+```
+
+![Chain Recurrent Set](henon_chain_rec.svg)
+
+### Example
+
+```@example 1
+using GAIO
+
 # Van der Pol system
 const ϵ = 1.5
 v((x,y)) = (y, ϵ*y*(1-x^2) - x)
