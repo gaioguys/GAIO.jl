@@ -52,50 +52,56 @@ end
 
 Core.@doc raw"""
     preimage(F::BoxMap, B::BoxSet, Q::BoxSet) -> BoxSet
-    preimage(F, B) = preimage(F, B, B)
 
 Compute the (restricted to `Q`) preimage of `B` under `F`, i.e.
 ```math
-F^{-1} (B) \cap Q
+F^{-1} (B) \cap Q . 
 ```
-Note that the larger `Q` is, the more calculation time required. 
-A similar computation could (less efficiently) be performed via
-```julia
-# create a measure with support over B
-μ = BoxFun(B)
-
-# compute transfer weights (restricted to Q)
-T = TransferOperator(F, Q, B)
-
-C⁻ = BoxSet(T'μ)    # support of pullback measure
-```
+Note that the larger ``Q`` is, the more calculation time required. 
 """
 function preimage(F::BoxMap, B::BoxSet, Q::BoxSet)
+    μ = BoxFun(B)
     T = TransferOperator(F, Q, B)
+    return BoxSet(T'μ)
+end
+
+Core.@doc raw"""
+    preimage(F::BoxMap, B::BoxSet) -> BoxSet
+
+Efficiently compute 
+```math
+F^{-1} (B) \cap B . 
+``` 
+Significantly faster than calling `preimage(F, B, B)`. 
+
+!!! warning "This is not the entire preimage in the mathematical sense!"
+    `preimage(F, B)` computes the RESTRICTED preimage
+    ``F^{-1} (B) \cap B``, NOT the full preimage 
+    ``F^{-1} (B)``. 
+"""
+function preimage(F::BoxMap, B::BoxSet)
+    T = TransferOperator(F, B, B)
     G = Graph(T)
-    C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = Q ∩ F⁻¹(B)
+    C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
     C = findall(C⁻)
     return BoxSet(G, C)
 end
 
-preimage(F::BoxMap, B::BoxSet) = preimage(F, B, B)
-
 Core.@doc raw"""
-    symmetric_image(F::BoxMap, B::BoxSet, Q::BoxSet) -> BoxSet
-    symmetric_image(F::BoxMap, B::BoxSet) = symmetric_image(F, B, B)
+    symmetric_image(F::BoxMap, B::BoxSet) -> BoxSet
 
 Efficiently compute 
 ```math
-F (B) \cap Q \cap F^{-1} (B)
+F (B) \cap B \cap F^{-1} (B) . 
 ```
-Note that the larger `Q` is, the more calculation time required.
-A similar computation could (less efficiently) be performed via
+Internally performs the following computation 
+(though more efficiently) 
 ```julia
 # create a measure with support over B
 μ = BoxFun(B)
 
-# compute transfer weights (restricted to Q)
-T = TransferOperator(F, Q, B)
+# compute transfer weights (restricted to B)
+T = TransferOperator(F, B, B)
 
 C⁺ = BoxSet(T*μ)    # support of pushforward measure
 C⁻ = BoxSet(T'μ)    # support of pullback measure
@@ -103,26 +109,24 @@ C⁻ = BoxSet(T'μ)    # support of pullback measure
 C = C⁺ ∩ C⁻
 ```
 """
-function symmetric_image(F::BoxMap, B::BoxSet, Q::BoxSet)
-    P = TransferOperator(F, Q, B)
+function symmetric_image(F::BoxMap, B::BoxSet)
+    P = TransferOperator(F, B, B)
     G = Graph(P)
-    C⁺ = vec( sum(P.mat, dims=1) .> 0 ) # C⁺ = Q ∩ F(B)
-    C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = Q ∩ F⁻¹(B)
-    C = findall(C⁺ .& C⁻)   # C  =  C⁺ ∩ C⁻  =  F(B) ∩ Q ∩ F⁻¹(B)
-    B = BoxSet(G, C)
+    C⁺ = vec( sum(P.mat, dims=1) .> 0 ) # C⁺ = B ∩ F(B)
+    C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
+    C = findall(C⁺ .& C⁻)   # C  =  C⁺ ∩ C⁻  =  F(B) ∩ B ∩ F⁻¹(B)
+    return BoxSet(G, C)
 end
 
-symmetric_image(F::BoxMap, B::BoxSet) = symmetric_image(F, B, B)
-
 """
-    maximal_forward_invariant_set(F::BoxMap, B.:BoxSet; steps=12)
+    maximal_forward_invariant_set(F::BoxMap, B::BoxSet; steps=12)
 
 Compute the maximal forward invariant set contained in `B`. 
 `B` should be a (coarse) covering of a forward invariant set, 
 e.g. `B = cover(P, :)` for a partition `P`.
 """
 function maximal_forward_invariant_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
-    F⁻¹(B) = preimage(F, B, B)
+    F⁻¹(B) = preimage(F, B)
     B = copy(B₀)
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
@@ -132,7 +136,7 @@ function maximal_forward_invariant_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=
 end
 
 """
-    maximal_forward_invariant_set(F::BoxMap, B.:BoxSet; steps=12)
+    maximal_invariant_set(F::BoxMap, B::BoxSet; steps=12)
 
 Compute the maximal invariant set contained in `B`. 
 `B` should be a (coarse) covering of an invariant set, 
@@ -142,7 +146,7 @@ function maximal_invariant_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) wher
     B = copy(B₀)
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)
-        B = symmetric_image(F, B, B)    # F(B) ∩ B ∩ F⁻¹(B)
+        B = symmetric_image(F, B)    # F(B) ∩ B ∩ F⁻¹(B)
     end
     return B
 end
