@@ -6,6 +6,28 @@ as a piecewise constant function over the boxes of `partition`.
     
 Implemented as a sparse vector over the indices of `partition`. 
 
+Constructors:
+* BoxFun with constant weight 1 of Type `T` (default Float64) 
+supported over a `BoxSet` `B`:
+```julia
+μ = BoxFun(B, T)
+```
+* BoxFun with specified weights per key
+```julia
+P = B.partition
+weights = Dict( key => 1 for key in keys(B) )
+BoxFun(P, weights)
+```
+* BoxFun with vector of weights supportted over a `BoxSet` `B`: 
+```julia
+weights = rand(length(B))
+μ = BoxFun(B, weights)
+```
+(Note that since `Boxset`s do not have a deterministic iteration 
+order by default, this may have unintented results. This 
+constructor should therefore only be used with 
+`BoxSet{<:Any, <:Any, <:OrderedSet}` types)
+
 Fields:
 * `partition`: An `AbstractBoxPartition` whose indices are used 
 for `vals`
@@ -16,7 +38,7 @@ Methods implemented:
 
     length, sum, iterate, values, isapprox, ∘, LinearAlgebra.norm, LinearAlgebra.normalize!
 
-.
+
 """
 struct BoxFun{B,K,V,P<:AbstractBoxPartition{B},D<:AbstractDict{K,V}} <: AbstractVector{V}
     partition::P
@@ -24,7 +46,7 @@ struct BoxFun{B,K,V,P<:AbstractBoxPartition{B},D<:AbstractDict{K,V}} <: Abstract
 end
 
 BoxFun(boxset::BoxSet, vals, dicttype=OrderedDict) = BoxFun(boxset.partition, dicttype(zip(boxset.set, vals)))
-BoxFun(boxset::BoxSet, T::Type, dicttype=OrderedDict) = BoxFun(boxset.partition, dicttype(key=>zero(T) for key in boxset.set))
+BoxFun(boxset::BoxSet, T::Type, dicttype=OrderedDict) = BoxFun(boxset.partition, dicttype(key=>one(T) for key in boxset.set))
 BoxFun(boxset::BoxSet) = BoxFun(boxset, Float)
 BoxFun(boxfun::BoxFun, vals, dicttype=OrderedDict)= BoxFun(boxfun.partition, dicttype(zip( keys(boxfun), vals )))
 
@@ -152,7 +174,7 @@ end
 
 function ∘(boxfun::BoxFun, F::BoxMap)
     T = TransferOperator(F, BoxSet(boxfun))
-    T' * boxfun
+    T'boxfun
 end
 
 Base.:(*)(a::Number, boxfun::BoxFun) = (x -> x*a) ∘ boxfun

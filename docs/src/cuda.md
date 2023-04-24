@@ -32,17 +32,16 @@ f(x) = rk4_flow_map(v, x, 0.002f0, 100)
     ```
     instead of `center, radius = (0,0,25), (30,30,30)`. 
 
-!!! danger "Using TreePartition"
-    `TreePartition` with GPU acceleratioin is not yet supported, since linear indexing of the tree structure is not yet implemented. 
-
-All we need to do is pass `:gpu` as the final argument to one of the box map constructors, eg. `BoxMap`, `PointDiscretizedMap`, `AdaptiveBoxMap`. 
+All we need to do is pass `:gpu` as the second argument to one of the box map constructors, eg. `BoxMap(:montecarlo, ...)`, `BoxMap(:grid, ...)`. 
 ```julia
 center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
-P = BoxPartition(Box(center, radius), (128,128,128))
-F = BoxMap(f, P, :gpu)
+Q = Box(center, radius)
+P = BoxPartition(Q, (128,128,128))
+F = BoxMap(:montecarlo, :simd, f, Q)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
-@time W = unstable_set(F, P[x])
+S = cover(P, x)
+@time W = unstable_set(F, S)
 ```
 
 Using CUDA, one can achieve a more than 100-fold increase in performance. However, the performance increase is dependent on the complexity of the map `f`. For "simple" maps (eg. `f` from above with 20 steps), the GPU accelerated version will actually perform _worse_ because computation time is dominated by the time required to transfer data across the (comparatively slow) PCIe bus. The GPU accelerated version only beats the CPU accelerated version if `f` is set to use more than 40 steps. Hence it is highly recommended to use the GPU if the map `f` is not dominated by memory transfer speed, but not recommended otherwise. For more detail, see [1]. 

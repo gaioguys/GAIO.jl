@@ -185,7 +185,7 @@ function Graphs.outneighbors(g::BoxGraph, v::Integer)
     # we do it this way to ensure that the result is type stable
     iterrange = 1 ≤ v ≤ n ? nzrange(g.gstar.mat, v) : (1:0)
 
-    return ( row_to_index(g, row) for row in @view(rows[iterrange]) )
+    return [ row_to_index(g, row) for row in @view(rows[iterrange]) ]
 end
 
 #Graphs.inneighbors(g::BoxGraph,  u::Integer) = findall(!iszero, g.gstar.mat[u, :])
@@ -194,7 +194,7 @@ function Graphs.inneighbors(g::BoxGraph, u::Integer)
     rows = rowvals(g.gstar.mat)
     colptr = SparseArrays.getcolptr(g.gstar.mat)
     j = index_to_row(g, u)
-    return ( findfirst(>(i), colptr) - 1 for (i, row) in enumerate(rows) if row == j )
+    return [ findfirst(>(i), colptr) - 1 for (i, row) in enumerate(rows) if row == j ]
 end
 
 function union_strongly_connected_components(g::BoxGraph)
@@ -221,12 +221,12 @@ end
 Construct a BoxSet from some 
 index / indices of vertices in a BoxGraph. 
 """
-function BoxSet(g::BoxGraph{P}, inds) where {B,T,Q,R,S<:BoxSet{B,Q,R},P<:TransferOperator{B,T,S}}
+function BoxSet(g::BoxGraph{B,T,P}, inds) where {B,T,B1,P1,R,S<:BoxSet{B1,P1,R},P<:TransferOperator{B,T,S}} # where {B,T,Q,R,S<:BoxSet{B,Q,R},P<:TransferOperator{B,T,S}}
     keys = (index_to_key(g, i) for i in inds)
     return BoxSet(g.gstar.domain.partition, R(keys))
 end
 
-function BoxSet(g::BoxGraph{P}, ind::Integer) where {B,T,Q,R,S<:BoxSet{B,Q,R},P<:TransferOperator{B,T,S}}
+function BoxSet(g::BoxGraph{B,T,P}, ind::Integer) where {B,T,B1,P1,R,S<:BoxSet{B1,P1,R},P<:TransferOperator{B,T,S}} # where {B,T,Q,R,S<:BoxSet{B,Q,R},P<:TransferOperator{B,T,S}}
     BoxSet(g, (ind,))
 end
 

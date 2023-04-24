@@ -1,10 +1,17 @@
 # GAIO.jl
 
+```@meta
+CurrentModule = GAIO
+DocTestSetup = quote
+  using GAIO
+end
+```
+
 ## About
 
 GAIO (_Global Analysis of Invariant Objects_) is a Julia package for set oriented computations.  Sets are represented by  collections of boxes. A _box_ (or _cube_) is a higher dimensional interval, i.e. a set of the form
 ```math
-[a_1,b_1) × ... × [a_n,b_n),    a_k,b_k ∈ ℝ
+[a_1,b_1) × \ldots × [a_n,b_n), \quad a_k,b_k ∈ ℝ
 ```
 GAIO.jl provides algorithms for  
 * dynamical systems

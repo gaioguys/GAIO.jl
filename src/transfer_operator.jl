@@ -135,6 +135,11 @@ function Base.show(io::IO, ::MIME"text/plain", g::TransferOperator)
     SparseArrays._show_with_braille_patterns(io, g.mat)
 end
 
+function Base.show(io::IO, g::K) where {K<:Union{<:LinearAlgebra.Transpose{<:Any,<:TransferOperator},LinearAlgebra.Adjoint{<:Any,<:TransferOperator}}}
+    m, n = size(g.parent)
+    print(io, "$n x $m Adjoint{TransferOperator} over $(g.parent.domain.partition)")
+end
+
 Base.:(==)(g1::TransferOperator, g2::TransferOperator) = g1.mat == g2.mat
 Base.eltype(::Type{<:TransferOperator{B,T}}) where {B,T} = T
 Base.keytype(::Type{<:TransferOperator{B,T,I}}) where {B,T,I} = I
@@ -149,7 +154,7 @@ Base.axes(g::TransferOperator) = (collect(g.domain), collect(g.codomain))
     return g.mat[i, j]
 end
 
-function Base.setindex!(g::TransferOperator, u...)
+function Base.setindex!(g::K, u...) where {K<:Union{<:TransferOperator,<:LinearAlgebra.Transpose{<:Any,<:TransferOperator},LinearAlgebra.Adjoint{<:Any,<:TransferOperator}}}
     @error "setindex! is deliberately not supported for TransferOperators. Use getindex to generate an index value. "
 end
 
@@ -181,7 +186,32 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         Arpack.eigs(g::$type, B::UniformScaling=I; kwargs...) = _eigs(g, B; kwargs...)
         Arpack.eigs(g::$type, B; kwargs...) = _eigs(g, B; kwargs...)
 
-        LinearAlgebra.mul!(y::AbstractVector, g::$type, x::AbstractVector) = mul!(y, $func($gmap.mat), x)
+        function _svds(g::$type; nsv=3, ritzvec=true, kwargs...)
+            Σ, ext... = Arpack._svds(g; nsv=nsv, ritzvec=true, kwargs...)
+            S = $gmap.domain
+
+            U = [BoxFun(S, Σ.U[:, i]) for i in 1:nsv]
+            σ = Σ.S
+            V = [BoxFun(S, Σ.V[:, i]) for i in 1:nsv]
+
+            return ritzvec ? (U, σ, V, ext...) : (σ, ext...)
+        end
+
+        """
+            svds(gstar::TransferOperator [; kwargs...]) -> ([U,], σ, [V,], nconv, niter, nmult, resid)
+
+        Compute a set of 
+        * singular values `σ`
+        * left singular vectors `U` 
+        * right singular vectors `V`
+        of `gstar`, where `U` and `V` are `Vector`s of `BoxFun`s. 
+        Works with the adjoint _Koopman operator_ as well. 
+        All keyword arguments from `Arpack.svds` can be passed. See the 
+        documentation for `Arpack.svds`. 
+        """
+        Arpack.svds(g::$type; kwargs...) = _svds(g; kwargs...)
+
+        LinearAlgebra.mul!(y::AbstractVecOrMat, g::$type, x::AbstractVecOrMat) = mul!(y, $func($gmap.mat), x)
 
         @propagate_inbounds function LinearAlgebra.mul!(y::BoxFun, g::$type, x::BoxFun)
             @boundscheck(checkbounds(Bool, g, keys(x.vals)) || throw(BoundsError(g, x)))

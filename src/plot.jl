@@ -179,7 +179,8 @@ RecipesBase.@recipe function plot!(boxset::BoxSet{Box{N,T}}; projection=x->x[1:2
     
     seriestype := :shape
     color --> default_box_color
-    linecolor --> default_box_color
+    linecolor --> :black
+    linewidth --> 0.
     
     xs, ys
 end
@@ -217,7 +218,8 @@ RecipesBase.@recipe function plot!(boxset::BoxSet{Box{1,T}}) where {T}
     
     seriestype := :shape
     color --> default_box_color
-    linecolor --> default_box_color
+    linecolor --> :black
+    linewidth --> 0.
     
     xs, ys
 end
@@ -235,7 +237,8 @@ RecipesBase.@recipe function plot!(boxset::BoxFun{Box{1,T}}) where {T}
     
     seriestype := :shape
     color --> default_box_color
-    linecolor --> default_box_color
+    linecolor --> :black
+    linewidth --> 0.
 
     xs, ys
 end

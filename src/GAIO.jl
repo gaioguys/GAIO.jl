@@ -44,9 +44,10 @@ export cover, subdivide, subdivide!
 export BoxFun
 
 export TransferOperator
-export construct_transfers, eigs
+export construct_transfers, eigs, svds
 
 export BoxGraph, Graph
+export union_strongly_connected_components
 
 export BoxMap, map_boxes
 export SampledBoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap
@@ -56,12 +57,13 @@ export SmartBoxMap
 export IntervalBoxMap
 
 export rk4, rk4_flow_map
+export preimage, symmetric_image
 
-export relative_attractor, unstable_set, chain_recurrent_set
-export box_dimension
+export relative_attractor, maximal_forward_invariant_set, maximal_invariant_set
+export unstable_set, chain_recurrent_set
+export box_dimension, finite_time_lyapunov_exponents
 export armijo_rule, adaptive_newton_step, cover_roots, cover_manifold
-export nth_iterate_jacobian, finite_time_lyapunov_exponents
-export union_strongly_connected_components
+export nth_iterate_jacobian
 export seba, partition_unity, partition_disjoint, partition_likelihood
 
 export plotboxes, plotboxes!

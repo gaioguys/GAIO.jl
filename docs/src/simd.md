@@ -28,14 +28,16 @@ Internally, GAIO calls this function on many test points within the various boxe
 !!! tip "Which instructions are supported?"
     GAIO.jl uses SIMD.jl to explicitly vectorize operations. To see precisely which instructions are supported, refer to [the documentation for SIMD.jl](https://github.com/eschnett/SIMD.jl.git). 
 
-All we need to do is pass `:cpu` as the final argument to one of the box map constructors, eg. `BoxMap`, `PointDiscretizedMap`, `AdaptiveBoxMap`. 
+All we need to do is pass `:simd` as the second argument to one of the box map constructors, eg. `BoxMap(:montecarlo, ...)`, `BoxMap(:grid, ...)`. 
 ```julia
 center, radius = (0,0,25), (30,30,30)
-P = BoxPartition(Box(center, radius), (128,128,128))
-F = BoxMap(f, P, :cpu)
+Q = Box(center, radius)
+P = BoxPartition(Q, (128,128,128))
+F = BoxMap(:montecarlo, :simd, f, Q)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
-@time W = unstable_set(F, P[x])
+S = cover(P, x)
+@time W = unstable_set(F, S)
 ```
 
 Using SIMD vectorization, one can roughly double the effective floating point operations per second. For more detail, see [1]. 

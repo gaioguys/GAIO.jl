@@ -69,7 +69,9 @@ function construct_transfers(
             fSet = cover(P, fbox)
             for hit in fSet.set
                 @reduce( image = S() ⊔ hit )
-                @reduce( mat = D() ⊔ ((hit,key) => 1) )
+                hitbox = key_to_box(P, hit)
+                V = volume(fbox ∩ hitbox)
+                @reduce( mat = D() ⊔ ((hit,key) => V) )
             end
         end
     end
@@ -94,7 +96,9 @@ function construct_transfers(
             fSet = cover(P2, fbox)
             for hit in fSet.set
                 hit in codomain.set || continue
-                @reduce( mat = D() ⊔ ((hit,key) => 1) )
+                hitbox = key_to_box(P, hit)
+                V = volume(fbox ∩ hitbox)
+                @reduce( mat = D() ⊔ ((hit,key) => V) )
             end
         end
     end
