@@ -19,7 +19,7 @@ is called _invariant_.
 
 A natural question to ask is "given a dynamical system, what is the maximal (in the sense of inclusion) set which is invariant?" The answer is given by the set ``\text{Inv} (Q)`` defined as follows. 
 
-Let ``\mathcal{O}(x) = \left\{\ \ldots,\, f^{-1}(x),\, x,\, f(x),\, \ldots right\}`` denote the _full orbit_ of a point ``x`` in the domain ``Q``. Then the set 
+Let ``\mathcal{O}(x) = \left\{ \ldots,\, f^{-1}(x),\, x,\, f(x),\, \ldots \right\}`` denote the _full orbit_ of a point ``x`` in the domain ``Q``. Then the set 
 ```math
 \text{Inv} (Q) = \left\{ x \in Q : \mathcal{O} (x) \subset Q \right\}
 ```
