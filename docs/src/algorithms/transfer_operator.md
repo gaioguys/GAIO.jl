@@ -92,7 +92,7 @@ save("transfer_operator.png", fig); nothing # hide
 ```@example 2
 using GAIO
 
-# the unit box [-1, 1]²
+# the box [-1, 1]²
 domain = Box((0.0, 0.0), (1.0, 1.0))
 partition = BoxPartition(domain, (16,8))
 

@@ -200,8 +200,11 @@ RecipesBase.@recipe function plot!(boxset::BoxFun{Box{N,T}}; projection=x->x[1:2
     end
     
     seriestype := :shape
+    fillcolor --> :match
     fill_z := cs
-    line_z := cs
+    #line_z := cs
+    linecolor --> :black
+    linewidth --> 0.
 
     xs, ys
 end

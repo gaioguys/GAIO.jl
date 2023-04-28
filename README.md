@@ -41,7 +41,7 @@ S = cover(P, :)                               # Set of all boxes in P
 f((x,y)) = (1 - 1.4*x^2 + y, 0.3*x)           # the Hénon map
 F = BoxMap(f, P)                              # ... turned into a map on boxes
 
-R = relative_attractor(F, S, steps = 12)      # subdivison algorithm computing
+R = relative_attractor(F, S, steps = 18)      # subdivison algorithm computing
                                               # the attractor relative to Q
 plot(R)                                       # plot R
 ```
