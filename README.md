@@ -31,7 +31,7 @@ The following script computes the attractor of the Hénon map within the box [-3
 
 ```julia
 using GAIO
-using WGLMakie: plot
+using Plots: plot
 
 center, radius = (0,0), (3,3)
 Q = Box(center, radius)                       # domain for the computation
