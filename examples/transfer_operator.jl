@@ -1,7 +1,7 @@
 using GAIO
 using Plots: plot, plot!
 
-# the unit box [-1, 1]²
+# the box [-1, 1]²
 domain = Box((0.0, 0.0), (1.0, 1.0))
 partition = BoxPartition(domain, (16,8))
 
@@ -11,11 +11,12 @@ right = cover(partition, Box((0.5, 0.0), (0.5, 1.0)))
 full  = cover(partition, :)
 
 # plot the BoxSets
-p = plot(full, linecolor=black, fillcolor=nothing, lab="")
+p = plot(full, linecolor=:black, linewidth=0.4, fillcolor=nothing, lab="")
 plot!(p, left, fillcolor=:blue)
 plot!(p, right, fillcolor=:red)
 
 # create measures with constant weight 1 per box
+n = length(left)
 μ_left  = BoxFun(left, ones(n))
 μ_right = BoxFun(right, ones(n))
 μ_full  = BoxFun(full, ones(2n))
@@ -34,7 +35,7 @@ f((x, y)) = (x+1, y)
 F = BoxMap(:sampled, f, domain, center, center)
 
 # compute the transfer operator over the domain
-T = TransferOperator(H, full, full)
+T = TransferOperator(F, full, full)
 
 # Compute the pushforward / pullback measures by using the transfer operator
 T*μ_left  == μ_right
