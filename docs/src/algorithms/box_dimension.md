@@ -44,7 +44,7 @@ This method is simple, however it is not the most efficient since in each iterat
 P = TreePartition(Q)
 S = cover(P, :)
 
-Base.@kwdef mutable struct SubdivisionIterator{B<:BoxSet}
+@kwdef mutable struct SubdivisionIterator{B<:BoxSet}
     boxset::B
     step::Int = 1
     maxsteps::Int = 20

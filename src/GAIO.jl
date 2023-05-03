@@ -1,33 +1,33 @@
 module GAIO
 
+# general dependencies
 using LinearAlgebra
-using SparseArrays
 using StaticArrays
-using OrderedCollections
-# using GLFW
-# using ModernGL
-using GeometryBasics
-using Graphs
-using Arpack
-using Base.Threads
+using MuladdMacro
+using PrecompileTools
+
+# for mapping boxes
 using FLoops
+using OrderedCollections
 using SplittablesBase
 using SplitOrderedCollections
-using Base: unsafe_trunc
 using IntervalArithmetic
-using MuladdMacro
-using HostCPUFeatures
-using SIMD
-using Adapt
-using CUDA
-using Base.Iterators: Stateful, take
 
-# using GLMakie
-# using WGLMakie
+# graph / linear algebra algorithms
+using Graphs
+using SparseArrays
+using Arpack
+
+# plotting using Makie -> in future versions maybe as Extensions
+using GeometryBasics
 using MakieCore
 using MakieCore: @recipe
+
+# plotting using Plots -> in future versions maybe as Extensions
 using RecipesBase: RecipesBase
 
+# misc
+import Base: unsafe_trunc
 import Base: ∘
 import Base: @propagate_inbounds
 
@@ -52,7 +52,6 @@ export union_strongly_connected_components
 export BoxMap, map_boxes
 export SampledBoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap
 export AdaptiveBoxMap, approx_lipschitz, sample_adaptive
-export CPUSampledBoxMap, GPUSampledBoxMap
 export SmartBoxMap
 export IntervalBoxMap
 
@@ -85,7 +84,6 @@ abstract type BoxMap end
 (g::BoxMap)(source::BoxSet) = map_boxes(g, source)
 
 include("boxmap_sampled.jl")
-include("boxmap_simd.jl")
 include("boxmap_intervals.jl")
 include("boxmap.jl")
 
@@ -93,18 +91,12 @@ include("boxfun.jl")
 include("transfer_operator.jl")
 include("boxgraph.jl")
 include("algorithms.jl")
-include("plot.jl")
 
-if CUDA.functional()
-    include("boxmap_cuda.jl")
-    @info "GAIO has found a CUDA-capable GPU."
-else
-    include("no_boxmap_cuda.jl")
-    @info "GAIO has not found a CUDA-capable GPU."
-end
+const default_box_color = :red # default color for plotting
 
-function __init__()
-    @info "GAIO is running on $(Threads.nthreads()) thread(s)."
-end
+include("plots.jl")
+include("makie.jl")
+
+include("precompile.jl")
 
 end # module

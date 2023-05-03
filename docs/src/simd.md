@@ -28,8 +28,10 @@ Internally, GAIO calls this function on many test points within the various boxe
 !!! tip "Which instructions are supported?"
     GAIO.jl uses SIMD.jl to explicitly vectorize operations. To see precisely which instructions are supported, refer to [the documentation for SIMD.jl](https://github.com/eschnett/SIMD.jl.git). 
 
-All we need to do is pass `:simd` as the second argument to one of the box map constructors, eg. `BoxMap(:montecarlo, ...)`, `BoxMap(:grid, ...)`. 
+All we need to do is load the SIMD.jl package and pass `:simd` as the second argument to one of the box map constructors, eg. `BoxMap(:montecarlo, ...)`, `BoxMap(:grid, ...)`. 
 ```julia
+using SIMD
+
 center, radius = (0,0,25), (30,30,30)
 Q = Box(center, radius)
 P = BoxPartition(Q, (128,128,128))

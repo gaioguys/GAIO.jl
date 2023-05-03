@@ -1,3 +1,4 @@
+using CUDA
 using GAIO
 using StaticArrays
 using Test
@@ -13,7 +14,7 @@ using Test
     domain = Box(center, radius)
     g = BoxMap(:pointdiscretized, :gpu, f, domain, test_points)
     @testset "basics with :gpu" begin
-        @test typeof(g) <: GPUSampledBoxMap
+        #@test typeof(g) <: GPUSampledBoxMap
         partition = BoxPartition(domain, (32,32))
         p1 = SVector(0.0, 0.0)
         p2 = SVector(0.5, 0.0)

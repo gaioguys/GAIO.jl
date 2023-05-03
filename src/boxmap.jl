@@ -11,11 +11,9 @@ a grid of test points by default.
 """
 BoxMap(symb::Symbol, args...; kwargs...) = BoxMap(Val(symb), args...; kwargs...)
 BoxMap(symb::Symbol, accel::Symbol, args...; kwargs...) = BoxMap(symb, Val(accel), args...; kwargs...)
-BoxMap(accel::Val{:simd}, args...; kwargs...) = BoxMap(Val(:grid), accel, args...; kwargs...)
-BoxMap(accel::Val{:gpu}, args...; kwargs...) = BoxMap(Val(:grid), accel, args...; kwargs...)
 
 # default BoxMap behavior
-BoxMap(args...; kwargs...) = AdaptiveBoxMap(args...; kwargs...)
+BoxMap(args...; kwargs...) = BoxMap(:adaptive, args...; kwargs...)
 
 for str in (
         "PointDiscretized", 
@@ -23,8 +21,6 @@ for str in (
         "Grid", 
         "Adaptive", 
         "Sampled", 
-        "CPUSampled", 
-        "GPUSampled", 
         "Interval"
     )
 

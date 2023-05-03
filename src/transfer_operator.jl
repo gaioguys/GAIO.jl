@@ -277,8 +277,8 @@ Used to enumerate `BoxSet`s as
 `TransferOperator`, `BoxGraph`. 
 """
 index_to_key(arr::AbstractArray, i) = arr[i]
-index_to_key(dict::Union{Dict,OrderedDict}, i) = dict.keys[i]
-index_to_key(set::Union{Set,OrderedSet}, i) = index_to_key(set.dict, i)
+index_to_key(dict::Union{<:Dict,<:OrderedDict}, i) = dict.keys[i]
+index_to_key(set::Union{<:Set,<:OrderedSet}, i) = index_to_key(set.dict, i)
 index_to_key(boxset::BoxSet, i) = index_to_key(boxset.set, i)
 index_to_key(g::TransferOperator, i, j) = (index_to_key(g.codomain, i), index_to_key(g.domain, j))
 

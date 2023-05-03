@@ -2,6 +2,8 @@
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 HostCPUFeatures = "3e5b6fbb-0976-4d2c-9146-d79de83f2fb0"
 IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
+Preferences = "21216c6a-2e73-6563-6e65-726566657250"
+SIMD = "fdea26ae-647d-5447-a871-4b548cad5224"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
