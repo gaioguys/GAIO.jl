@@ -75,6 +75,7 @@ T = TransferOperator(F, W, W)
 ```
 
 ```@example 1
+using MakieCore
 using GLMakie: Figure, Axis3, plot!, Colorbar
 fig = Figure();
 ax = Axis3(fig[1,1], azimuth=pi/10);

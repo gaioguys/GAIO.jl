@@ -18,12 +18,16 @@ using Plots
 
 ## Using Makie
 
-To see a plot, one needs to load one of the Makie backends (see [makie documentation about backends](https://makie.juliaplots.org/stable/#first_steps)). We will use GLMakie, which uses OpenGL. Add GLMakie using the package manager
+To see a plot, one needs to 
+* load MakieCore (this is necessary, otherwise the plot recipes won't load)
+* load one of the Makie backends (see [makie documentation about backends](https://makie.juliaplots.org/stable/#first_steps)). 
+We will use GLMakie, which uses OpenGL. Add the packages using the package manager
 ```julia
-pkg> add GLMakie
+pkg> add MakieCore, GLMakie
 ```
 Load the GLMakie backend and some plotting tools with
 ```julia
+using MakieCore
 using GLMakie: plot #, Axis3, Colorbar, etc...
 ```
 
@@ -43,6 +47,7 @@ plot(b)
 The mutating function `plot!` is also available. All of Plots.jl's or Makie.jl's keyword arguments, such as `color`, `colormap`, etc. can be used. In addition, the keyword argument `projection` is used to project to a lower dimensional space if the dimension of the space ``d`` is greater than 2 for Plots.jl or greater than 3 for Makie.jl. By default, the function used is `x -> x[1:2]` for Plots.jl and `x -> x[1:3]` for Makie.jl. For an example using a custom projection function, eg. to plot the unstable set of the _dadras system_:
 ```julia
 using GAIO
+using MakieCore
 using GLMakie: plot
 
 # the Dadras system
@@ -62,8 +67,4 @@ A = [0 1 0 0;
      0 0 0 1]
 
 plot(W, projection = x -> A*x)
-```
-
-```@docs
-GAIO.plotboxes
 ```

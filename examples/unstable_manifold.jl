@@ -14,6 +14,7 @@ S = cover(P, x)
 W = unstable_set(F, S)
 
 #using Plots: plot
+using MakieCore
 using GLMakie: plot
 
 plot(W)

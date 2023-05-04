@@ -16,6 +16,7 @@ S = cover(P, :)
 R = cover_roots(g, Dg, S, steps=dim*8)
 
 #using Plots: plot       # plot a 2D projection
+using MakieCore
 using WGLMakie: plot    # plot a 3D projection
 
 plot(R)

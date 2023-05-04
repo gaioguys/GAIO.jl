@@ -33,13 +33,11 @@ F = BoxMap(f, P)
 S = cover(P, :)
 A = chain_recurrent_set(F, S, steps = 22)
 
-using Plots: plot
-#using WGLMakie: plot    # same result, just interactive
-
+using Plots
 p = plot(A);
 
 using Plots: savefig # hide
-savefig("henon_chain_rec.svg"); nothing # hide
+savefig(p, "henon_chain_rec.svg"); nothing # hide
 ```
 
 ![Chain Recurrent Set](henon_chain_rec.svg)
@@ -67,7 +65,7 @@ C = chain_recurrent_set(F, S, steps=18)
 using Plots
 plot(C)
 
-savefig("chain_recurrent_set.svg"); nothing # hide
+savefig(p, "chain_recurrent_set.svg"); nothing # hide
 ```
 
 ![Chain recurrent set](chain_recurrent_set.svg)

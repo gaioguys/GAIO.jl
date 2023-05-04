@@ -18,11 +18,6 @@ using Graphs
 using SparseArrays
 using Arpack
 
-# plotting using Makie -> in future versions maybe as Extensions
-using GeometryBasics
-using MakieCore
-using MakieCore: @recipe
-
 # misc
 import Base: unsafe_trunc
 import Base: ∘
@@ -67,6 +62,7 @@ export plotboxes, plotboxes!
 # ENV["JULIA_DEBUG"] = all
 
 const SVNT{N,T} = Union{<:NTuple{N,T}, <:StaticVector{N,T}}
+const default_box_color = :red # default color for plotting
 
 include("box.jl")
 
@@ -88,10 +84,6 @@ include("boxfun.jl")
 include("transfer_operator.jl")
 include("boxgraph.jl")
 include("algorithms.jl")
-
-const default_box_color = :red # default color for plotting
-
-include("makie.jl")
 
 include("precompile.jl")
 

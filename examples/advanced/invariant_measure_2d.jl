@@ -22,6 +22,7 @@ plot(μ)
 
 # ------------------------------------
 
+using MakieCore
 using WGLMakie: plot!, Figure, Axis3
 # Plot an interactive 3D bar plot at a nice viewing angle
 fig = Figure()

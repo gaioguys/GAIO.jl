@@ -1,11 +1,11 @@
 using GAIO
 using Documenter, LinearAlgebra, SparseArrays, StaticArrays
-import Plots, GLMakie
+import Plots, MakieCore, GLMakie
 
 ENV["JULIA_DEBUG"] = Documenter
 #ENV["JULIA_DEBUG"] = nothing
 ENV["GKSwstype"] = "100"
-ci = get(ENV, "CI", nothing) == "true"
+ci = get(ENV, "CI", "false") == "true"
 
 makedocs(
     modules = [GAIO],
@@ -80,13 +80,8 @@ makedocs(
     #format = Documenter.LaTeX(platform = "none")
 )
 
-username = get(ENV, "GITHUB_REPOSITORY", nothing)
-
-if !( username in ["gaioguys/GAIO.jl", "April-Hannah-Lena/GAIO.jl"] )
-    username = "gaioguys/GAIO.jl"
-end
-
 if ci
+    username = get(ENV, "GITHUB_REPOSITORY", "gaioguys/GAIO.jl")
     deploydocs(
         repo = "github.com/" * username * ".git",
         push_preview = true,

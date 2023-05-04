@@ -12,7 +12,6 @@ Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 HostCPUFeatures = "3e5b6fbb-0976-4d2c-9146-d79de83f2fb0"
 IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
@@ -24,10 +23,12 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [weakdeps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 SIMD = "fdea26ae-647d-5447-a871-4b548cad5224"
 
 [extensions]
 CUDAExt = "CUDA"
+MakieExt = "MakieCore"
 PlotsExt = "Plots"
 SIMDExt = "SIMD"
