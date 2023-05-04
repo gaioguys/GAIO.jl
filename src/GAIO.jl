@@ -91,7 +91,6 @@ include("algorithms.jl")
 
 const default_box_color = :red # default color for plotting
 
-include("plots.jl")
 include("makie.jl")
 
 include("precompile.jl")
