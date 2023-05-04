@@ -24,8 +24,10 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [weakdeps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 SIMD = "fdea26ae-647d-5447-a871-4b548cad5224"
 
 [extensions]
 CUDAExt = "CUDA"
+PlotsExt = "Plots"
 SIMDExt = "SIMD"

@@ -23,9 +23,6 @@ using GeometryBasics
 using MakieCore
 using MakieCore: @recipe
 
-# plotting using Plots -> in future versions maybe as Extensions
-using RecipesBase: RecipesBase
-
 # misc
 import Base: unsafe_trunc
 import Base: ∘
