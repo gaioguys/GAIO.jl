@@ -1,6 +1,6 @@
 module MakieExt
 
-using GAIO, MakieCore, GeometryBasics
+using GAIO, MakieCore, GeometryBasics, StaticArrays
 using MakieCore: @recipe
 import GAIO: default_box_color
     
