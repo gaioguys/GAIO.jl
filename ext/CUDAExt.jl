@@ -50,7 +50,7 @@ struct GPUSampledBoxMap{N,T,F<:SampledBoxMap{N,T}} <: BoxMap
     boxmap::F
 
     function GPUSampledBoxMap(g::F) where {N,T,F<:SampledBoxMap{N,T}}
-        CUDA.functional(true)
+        CUDA.functional(true)   # test if CUDA is working, or throw an error
         if !( g.domain_points(g.domain...) isa Base.Generator{<:Union{<:CuArray,<:CuDeviceArray}} )
             throw(AssertionError("""
             GPU BoxMaps require one set of "global" test points in the 
