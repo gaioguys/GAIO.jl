@@ -22,9 +22,9 @@ This leaves a new eigenproblem of the form ``(f_{t})_{\#}^{\,*} \, (f_{t})_{\#}`
 
 ### Example
 
-We will consider the _periodically driven double-gyre map_
+We will consider the _periodically driven double-gyre_ described in the section on [Almost Invariant (metastable) Sets](@ref). See that page for details on the map. 
 
-```@example 1
+```@setup 1
 using GAIO, LinearAlgebra
 
 const A, ϵ, ω = 0.25, 0.25, 2π
@@ -50,6 +50,7 @@ end
 ```@example 1
 t₀, τ, steps = 0, 0.1, 20
 t₁ = t₀ + τ * steps
+Tspan = t₁ - t₀
 Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)
 
 domain = Box((1.0, 0.5), (1.0, 0.5))
@@ -92,28 +93,30 @@ p = plot(sign ∘ μ, colormap=:redsblues);
 savefig(p, "sv1.svg"); nothing # hide
 ```
 
-![First left singular measure](sv1.svg)
+![Second left singular measure](sv1.svg)
 
 ```@example 1
-anim = @animate for t in t₀:τ:t₁
-    next!(prog)
-
+anim = @animate for t in t₀:τ/4:t₁
     Φₜ(z) = Φ(z, t, τ, steps)
 
     F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
     F♯ = TransferOperator(F, S, S)
     rescale!(F♯)
+
+    global maxiter, tol, v0
     U, σ, V = svds(F♯; maxiter=maxiter, tol=tol, v0=v0)
 
+    μ = U[2]
+
     # do some rescaling to get a nice plot
-    μ = ( x -> sign(x) * log(abs(x) + 1e-4) ) ∘ U[2]
+    μ = ( x -> sign(x) * log(abs(x) + 1e-4) ) ∘ μ
     s = sign(μ[(10,40)])
     M = maximum(abs ∘ μ)
     μ = s/M * μ
 
     plot(μ, clims=(-1,1), colormap=:jet)
 end;
-gif(anim, "coherent.gif", fps=Tspan÷(2τ));
+gif(anim, "coherent.gif", fps=Tspan÷τ); nothing # hide
 ```
 
 ![Coherent Sets](coherent.gif)

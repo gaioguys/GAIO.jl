@@ -24,7 +24,7 @@ seba
 
 ### Example
 
-We will continue using the periodically driven double-gyre introduced in the section on [Coherent Sets](@ref). See that code block for the definition of the map. 
+We will continue using the periodically driven double-gyre introduced in the section on [Almost Invariant (metastable) Sets](@ref). See that code block for the definition of the map. 
 
 ```@setup 1
 using StaticArrays # hide
@@ -63,48 +63,40 @@ test_points = SVector{2,Float64}[               # hide
  (0.49288810186172594, -0.8347990196625026)     # hide
 ] # hide
 
-using GAIO
-using Plots
+
+using GAIO, LinearAlgebra
 
 const A, ϵ, ω = 0.25, 0.25, 2π
-function double_gyre(x, y, t)
-    f(x, t)  =  ϵ * sin(ω*t) * x^2 + (1 - 2ϵ * sin(ω*t)) * x
-    df(x, t) = 2ϵ * sin(ω*t) * x   + (1 - 2ϵ * sin(ω*t))
 
-    return (
-        -π * A * sin(π * f(x, t)) * cos(π * y),
-         π * A * cos(π * f(x, t)) * sin(π * y) * df(x, t),
-         1
-    )
-end
+f(x, t)  =  ϵ * sin(ω*t) * x^2 + (1 - 2ϵ * sin(ω*t)) * x
+df(x, t) = 2ϵ * sin(ω*t) * x   + (1 - 2ϵ * sin(ω*t))
 
-double_gyre((x, y, t)) = double_gyre(x, y, t)
+double_gyre(x, y, t) = (
+    -π * A * sin(π * f(x, t)) * cos(π * y),
+     π * A * cos(π * f(x, t)) * sin(π * y) * df(x, t)
+)
 
-# create a point map ℝ² → ℝ² that 
-# integrates the vector field 
-# with fixed start time t₀, step size τ 
-# until a fixed end time t₁ is reached
-function Φ((x₀, y₀), t₀, τ, t₁)
-    z = (x₀, y₀, t₀)
-    for _ in t₀ : τ : t₁-τ
-        z = rk4(double_gyre, z, τ)
-    end
-    (x₁, y₁, t₁) = z
-    return (x₁, y₁)
+# autonomize the ODE by adding a dimension
+double_gyre((x, y, t)) = (double_gyre(x, y, t)..., 1)
+
+# nonautonomous flow map: reduce back to 2 dims
+function Φ((x, y), t, τ, steps)
+    (x, y, t) = rk4_flow_map(double_gyre, (x, y, t), τ, steps)
+    return (x, y)
 end
 ```
 
 ```@example 1
-using GAIO
-
-t₀, τ, t₁ = 0, 0.1, 2
-Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, t₁)
+t₀, τ, steps = 0, 0.1, 20
+t₁ = t₀ + τ * steps
+Tspan = t₁ - t₀
+Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)
 
 domain = Box((1.0, 0.5), (1.0, 0.5))
 P = BoxPartition(domain, (256, 128))
 S = cover(P, :)
 
-F = BoxMap(:montecarlo, Φₜ₀ᵗ¹, domain)
+F = BoxMap(:montecarlo, Φₜ₀ᵗ¹, domain, n_points=32)
 F = BoxMap(:pointdiscretized, Φₜ₀ᵗ¹, domain, test_points) # hide
 
 T = TransferOperator(F, S, S)
@@ -113,13 +105,14 @@ T = TransferOperator(F, S, S)
 # see the Arpack docs for explanations of keywords
 tol, maxiter, v0 = eps()^(1/4), 1000, ones(size(T, 2))
 λ, ev = eigs(T; nev=2, which=:LR, maxiter=maxiter, tol=tol, v0=v0)
-μ = real ∘ ev[2]
+
+μ = abs ∘ ev[2]
 ```
 
 ```@example 1
 using Plots
 
-p = plot(μ);
+p = plot(μ, colormap=:jet);
 
 savefig("second_eigvec.svg"); nothing # hide
 ```
@@ -129,7 +122,10 @@ savefig("second_eigvec.svg"); nothing # hide
 We notice there are two "blobs" defining the second eigenmeasure. These correspond to the almost invariant sets; there are two "vortices" where mass flows in a circular pattern and doesn't mix with the rest of the domain. We wish to isolate these blobs using `seba`
 
 ```@example 1
-re_ev = real .∘ ev  # seba expects real numbers, ev is complex
+# seba expects real numbers, ev is complex, so we grab the real components. 
+# We also potentially have to scale by -1, this depends on what Arpack 
+# returns so always try both
+re_ev = real .∘ (-1 .* ev)
 
 ev_seba, feature_vec = seba(re_ev, which=partition_unity)
 μ1, μ2 = ev_seba[1], ev_seba[2]
@@ -146,7 +142,7 @@ p = plot!(p, S2, color=:blue);
 savefig("seba.svg"); nothing # hide
 ```
 
-![Almost invraiant sets isolated by SEBA](seba.svg)
+![Almost invriant sets isolated by SEBA](seba.svg)
 
 ### References
 
