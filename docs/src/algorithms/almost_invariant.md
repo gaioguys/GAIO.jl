@@ -176,7 +176,7 @@ anim = @animate for t in t₀:τ/4:t₁
 
     F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
     F♯ = TransferOperator(F, S, S)
-    λ, ev = eigs(T; which=:LR, maxiter=maxiter, tol=tol, v0=v0)
+    λ, ev = eigs(F♯; which=:LR, maxiter=maxiter, tol=tol, v0=v0)
 
     μ = real ∘ ev[2]
 
