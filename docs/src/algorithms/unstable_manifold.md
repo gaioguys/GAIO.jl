@@ -48,7 +48,7 @@ W = unstable_set(F, S)
 ```
 
 ```@example 1
-using MakieCore, GLMakie
+using GLMakie
 
 fig, ax, ms = plot(W);
 

@@ -75,8 +75,7 @@ F♯ = TransferOperator(F, W, W)
 ```
 
 ```@example 1
-using MakieCore
-using GLMakie: Figure, Axis3, plot!, Colorbar
+using GLMakie
 fig = Figure();
 ax = Axis3(fig[1,1], azimuth=pi/10);
 ms = plot!(ax, μ, colormap=:jet);

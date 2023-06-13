@@ -53,7 +53,7 @@ We see that the first eigenvalue is approaching ``1``. This is the invariant mea
 ```
 
 ```@example 1
-using MakieCore, GLMakie
+using GLMakie
 
 fig = Figure();
 ax = Axis3(fig[1,1], aspect=(1,1.2,1), azimuth=-3pi/10)

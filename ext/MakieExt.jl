@@ -1,7 +1,7 @@
 module MakieExt
 
-using GAIO, MakieCore, GeometryBasics, StaticArrays
-using MakieCore: @recipe
+using GAIO, Makie, GeometryBasics, StaticArrays
+using Makie: MakieCore
 import GAIO: default_box_color
     
 """
@@ -40,7 +40,7 @@ All other attributes are taken from MeshScatter.
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{Box{N,T}}}}) where {N,T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{GAIO.Box{N,T}}}}) where {N,T}
 
     boxset = boxes[1][]
     d = min(N, 3)
@@ -66,7 +66,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{Box{N,T}}}}) where {N
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{N,T}}}}) where {N,T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{GAIO.Box{N,T}}}}) where {N,T}
 
     boxfun = boxes[1][]
     d = min(N, 3)
@@ -98,7 +98,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{N,T}}}}) where {N
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{2,T}}}}) where {T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{GAIO.Box{2,T}}}}) where {T}
 
     boxfun = boxes[1][]
 
@@ -123,7 +123,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{2,T}}}}) where {T
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{Box{1,T}}}}) where {T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{GAIO.Box{1,T}}}}) where {T}
 
     boxfun = boxes[1][]
 

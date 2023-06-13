@@ -27,8 +27,7 @@ plot(p1, p2, size = (1200,600))
 
 # ------------------------------------
 
-using MakieCore
-using WGLMakie: plot, Colorbar
+using GLMakie
 # Plot an interactive 3D heatmap
 fig, ax, ms = plot(μ)
 Colorbar(fig[1,2], ms)
