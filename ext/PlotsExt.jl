@@ -1,6 +1,8 @@
 module PlotsExt
 
-using GAIO, RecipesBase
+using GAIO, Plots
+using Plots: RecipesBase
+using Plots.RecipesBase: @recipe
 import GAIO: default_box_color
 
 @recipe function plot!(boxset::BoxSet{Box{N,T}}; projection=x->x[1:2]) where {N,T}
