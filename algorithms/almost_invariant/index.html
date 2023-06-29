@@ -27,19 +27,19 @@ tol, maxiter, v0 = eps()^(1/4), 1000, ones(size(T, 2))
 λ, ev = eigs(T; nev=6, which=:LR, maxiter=maxiter, tol=tol, v0=v0)
 
 λ</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6-element Vector{ComplexF64}:
-  1.000000000000001 + 0.0im
- 0.9781177864404085 + 0.0im
- 0.9333821668202478 + 0.08300871141881976im
- 0.9333821668202478 - 0.08300871141881976im
- 0.9300747210274418 + 0.141652598924924im
- 0.9300747210274418 - 0.141652598924924im</code></pre><p>We see that the first eigenvalue is approaching <span>$1$</span>. This is the invariant measure. There is also an eigenvalue <em>near, but not exactly</em> <span>$1$</span>. Let us examine this eigenmeasure a but more closely. </p><pre><code class="language-julia hljs">μ = (x -&gt; sign(x) * log(abs(x))) ∘ real ∘ ev[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BoxFun in 256 x 256 x 256 - element BoxPartition with 548545 stored weights</code></pre><pre><code class="language-julia hljs">using GLMakie
+ 0.9999999999999993 + 0.0im
+ 0.9782889179078885 + 0.0im
+ 0.9334898586803618 + 0.0826127629877514im
+ 0.9334898586803618 - 0.0826127629877514im
+ 0.9300663505292008 + 0.14257243874770897im
+ 0.9300663505292008 - 0.14257243874770897im</code></pre><p>We see that the first eigenvalue is approaching <span>$1$</span>. This is the invariant measure. There is also an eigenvalue <em>near, but not exactly</em> <span>$1$</span>. Let us examine this eigenmeasure a but more closely. </p><pre><code class="language-julia hljs">μ = (x -&gt; sign(x) * log(abs(x))) ∘ real ∘ ev[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BoxFun in 256 x 256 x 256 - element BoxPartition with 483819 stored weights</code></pre><pre><code class="language-julia hljs">using GLMakie
 
 fig = Figure();
 ax = Axis3(fig[1,1], aspect=(1,1.2,1), azimuth=-3pi/10)
 ms = plot!(ax, μ, colormap=(:jet, 0.2))
 Colorbar(fig[1,2], ms)</code></pre><p><img src="../2nd_eig.png" alt="Second Leading Eigenvector"/></p><p>There are clearly two &quot;sections&quot; corresponding to the two &quot;scrolls&quot; of the attractor. We can separate these sections as follows. </p><pre><code class="language-julia hljs">τ = 0
 B1 = BoxSet(P, Set(key for key in keys(μ) if μ[key] ≤ τ))
-B2 = BoxSet(P, Set(key for key in keys(μ) if μ[key] &gt; τ))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">273811 - element BoxSet in 256 x 256 x 256 - element BoxPartition</code></pre><pre><code class="language-julia hljs">fig = Figure(resolution=(1200,600));
+B2 = BoxSet(P, Set(key for key in keys(μ) if μ[key] &gt; τ))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">243468 - element BoxSet in 256 x 256 x 256 - element BoxPartition</code></pre><pre><code class="language-julia hljs">fig = Figure(resolution=(1200,600));
 ax1 = Axis3(fig[1,1], aspect=(1,1.2,1), azimuth=-3pi/10)
 ms1 = plot!(ax1, B1, color=(:blue, 0.4))
 ax2 = Axis3(fig[1,2], aspect=(1,1.2,1), azimuth=-3pi/10)
@@ -49,4 +49,62 @@ ms2 = plot!(ax2, B2, color=(:red, 0.4))</code></pre><p><img src="../almost_inv.p
     ax2.elevation[] = pi/20 - pi * v / 20
     ax1.azimuth[] = 3pi * v / 4
     ax2.azimuth[] = 3pi * v / 4
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">&quot;almost_inv_rotating.gif&quot;</code></pre><p><img src="../almost_inv_rotating.gif" alt="Almost Invariant Sets Animation"/></p><h3 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h3><p>[1] Froyland, G., Padberg-Gehle, K. (2014). Almost-Invariant and Finite-Time Coherent Sets: Directionality, Duration, and Diffusion. In: Bahsoun, W., Bose, C., Froyland, G. (eds) Ergodic Theory, Open Dynamics, and Coherent Structures. Springer Proceedings in Mathematics &amp; Statistics, vol 70. Springer, New York, NY. https://doi.org/10.1007/978-1-4939-0419-8_9</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../transfer_operator/">« Ulam&#39;s method and Invariant Measures</a><a class="docs-footer-nextpage" href="../cyclic/">Cyclic Sets »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Wednesday 3 May 2023 09:42">Wednesday 3 May 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">&quot;almost_inv_rotating.gif&quot;</code></pre><p><img src="../almost_inv_rotating.gif" alt="Almost Invariant Sets Animation"/></p><h3 id="Example-2:-Double-Gyre-Map"><a class="docs-heading-anchor" href="#Example-2:-Double-Gyre-Map">Example 2: Double Gyre Map</a><a id="Example-2:-Double-Gyre-Map-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2:-Double-Gyre-Map" title="Permalink"></a></h3><p>We will consider the <em>periodically driven double-gyre</em> which is a nonautonomous system of 2 ODEs</p><pre><code class="language-julia hljs">using GAIO, LinearAlgebra
+
+const A, ϵ, ω = 0.25, 0.25, 2π
+
+f(x, t)  =  ϵ * sin(ω*t) * x^2 + (1 - 2ϵ * sin(ω*t)) * x
+df(x, t) = 2ϵ * sin(ω*t) * x   + (1 - 2ϵ * sin(ω*t))
+
+double_gyre(x, y, t) = (
+    -π * A * sin(π * f(x, t)) * cos(π * y),
+     π * A * cos(π * f(x, t)) * sin(π * y) * df(x, t)
+)
+
+# autonomize the ODE by adding a dimension
+double_gyre((x, y, t)) = (double_gyre(x, y, t)..., 1)
+
+# nonautonomous flow map: reduce back to 2 dims
+function Φ((x, y), t, τ, steps)
+    (x, y, t) = rk4_flow_map(double_gyre, (x, y, t), τ, steps)
+    return (x, y)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Φ (generic function with 1 method)</code></pre><p>We can construct an autonomous system which behaves approximately like the real system by fixing one <code>t₀</code> and considering only the time-<span>$T$</span> flow map, always starting at time <code>t₀</code>. </p><pre><code class="language-julia hljs">t₀, τ, steps = 0, 0.1, 20
+t₁ = t₀ + τ * steps
+Tspan = t₁ - t₀
+Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Φₜ₀ᵗ¹ (generic function with 1 method)</code></pre><pre><code class="language-julia hljs">t₀, τ, steps = 0, 0.1, 20
+t₁ = t₀ + τ * steps
+Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)
+
+domain = Box((1.0, 0.5), (1.0, 0.5))
+P = BoxPartition(domain, (256, 128))
+S = cover(P, :)
+
+F = BoxMap(:grid, Φₜ₀ᵗ¹, domain, n_points=(6,6))
+
+T = TransferOperator(F, S, S)
+
+# we give Arpack some help converging to the eigenvalues,
+# see the Arpack docs for explanations of keywords
+tol, maxiter, v0 = eps()^(1/4), 1000, ones(size(T, 2))
+λ, ev = eigs(T; which=:LR, maxiter=maxiter, tol=tol, v0=v0)
+λ</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3-element Vector{ComplexF64}:
+ 0.9999999999209355 + 0.0im
+  0.999697402972666 + 0.0im
+ 0.9995772599121923 + 0.0im</code></pre><pre><code class="language-julia hljs">using Plots
+
+p = plot(real ∘ ev[2], colormap=:jet)</code></pre><p><img src="../gyre_almost_inv.svg" alt="almost invariant sets in the doube-gyre"/></p><p>Since the map is nonautonomous, this image should change if we vary the start time <code>t₀</code>. </p><pre><code class="language-julia hljs">anim = @animate for t in t₀:τ/4:t₁
+    Φₜ(z) = Φ(z, t, τ, steps)
+
+    F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
+    F♯ = TransferOperator(F, S, S)
+    λ, ev = eigs(F♯; which=:LR, maxiter=maxiter, tol=tol, v0=v0)
+
+    μ = real ∘ ev[2]
+
+    # do some rescaling to get a nice plot
+    s = sign(μ[(65,65)])
+    M = maximum(abs ∘ μ)
+    μ = s/M * μ
+
+    plot(μ, clims=(-1,1), colormap=:jet)
+end;</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">[ Info: Saved animation to /home/runner/work/GAIO.jl/GAIO.jl/docs/build/algorithms/gyre_almost_inv.gif</code></pre><p><img src="../gyre_almost_inv.gif" alt="almost invariant sets changing over time"/></p><h3 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h3><p>[1] Froyland, G., Padberg-Gehle, K. (2014). Almost-Invariant and Finite-Time Coherent Sets: Directionality, Duration, and Diffusion. In: Bahsoun, W., Bose, C., Froyland, G. (eds) Ergodic Theory, Open Dynamics, and Coherent Structures. Springer Proceedings in Mathematics &amp; Statistics, vol 70. Springer, New York, NY. https://doi.org/10.1007/978-1-4939-0419-8_9</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../transfer_operator/">« Ulam&#39;s method and Invariant Measures</a><a class="docs-footer-nextpage" href="../cyclic/">Cyclic Sets »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Thursday 29 June 2023 16:50">Thursday 29 June 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
