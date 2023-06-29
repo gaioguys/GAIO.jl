@@ -51,8 +51,8 @@ P = BoxPartition(Box(center, radius))
 S = cover(P, :)
 R = cover_roots(g, Dg, S, steps=dim*8)
 
-#using Plots: plot       # plot a 2D projection
-using GLMakie: plot    # plot a 3D projection
+#using Plots       # plot a 2D projection
+using GLMakie
 
 fig, ax, ms = plot(R);
 

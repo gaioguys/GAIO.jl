@@ -11,6 +11,6 @@ S = cover(P, :)
 A = relative_attractor(F, S, steps = 16)
 
 using Plots: plot
-#using WGLMakie: plot    # same result, just interactive
+#using WGLMakie    # same result, just interactive
 
 plot(A)

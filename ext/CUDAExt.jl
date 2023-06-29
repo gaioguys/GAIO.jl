@@ -1,3 +1,17 @@
+module CUDAExt
+
+using GAIO, Adapt, CUDA, StaticArrays, MuladdMacro
+
+import Base.Iterators: Stateful, take
+import GAIO: BoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap
+import GAIO: typesafe_map, map_boxes, construct_transfers, ⊔, SVNT
+
+#export GPUSampledBoxMap
+
+BoxMap(::Val{Symbol("GPUSampled")}, args...; kwargs...) = GPUSampledBoxMap(args...; kwargs...)
+BoxMap(::Val{Symbol("gpusampled")}, args...; kwargs...) = GPUSampledBoxMap(args...; kwargs...)
+BoxMap(accel::Val{:gpu}, args...; kwargs...) = BoxMap(Val(:grid), accel, args...; kwargs...)
+    
 struct NumLiteral{T} end
 Base.:(*)(x, ::Type{NumLiteral{T}}) where T = T(x)
 const i32, ui32 = NumLiteral{Int32}, NumLiteral{UInt32}
@@ -36,6 +50,7 @@ struct GPUSampledBoxMap{N,T,F<:SampledBoxMap{N,T}} <: BoxMap
     boxmap::F
 
     function GPUSampledBoxMap(g::F) where {N,T,F<:SampledBoxMap{N,T}}
+        CUDA.functional(true)   # test if CUDA is working, or throw an error
         if !( g.domain_points(g.domain...) isa Base.Generator{<:Union{<:CuArray,<:CuDeviceArray}} )
             throw(AssertionError("""
             GPU BoxMaps require one set of "global" test points in the 
@@ -48,9 +63,10 @@ struct GPUSampledBoxMap{N,T,F<:SampledBoxMap{N,T}} <: BoxMap
     end
 end
 
-function map_boxes_kernel!(g, P::AbstractBoxPartition{Box{N,T}}, domain_points, in_keys, out_keys) where {N,T}
-    nk, np = Int32.((length(in_keys), length(domain_points)))
-    ind = (blockIdx().x - 1i32) * blockDim().x + threadIdx().x #- 1i32
+function map_boxes_kernel!(g, P, domain_points, in_keys, out_keys)
+    nk = length(in_keys)*i32
+    np = length(domain_points)*i32
+    ind = (blockIdx().x - 1) * blockDim().x + threadIdx().x #- 1i32
     stride = gridDim().x * blockDim().x
     len = nk * np #- 1i32
     for i in ind : stride : len
@@ -60,7 +76,7 @@ function map_boxes_kernel!(g, P::AbstractBoxPartition{Box{N,T}}, domain_points, 
         box  = key_to_box(P, key)
         c, r = box
         fp   = g(@muladd p .* r .+ c)
-        hit  = point_to_key(P, fp)
+        hit  = @inbounds point_to_key(P, fp)
         out_keys[i] = isnothing(hit) ? out_of_bounds(P) : hit
     end
 end
@@ -149,7 +165,7 @@ function construct_transfers(
     keys = Stateful(domain.set)
     P = domain.partition
     P2 = codomain.partition
-    P == P2 || throw(DomainError((P, P2), "Partitions of domain and codomain dno not match. For GPU acceleration, they must be equal."))
+    P == P2 || throw(DomainError((P, P2), "Partitions of domain and codomain do not match. For GPU acceleration, they must be equal."))
     K = cu_reduce(keytype(Q))
     D = Dict{Tuple{K,K},cu_reduce(T)}
     mat = D()
@@ -207,13 +223,13 @@ a tuple of length equal to the dimension of the domain.
 
 Requires a CUDA-capable gpu. 
 """
-function GridBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; n_points=ntuple(_->n_default(T),N)) where {N,T}
+function GridBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; n_points=ntuple(_->4,N)) where {N,T}
     Δp = 2 ./ n_points
     points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(n_points) ]
     PointDiscretizedBoxMap(c, map, domain, points)
 end
 
-function GridBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; n_points=ntuple(_->n_default(T),N)) where {N,T}
+function GridBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; n_points=ntuple(_->4,N)) where {N,T}
     GridBoxMap(c, map, P.domain, n_points=n_points)
 end
 
@@ -225,18 +241,18 @@ Monte-Carlo test points.
 
 Requires a CUDA-capable gpu. 
 """
-function MonteCarloBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; n_points=n_default(N,T)) where {N,T}
+function MonteCarloBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; n_points=16*N) where {N,T}
     points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:n_points ] 
     PointDiscretizedBoxMap(c, map, domain, points)
 end 
 
-function MonteCarloBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; n_points=n_default(N,T)) where {N,T}
+function MonteCarloBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; n_points=16*N) where {N,T}
     MonteCarloBoxMap(c, map, P.domain; n_points=n_points)
 end
 
 # helper + compatibility functions
 function Base.show(io::IO, g::GPUSampledBoxMap)
-    n = length(g.domain_points(g.domain...).iter)
+    n = length(g.boxmap.domain_points(g.boxmap.domain...).iter)
     print(io, "GPUSampledBoxMap with $(n) sample points")
 end
 
@@ -267,12 +283,12 @@ cu_reduce(::Type{F}) where {F<:AbstractFloat} = Float32
 cu_reduce(::Type{Float16}) = Float16
 cu_reduce(::Type{<:NTuple{N,T}}) where {N,T} = NTuple{N,cu_reduce(T)}
 
-function out_of_bounds(P::BoxPartition{N,T,I}) where {N,T,I}
+function out_of_bounds(::P) where {N,T,I,P<:BoxPartition{N,T,I}}
     K = cu_reduce(keytype(P))
     K(ntuple(_->0, Val(N)))
 end
 
-function out_of_bounds(P::TreePartition{N,T,I}) where {N,T,I}
+function out_of_bounds(::P) where {N,T,I,P<:TreePartition{N,T,I}}
     K = cu_reduce(keytype(P))
     K((0, ntuple(_->0, Val(N))))
 end
@@ -302,7 +318,9 @@ end
 
 function Adapt.adapt_structure(
         ::CUDA.CuArrayAdaptor, x::V
-    ) where {N,F<:AbstractFloat,V<:AbstractArray{<:SVNT{N,F}}}
+    ) where {N,M,F<:AbstractFloat,V<:AbstractArray{<:SVNT{N,F},M}}
 
-    CuArray{SVector{N,cu_reduce(F)},1}(x)
+    CuArray{SVector{N,cu_reduce(F)},M}(x)
 end
+
+end # module

@@ -13,6 +13,6 @@ T = TransferOperator(F, S, S)
 (λ, ev) = eigs(T)
 
 using Plots: plot
-#using WGLMakie: plot   # same result, just interactive
+#using WGLMakie   # same result, just interactive
 
 plot(abs ∘ ev[1])

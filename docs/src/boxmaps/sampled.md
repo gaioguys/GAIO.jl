@@ -6,8 +6,6 @@ We can even further generalize the concept of `MonteCarloBoxMap`, `GridBoxMap`, 
 
 ```@docs
 SampledBoxMap
-CPUSampledBoxMap
-GPUSampledBoxMap
 ```
 
 ### Example
@@ -85,7 +83,7 @@ midpoint = round.(Int, ( 1+(α+β+γ/4)/2, 1+(δ+ω)/2 ), RoundUp)
 domain = Box(midpoint, midpoint)
 
 P = BoxPartition(domain, 2 .* midpoint)
-p = plot(cover(P, :), linecolor=:black, fillcolor=nothing, lab="", leg=:outerbottom)
+p = plot(cover(P, :), linewidth=0.5, fillcolor=nothing, lab="", leg=:outerbottom)
 
 # unit box
 B = cover(P, (0,0))
@@ -127,7 +125,7 @@ F = BoxMap(:sampled, f, domain, domain_points, image_points)
 p = plot!(
     p, F(B), 
     color=RGBA(1.,0.,0.,0.5), 
-    lab="Recreation of AdaptiveBoxMap using SampledBoxMap"
+    lab="Recreation of AdaptiveBoxMap using fallback points if an exception is thrown"
 )
 
 savefig("sampled2.svg"); nothing # hide

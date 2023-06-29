@@ -25,7 +25,7 @@ GAIO.jl provides algorithms for
 
 ## Installation
 
-The package requires Julia 1.7 or later. In Julia's package manager, type
+The package requires Julia 1.9 or later. In Julia's package manager, type
 ```julia
 pkg> add https://github.com/gaioguys/GAIO.jl.git
 ```

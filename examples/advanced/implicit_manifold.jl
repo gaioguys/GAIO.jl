@@ -11,6 +11,6 @@ S = cover(P, :)
 M = cover_manifold(H, S; steps=16)
 
 using Plots: plot
-#using WGLMakie: plot
+#using WGLMakie
 
 plot(M)

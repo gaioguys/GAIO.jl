@@ -32,8 +32,10 @@ f(x) = rk4_flow_map(v, x, 0.002f0, 100)
     ```
     instead of `center, radius = (0,0,25), (30,30,30)`. 
 
-All we need to do is pass `:gpu` as the second argument to one of the box map constructors, eg. `BoxMap(:montecarlo, ...)`, `BoxMap(:grid, ...)`. 
+All we need to do is load the CUDA.jl package and pass `:gpu` as the second argument to one of the box map constructors, eg. `BoxMap(:montecarlo, ...)`, `BoxMap(:grid, ...)`. 
 ```julia
+using CUDA
+
 center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
 Q = Box(center, radius)
 P = BoxPartition(Q, (128,128,128))

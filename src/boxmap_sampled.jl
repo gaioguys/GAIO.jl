@@ -15,11 +15,11 @@ Fields:
 
 .
 """
-struct SampledBoxMap{N,T,F,D,I} <: BoxMap
-    map::F
+struct SampledBoxMap{N,T} <: BoxMap
+    map
     domain::Box{N,T}
-    domain_points::D
-    image_points::I
+    domain_points
+    image_points
 end
 
 # we need a small helper function because of 
@@ -37,12 +37,16 @@ function ⊔(d::AbstractDict, p::Pair)
     d
 end
 
+function typesafe_map(g::SampledBoxMap{N,T}, x::SVNT{N}) where {N,T}
+    convert(SVector{N,T}, g.map(x))
+end
+
 function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
     P = source.partition
     @floop for box in source
         c, r = box
         for p in g.domain_points(c, r)
-            fp = g.map(p)
+            fp = typesafe_map(g, p)
             hitbox = point_to_box(P, fp)
             isnothing(hitbox) && continue
             _, r = hitbox
@@ -53,7 +57,7 @@ function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
             end
         end
     end
-    return BoxSet(P, image)
+    return BoxSet(P, image::S)
 end 
 
 function construct_transfers(
@@ -65,7 +69,7 @@ function construct_transfers(
         box = key_to_box(P, key)
         c, r = box
         for p in g.domain_points(c, r)
-            c = g.map(p)
+            c = typesafe_map(g, p)
             hitbox = point_to_box(P, c)
             isnothing(hitbox) && continue
             _, r = hitbox
@@ -77,8 +81,8 @@ function construct_transfers(
             end
         end
     end
-    codomain = BoxSet(P, image)
-    return mat, codomain
+    codomain = BoxSet(P, image::S)
+    return mat::D, codomain
 end
 
 function construct_transfers(
@@ -91,7 +95,7 @@ function construct_transfers(
         box = key_to_box(P1, key)
         c, r = box
         for p in g.domain_points(c, r)
-            c = g.map(p)
+            c = typesafe_map(g, p)
             hitbox = point_to_box(P2, c)
             isnothing(hitbox) && continue
             _, r = hitbox
@@ -103,7 +107,7 @@ function construct_transfers(
             end
         end
     end
-    return mat
+    return mat::D
 end
 
 function Base.show(io::IO, g::SampledBoxMap)
@@ -111,9 +115,6 @@ function Base.show(io::IO, g::SampledBoxMap)
     n = length(g.domain_points(center, radius))
     print(io, "SampledBoxMap with $(n) sample points")
 end
-
-n_default(T) = Int(pick_vector_width(T))
-n_default(N, T) = 4 * N * n_default(T)
 
 """
     BoxMap(:pointdiscretized, map, domain, points) -> SampledBoxMap
@@ -137,13 +138,13 @@ Construct a `SampledBoxMap` that uses a grid of test points.
 The size of the grid is defined by `n_points`, which is 
 a tuple of length equal to the dimension of the domain. 
 """
-function GridBoxMap(map, domain::Box{N,T}; n_points::NTuple{N}=ntuple(_->n_default(T),N)) where {N,T}
+function GridBoxMap(map, domain::Box{N,T}; n_points::NTuple{N}=ntuple(_->4,N)) where {N,T}
     Δp = 2 ./ n_points
     points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(n_points) ]
     return PointDiscretizedBoxMap(map, domain, points)
 end
 
-function GridBoxMap(map, P::Q; n_points=ntuple(_->n_default(T),N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+function GridBoxMap(map, P::Q; n_points=ntuple(_->4,N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
     GridBoxMap(map, P.domain; n_points=n_points)
 end
 
@@ -153,12 +154,12 @@ end
 Construct a `SampledBoxMap` that uses `n_points` 
 Monte-Carlo test points. 
 """
-function MonteCarloBoxMap(map, domain::Box{N,T}; n_points=n_default(N,T)) where {N,T}
+function MonteCarloBoxMap(map, domain::Box{N,T}; n_points=16*N) where {N,T}
     points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:n_points ] 
     return PointDiscretizedBoxMap(map, domain, points) 
 end 
 
-function MonteCarloBoxMap(map, P::Q; n_points=n_default(N,T)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+function MonteCarloBoxMap(map, P::Q; n_points=16*N) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
     MonteCarloBoxMap(map, P.domain; n_points=n_points)
 end
 
@@ -228,7 +229,7 @@ function sample_adaptive(f, center::SVNT{N,T}, radius::SVNT{N,T}; alg=LinearAlge
     n = ntuple(i -> ceil(Int, σ[i]), Val(N))
     h = convert(T, 2) ./ (n .- 1)
     points = Iterators.map(CartesianIndices(n)) do i
-        p  = T[ n[k] == 1 ? 0 : (i[k] - 1) * h[k] - 1 for k in 1:N ]
+        p  = T[ n[k] == 1 ? zero(T) : (i[k] - 1) * h[k] - 1 for k in 1:N ]
         p .= Vt'p
         @muladd p .= center .+ radius .* p
         sp = SVector{N,T}(p)

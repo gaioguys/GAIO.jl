@@ -29,6 +29,7 @@ S = cover(P, Box((0,0,0,0), (0.1,0.1,0.1,0.1)))
 W = unstable_set(F, S)
 
 #using Plots: plot
+using MakieCore
 using GLMakie: plot
 
 plot(W)

@@ -1,3 +1,4 @@
+using SIMD
 using GAIO
 using StaticArrays
 using HostCPUFeatures
@@ -14,7 +15,7 @@ using Test
     domain = Box(center, radius)
     g = BoxMap(:pointdiscretized, :simd, f, domain, test_points)
     @testset "basics with :cpu" begin
-        @test typeof(g) <: CPUSampledBoxMap
+        #@test typeof(g) <: CPUSampledBoxMap
         partition = BoxPartition(domain, (32,32))
         p1 = SVector(0.0, 0.0)
         p2 = SVector(0.5, 0.0)

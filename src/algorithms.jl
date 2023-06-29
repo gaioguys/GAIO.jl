@@ -80,8 +80,8 @@ Significantly faster than calling `preimage(F, B, B)`.
     ``F^{-1} (B)``. 
 """
 function preimage(F::BoxMap, B::BoxSet)
-    T = TransferOperator(F, B, B)
-    G = Graph(T)
+    P = TransferOperator(F, B, B)
+    G = Graph(P)
     C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
     C = findall(C⁻)
     return BoxSet(G, C)

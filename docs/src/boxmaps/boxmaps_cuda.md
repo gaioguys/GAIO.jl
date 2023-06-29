@@ -2,10 +2,23 @@
 
 If an Nvidia gpu is available, the above technique can be improved dramatically. The gpu uses a "massively parallel programming" paradigm, which fits perfectly to the problem of mapping many sample points independently. For more information, see the [maximizing performance section](https://gaioguys.github.io/GAIO.jl/cuda/).
 
-```@docs
-GridBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
-MonteCarloBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points) where {N,T}
-```
+!!! note "`GridBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points) where {N,T}`"
+    ```julia
+    BoxMap(:grid, :gpu, map, domain::Box{N}; n_points::NTuple{N} = ntuple(_->16, N)) -> GPUSampledBoxMap
+    ```
+    Construct a `GPUSampledBoxMap` that uses a grid of test points. 
+    The size of the grid is defined by `n_points`, which is 
+    a tuple of length equal to the dimension of the domain. 
+    Requires a CUDA-capable gpu. 
+
+!!! note "`MonteCarloBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; no_of_points) where {N,T}`"
+    ```julia
+    BoxMap(:montecarlo, :gpu, map, domain::Box{N}; n_points=16*N) -> GPUSampledBoxMap
+    ```
+    Construct a `GPUSampledBoxMap` that uses `n_points` 
+    Monte-Carlo test points. 
+    Requires a CUDA-capable gpu. 
+
 
 Using the gpu, a speed increase of up to 200x can be achieved. 
 

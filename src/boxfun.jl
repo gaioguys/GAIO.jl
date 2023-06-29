@@ -47,7 +47,7 @@ end
 
 BoxFun(boxset::BoxSet, vals, dicttype=OrderedDict) = BoxFun(boxset.partition, dicttype(zip(boxset.set, vals)))
 BoxFun(boxset::BoxSet, T::Type, dicttype=OrderedDict) = BoxFun(boxset.partition, dicttype(key=>one(T) for key in boxset.set))
-BoxFun(boxset::BoxSet) = BoxFun(boxset, Float)
+BoxFun(boxset::BoxSet{B}) where {N,T,B<:Box{N,T}} = BoxFun(boxset, T)
 BoxFun(boxfun::BoxFun, vals, dicttype=OrderedDict)= BoxFun(boxfun.partition, dicttype(zip( keys(boxfun), vals )))
 
 BoxSet(boxfun::BoxFun; settype=OrderedSet) = BoxSet(boxfun.partition, settype(keys(boxfun)))

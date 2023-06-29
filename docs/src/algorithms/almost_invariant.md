@@ -102,6 +102,96 @@ end
 
 ![Almost Invariant Sets Animation](almost_inv_rotating.gif)
 
+### Example 2: Double Gyre Map
+
+We will consider the _periodically driven double-gyre_ which is a nonautonomous system of 2 ODEs
+
+```@example 2
+using GAIO, LinearAlgebra
+
+const A, ϵ, ω = 0.25, 0.25, 2π
+
+f(x, t)  =  ϵ * sin(ω*t) * x^2 + (1 - 2ϵ * sin(ω*t)) * x
+df(x, t) = 2ϵ * sin(ω*t) * x   + (1 - 2ϵ * sin(ω*t))
+
+double_gyre(x, y, t) = (
+    -π * A * sin(π * f(x, t)) * cos(π * y),
+     π * A * cos(π * f(x, t)) * sin(π * y) * df(x, t)
+)
+
+# autonomize the ODE by adding a dimension
+double_gyre((x, y, t)) = (double_gyre(x, y, t)..., 1)
+
+# nonautonomous flow map: reduce back to 2 dims
+function Φ((x, y), t, τ, steps)
+    (x, y, t) = rk4_flow_map(double_gyre, (x, y, t), τ, steps)
+    return (x, y)
+end
+```
+
+We can construct an autonomous system which behaves approximately like the real system by fixing one `t₀` and considering only the time-``T`` flow map, always starting at time `t₀`. 
+
+```@example 2
+t₀, τ, steps = 0, 0.1, 20
+t₁ = t₀ + τ * steps
+Tspan = t₁ - t₀
+Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)
+```
+
+```@example 2
+t₀, τ, steps = 0, 0.1, 20
+t₁ = t₀ + τ * steps
+Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)
+
+domain = Box((1.0, 0.5), (1.0, 0.5))
+P = BoxPartition(domain, (256, 128))
+S = cover(P, :)
+
+F = BoxMap(:grid, Φₜ₀ᵗ¹, domain, n_points=(6,6))
+
+T = TransferOperator(F, S, S)
+
+# we give Arpack some help converging to the eigenvalues,
+# see the Arpack docs for explanations of keywords
+tol, maxiter, v0 = eps()^(1/4), 1000, ones(size(T, 2))
+λ, ev = eigs(T; which=:LR, maxiter=maxiter, tol=tol, v0=v0)
+λ
+```
+
+```@example 2
+using Plots
+
+p = plot(real ∘ ev[2], colormap=:jet)
+
+savefig(p, "gyre_almost_inv.svg"); nothing # hide
+```
+
+![almost invariant sets in the doube-gyre](gyre_almost_inv.svg)
+
+Since the map is nonautonomous, this image should change if we vary the start time `t₀`. 
+
+```@example 2
+anim = @animate for t in t₀:τ/4:t₁
+    Φₜ(z) = Φ(z, t, τ, steps)
+
+    F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
+    F♯ = TransferOperator(F, S, S)
+    λ, ev = eigs(F♯; which=:LR, maxiter=maxiter, tol=tol, v0=v0)
+
+    μ = real ∘ ev[2]
+
+    # do some rescaling to get a nice plot
+    s = sign(μ[(65,65)])
+    M = maximum(abs ∘ μ)
+    μ = s/M * μ
+
+    plot(μ, clims=(-1,1), colormap=:jet)
+end;
+gif(anim, "gyre_almost_inv.gif", fps=Tspan÷τ); nothing # hide
+```
+
+![almost invariant sets changing over time](gyre_almost_inv.gif)
+
 ### References
 
 [1] Froyland, G., Padberg-Gehle, K. (2014). Almost-Invariant and Finite-Time Coherent Sets: Directionality, Duration, and Diffusion. In: Bahsoun, W., Bose, C., Froyland, G. (eds) Ergodic Theory, Open Dynamics, and Coherent Structures. Springer Proceedings in Mathematics & Statistics, vol 70. Springer, New York, NY. https://doi.org/10.1007/978-1-4939-0419-8_9

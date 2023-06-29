@@ -90,7 +90,7 @@ S = cover(P, :)
 C = chain_recurrent_set(F, S, steps = 18)
 
 #using Plots: plot     # plot a 2D projection
-using WGLMakie: plot
+using WGLMakie
 
 plot(C)
 

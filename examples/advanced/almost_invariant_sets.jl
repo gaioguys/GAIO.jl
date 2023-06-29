@@ -22,7 +22,7 @@ T = TransferOperator(F, W, W)
 tol, maxiter, v0 = eps()^(1/4), 1000, ones(size(T, 2))
 λ, ev = eigs(T; nev=2, which=:LR, maxiter=maxiter, tol=tol, v0=v0)
 
-using WGLMakie: plot!, Figure, Axis3, Cycled
+using GLMakie
 
 fig = Figure()
 ax = Axis3(fig[1,1], aspect=(1,1.2,1))

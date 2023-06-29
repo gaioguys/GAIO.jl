@@ -23,21 +23,21 @@ Fields:
 
 .
 """
-struct IntervalBoxMap{N,T,I,F} <: BoxMap
-    map::F
+struct IntervalBoxMap{N,T} <: BoxMap
+    map
     domain::Box{N,T}
-    n_subintervals::I
+    n_subintervals
 
-    function IntervalBoxMap(map::F, domain::Box{N,T}, n_subintervals::I) where {N,T,I,F}
-        new{N,T,I,F}(map, domain, n_subintervals)
+    function IntervalBoxMap(map, domain::Box{N,T}, n_subintervals) where {N,T}
+        new{N,T}(map, domain, n_subintervals)
     end
-    function IntervalBoxMap(map::F, domain::Box{N,T}, n_subintervals::I) where {N,T,I<:NTuple{N},F}
+    function IntervalBoxMap(map, domain::Box{N,T}, n_subintervals::NTuple{N}) where {N,T}
         new_n_subintervals = (c, r) -> n_subintervals
-        new{N,T,typeof(new_n_subintervals),F}(map, domain, new_n_subintervals)
+        new{N,T}(map, domain, new_n_subintervals)
     end
 end
 
-function map_boxes(g::IntervalBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
+function map_boxes(g::IntervalBoxMap, source::BS) where {B,Q,S,BS<:BoxSet{B,Q,S}}
     P = source.partition
     @floop for box in source
         c, r = box
@@ -50,7 +50,7 @@ function map_boxes(g::IntervalBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
             @reduce(image = BoxSet(P, S()) ⊔ fSet)
         end
     end
-    return image
+    return image::BS
 end
 
 function construct_transfers(
@@ -75,15 +75,15 @@ function construct_transfers(
             end
         end
     end
-    image_set = BoxSet(P, image)
-    return mat, image_set
+    image_set = BoxSet(P, image::S)
+    return mat::D, image_set
 end
 
 function construct_transfers(
         g::IntervalBoxMap, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
     ) where {N,T,R<:Box{N,T},Q,S,U,H,W}
 
-    P1, P2 = domain.partiiton, codomain.partition
+    P1, P2 = domain.partition, codomain.partition
     D = Dict{Tuple{keytype(H),keytype(Q)},T}
     @floop for key in domain.set
         box = key_to_box(P1, key)
@@ -96,13 +96,13 @@ function construct_transfers(
             fSet = cover(P2, fbox)
             for hit in fSet.set
                 hit in codomain.set || continue
-                hitbox = key_to_box(P, hit)
+                hitbox = key_to_box(P2, hit)
                 V = volume(fbox ∩ hitbox)
                 @reduce( mat = D() ⊔ ((hit,key) => V) )
             end
         end
     end
-    return mat
+    return mat::D
 end
 
 function IntervalBoxMap(map, domain::Box{N,T}; n_subintervals=ntuple(_->4,N)) where {N,T}
