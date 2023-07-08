@@ -63,7 +63,7 @@ include the support of the `BoxFun`.
 
 Methods Implemented: 
 ```julia
-:(==), axes, size, eltype, getindex, setindex!, SparseArrays.sparse, Arpack.eigs, LinearAlgebra.mul! #, etc ...
+:(==), size, eltype, getindex, setindex!, SparseArrays.sparse, Arpack.eigs, LinearAlgebra.mul! #, etc ...
 ```
 
 Implementation detail:
@@ -143,10 +143,11 @@ end
 Base.:(==)(g1::TransferOperator, g2::TransferOperator) = g1.mat == g2.mat
 Base.eltype(::Type{<:TransferOperator{B,T}}) where {B,T} = T
 Base.keytype(::Type{<:TransferOperator{B,T,I}}) where {B,T,I} = I
+Base.keys(g::TransferOperator) = (keys(g.codomain), keys(g.domain))
 Base.size(g::TransferOperator) = size(g.mat)
 Base.Matrix(g::TransferOperator) = Matrix(g.mat)
 SparseArrays.sparse(g::TransferOperator) = copy(g.mat)
-Base.axes(g::TransferOperator) = (collect(g.domain), collect(g.codomain))
+Base.axes(g::TransferOperator) = (Base.OneTo(length(g.codomain)), Base.OneTo(length(g.domain)))
 
 @propagate_inbounds function Base.getindex(g::TransferOperator{T,I}, u, v) where {T,I}
     @boundscheck checkbounds(Bool, g, u, v) || throw(BoundsError(g, (u,v)))

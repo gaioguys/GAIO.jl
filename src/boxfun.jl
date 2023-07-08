@@ -123,8 +123,11 @@ function LinearAlgebra.normalize!(boxfun::BoxFun)
     boxfun
 end
 
-Base.getindex(boxfun::BoxFun{B,K,V}, key) where {B,K,V} = get(boxfun.vals, key, zero(V))
-Base.setindex!(boxfun::BoxFun, val, key) = setindex!(boxfun.vals, val, key)
+Base.getindex(boxfun::BoxFun{B,K,V}, key::Vararg{<:Integer,N}) where {N,B<:Box{N},K,V} = get(boxfun.vals, key, zero(V))
+Base.getindex(boxfun::BoxFun{B,K,V}, key::L) where {N,B<:Box{N},K,V,L<:Union{<:CartesianIndex{N},<:SVNT{N}}} = get(boxfun.vals, key, zero(V))
+Base.setindex!(boxfun::BoxFun{B}, val, key::Vararg{<:Integer,N}) where {N,B<:Box{N}} = setindex!(boxfun.vals, val, key)
+Base.setindex!(boxfun::BoxFun{B}, val, key::L) where {N,B<:Box{N},L<:Union{<:CartesianIndex{N},<:SVNT{N}}} = setindex!(boxfun.vals, val, key)
+Base.fill!(boxfun::BoxFun, val) = (for key in keys(boxfun); boxfun[key] = val; end; boxfun)
 Base.sizehint!(boxfun::BoxFun, sz) = sizehint!(boxfun.vals, sz)
 Base.copy(boxfun::BoxFun) = BoxFun(boxfun.partition, copy(boxfun.vals))
 Base.deepcopy(boxfun::BoxFun) = BoxFun(boxfun.partition, deepcopy(boxfun.vals))
