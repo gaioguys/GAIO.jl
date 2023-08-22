@@ -6,6 +6,8 @@ using SIMD
 using CUDA
 using GAIO
 
+ENV["JULIA_DEBUG"] = GAIO
+
 @testset "GAIO.jl" begin
 
     @info "testing box.jl"
