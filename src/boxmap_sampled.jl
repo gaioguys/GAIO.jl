@@ -41,11 +41,19 @@ function typesafe_map(g::SampledBoxMap{N,T}, x::SVNT{N}) where {N,T}
     convert(SVector{N,T}, g.map(x))
 end
 
-function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
+function map_boxes(
+        g::SampledBoxMap, source::BoxSet{B,Q,S}; 
+        show_progress=false
+    ) where {B,Q,S}
+
+    prog = Progress(length(source)+1; desc="Computing image...", enabled=show_progress, showspeed=true)
+
     P = source.partition
     @floop for box in source
         c, r = box
-        for p in g.domain_points(c, r)
+        domain_points = g.domain_points(c, r)
+        show_progress && @reduce( n_points_mapped = 0 + length(domain_points) )
+        for p in domain_points
             fp = typesafe_map(g, p)
             hitbox = point_to_box(P, fp)
             isnothing(hitbox) && continue
@@ -53,22 +61,30 @@ function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
             for ip in g.image_points(fp, r)
                 hit = point_to_key(P, ip)
                 isnothing(hit) && continue
-                @reduce(image = S() ⊔ hit)
+                @reduce( image = S() ⊔ hit )
             end
         end
+        next!(prog)
     end
+    
+    next!(prog, showvalues=[("Total number of mapped points", n_points_mapped)])
     return BoxSet(P, image::S)
 end 
 
 function construct_transfers(
-        g::SampledBoxMap, domain::BoxSet{R,Q,S}
+        g::SampledBoxMap, domain::BoxSet{R,Q,S};
+        show_progress=false
     ) where {N,T,R<:Box{N,T},Q,S<:OrderedSet}
+
+    prog = Progress(length(domain)+1; desc="Computing transfer weights...", enabled=show_progress, showspeed=true)
 
     P, D = domain.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
     @floop for key in domain.set
         box = key_to_box(P, key)
         c, r = box
-        for p in g.domain_points(c, r)
+        domain_points = g.domain_points(c, r)
+        show_progress && @reduce( n_points_mapped = 0 + length(domain_points) )
+        for p in domain_points
             c = typesafe_map(g, p)
             hitbox = point_to_box(P, c)
             isnothing(hitbox) && continue
@@ -81,20 +97,27 @@ function construct_transfers(
             end
         end
     end
+
+    next!(prog, showvalues=[("Total number of mapped points", n_points_mapped)])
     codomain = BoxSet(P, image::S)
     return mat::D, codomain
 end
 
 function construct_transfers(
-        g::SampledBoxMap, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
+        g::SampledBoxMap, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W};
+        show_progress=false
     ) where {N,T,R<:Box{N,T},Q,S,U,H,W}
+
+    prog = Progress(length(domain)+1; desc="Computing transfer weights...", enabled=show_progress, showspeed=true)
 
     P1, P2 = domain.partition, codomain.partition
     D = Dict{Tuple{keytype(H),keytype(Q)},T}
     @floop for key in domain.set
         box = key_to_box(P1, key)
         c, r = box
-        for p in g.domain_points(c, r)
+        domain_points = g.domain_points(c, r)
+        show_progress && @reduce( n_points_mapped = 0 + length(domain_points) )
+        for p in domain_points
             c = typesafe_map(g, p)
             hitbox = point_to_box(P2, c)
             isnothing(hitbox) && continue
@@ -107,6 +130,8 @@ function construct_transfers(
             end
         end
     end
+
+    next!(prog, showvalues=[("Total number of mapped points", n_points_mapped)])
     return mat::D
 end
 

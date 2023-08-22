@@ -5,6 +5,7 @@ using LinearAlgebra
 using StaticArrays
 using MuladdMacro
 using PrecompileTools
+using ProgressMeter
 
 # for mapping boxes
 using FLoops
@@ -74,7 +75,7 @@ include("boxset.jl")
 
 abstract type BoxMap end
 
-(g::BoxMap)(source::BoxSet) = map_boxes(g, source)
+(g::BoxMap)(source::BoxSet; kwargs...) = map_boxes(g, source; kwargs...)
 
 include("boxmap_sampled.jl")
 include("boxmap_intervals.jl")
