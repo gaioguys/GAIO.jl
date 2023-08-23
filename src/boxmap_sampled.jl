@@ -96,6 +96,7 @@ function construct_transfers(
                 @reduce( mat = D() ⊔ ((hit,key) => 1) )
             end
         end
+        next!(prog)
     end
 
     next!(prog, showvalues=[("Total number of mapped points", n_points_mapped)])
@@ -129,6 +130,7 @@ function construct_transfers(
                 @reduce( mat = D() ⊔ ((hit,key) => 1) )
             end
         end
+        next!(prog)
     end
 
     next!(prog, showvalues=[("Total number of mapped points", n_points_mapped)])

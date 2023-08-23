@@ -114,7 +114,7 @@ not lie in the domain.
     xi = (point .- partition.left) .* partition.scale
     x_ints = ntuple( i -> unsafe_trunc(I, xi[i]) + one(I), Val(N) )
     @boundscheck if !checkbounds(Bool, partition, x_ints)
-        #@debug "something went wrong in point_to_key" point xi x_ints partition partition.domain
+        @debug "something went wrong in point_to_key" point xi x_ints partition partition.domain
         x_ints = min.(max.(x_ints, ntuple(_->one(I),Val(N))), size(partition))
     end
     return x_ints
