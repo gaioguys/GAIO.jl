@@ -1,6 +1,6 @@
 module SIMDExt
     
-using GAIO, SIMD, HostCPUFeatures, MuladdMacro, Base.Threads, StaticArrays, FLoops
+using GAIO, SIMD, HostCPUFeatures, MuladdMacro, Base.Threads, StaticArrays, FLoops, ProgressMeter
 
 import Base: @propagate_inbounds
 import GAIO: BoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap
@@ -62,7 +62,13 @@ function typesafe_map(g::CPUSampledBoxMap{simd,N,T}, x::SVNT{N}) where {simd,N,T
     convert(SVector{N,SIMD.Vec{simd,T}}, g.boxmap.map(x))
 end
 
-@inbounds @muladd function map_boxes(G::CPUSampledBoxMap{simd,N}, source::BoxSet{B,Q,S}) where {simd,N,B,Q,S}
+@inbounds @muladd function map_boxes(
+        G::CPUSampledBoxMap{simd,N}, source::BoxSet{B,Q,S};
+        show_progress=false
+    ) where {simd,N,B,Q,S}
+
+    prog = Progress(length(source)+1; desc="Computing image...", enabled=show_progress, showspeed=true)
+
     P = source.partition
     g, idx_base, temp_points = G
     @floop for box in source
@@ -70,7 +76,9 @@ end
         idx = idx_base + tid * N
         mapped_points = @view temp_points[tid+1:tid+simd]
         c, r = box
-        for p in g.domain_points(c, r)
+        domain_points = g.domain_points(c, r)
+        show_progress && @reduce( n_points_mapped = 0 + length(domain_points) )
+        for p in domain_points
             fp = typesafe_map(G, p)
             tuple_vscatter!(temp_points, fp, idx)
             for q in mapped_points
@@ -84,13 +92,19 @@ end
                 end
             end
         end
+        next!(prog)
     end
+
+    next!(prog, showvalues=[("Total number of mapped points", n_points_mapped)])
     return BoxSet(P, image::S)
 end
 
 @inbounds @muladd function construct_transfers(
-        G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q,S}
+        G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q,S};
+        show_progress=false
     ) where {simd,N,T,R<:Box{N,T},Q,S}
+
+    prog = Progress(length(domain)+1; desc="Computing transfer weights...", enabled=show_progress, showspeed=true)
     
     P, D = domain.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
     g, idx_base, temp_points = G
@@ -100,7 +114,9 @@ end
         mapped_points = @view temp_points[tid+1:tid+simd]
         box = key_to_box(P, key)
         c, r = box
-        for p in g.domain_points(c, r)
+        domain_points = g.domain_points(c, r)
+        show_progress && @reduce( n_points_mapped = 0 + length(domain_points) )
+        for p in domain_points
             fp = typesafe_map(G, p)
             tuple_vscatter!(temp_points, fp, idx)
             for q in mapped_points
@@ -115,14 +131,20 @@ end
                 end
             end
         end
+        next!(prog)
     end
+
+    next!(prog, showvalues=[("Total number of mapped points", n_points_mapped)])
     codomain = BoxSet(P, image::S)
     return mat::D, codomain
 end
 
 @inbounds @muladd function construct_transfers(
-        G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
+        G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W};
+        show_progress=false
     ) where {simd,N,T,R<:Box{N,T},Q,S,U,H,W}
+
+    prog = Progress(length(domain)+1; desc="Computing transfer weights...", enabled=show_progress, showspeed=true)
 
     P1, P2 = domain.partition, codomain.partition
     D = Dict{Tuple{keytype(H),keytype(Q)},T}
@@ -133,7 +155,9 @@ end
         mapped_points = @view temp_points[tid+1:tid+simd]
         box = key_to_box(P1, key)
         c, r = box
-        for p in g.domain_points(c, r)
+        domain_points = g.domain_points(c, r)
+        show_progress && @reduce( n_points_mapped = 0 + length(domain_points) )
+        for p in domain_points
             fp = typesafe_map(G, p)
             tuple_vscatter!(temp_points, fp, idx)
             for q in mapped_points
@@ -148,7 +172,10 @@ end
                 end
             end
         end
+        next!(prog)
     end
+
+    next!(prog, showvalues=[("Total number of mapped points", n_points_mapped)])
     return mat::D
 end
 

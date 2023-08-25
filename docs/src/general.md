@@ -118,6 +118,12 @@ C = F(B)
 ```
 where the output `C` is also a `BoxSet`.
 
+For long running computations, GAIO.jl can also display a progress meter
+```@repl 1
+C = F(B; show_progress = true)
+```
+(Adding a progress meter adds a little bit of overhead, so for super short computations like the above it isn't recommended)
+
 ## TransferOperator
 
 The _Perron-Frobenius operator_ (or _transfer operator_) [2] is discretized in GAIO.jl using the `TransferOperator` type. To initialize a `TransferOperator` that acts on a subdomain of ``Q``, type
@@ -129,13 +135,18 @@ In this case, the codomain is generated automatically. This is not always ideal 
 ```@repl 1
 T = TransferOperator(F, B, B)
 ```
-To convert this to the underlying transfer matrix described in [3], one can simply type 
+Again, a progress meter can be displayed for long computations
 ```@repl 1
-Matrix(T)
+T = TransferOperator(F, B, B; show_progress = true)
+```
+To convert this to the underlying transfer matrix described in [3], one can simply call the `sparse` function from `SparseArrays` 
+```@repl 1
+using SparseArrays
+sparse(T)
 ```
 To find an approximate invariant measure over `B` use the `eigs` function from `Arpack.jl`. All keyword arguments from `Arpack.eigs` are supported. 
 ```@repl 1
-# for the Baker trafo, the Lebesque measure 
+# for the Baker trafo, the Lebesgue measure 
 # - i.e. the constant-weight measure - is invariant
 λ, ev = eigs(T);
 λ

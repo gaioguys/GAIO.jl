@@ -37,32 +37,48 @@ struct IntervalBoxMap{N,T} <: BoxMap
     end
 end
 
-function map_boxes(g::IntervalBoxMap, source::BS) where {B,Q,S,BS<:BoxSet{B,Q,S}}
+function map_boxes(
+        g::IntervalBoxMap, source::BS;
+        show_progress=false
+    ) where {B,Q,S,BS<:BoxSet{B,Q,S}}
+
+    prog = Progress(length(source)+1; desc="Computing image...", enabled=show_progress, showspeed=true)
+
     P = source.partition
     @floop for box in source
         c, r = box
         int = IntervalBox(box)
-        for subint in mince(int, g.n_subintervals(c, r))
+        minced = mince(int, g.n_subintervals(c, r))
+        show_progress && @reduce( n_ints_mapped = 0 + length(minced) )
+        for subint in minced
             fint = g.map(subint)
             fbox = Box(fint)
             isnothing(fbox) && continue
             fSet = cover(P, fbox)
-            @reduce(image = BoxSet(P, S()) ⊔ fSet)
+            @reduce( image = BoxSet(P, S()) ⊔ fSet )
         end
+        next!(prog)
     end
+
+    next!(prog, showvalues=[("Total number of mapped intervals", n_ints_mapped)])
     return image::BS
 end
 
 function construct_transfers(
-        g::IntervalBoxMap, domain::BoxSet{R,Q,S}
+        g::IntervalBoxMap, domain::BoxSet{R,Q,S};
+        show_progress=false
     ) where {N,T,R<:Box{N,T},Q,S}
+
+    prog = Progress(length(domain)+1; desc="Computing transfer weights...", enabled=show_progress, showspeed=true)
 
     P, D = domain.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
     @floop for key in domain.set
         box = key_to_box(P, key)
         c, r = box
         int = IntervalBox(box)
-        for subint in mince(int, g.n_subintervals(c, r))
+        minced = mince(int, g.n_subintervals(c, r))
+        show_progress && @reduce( n_ints_mapped = 0 + length(minced) )
+        for subint in minced
             fint = g.map(subint)
             fbox = Box(fint)
             isnothing(fbox) && continue
@@ -74,14 +90,20 @@ function construct_transfers(
                 @reduce( mat = D() ⊔ ((hit,key) => V) )
             end
         end
+        next!(prog)
     end
+
+    next!(prog, showvalues=[("Total number of mapped intervals", n_ints_mapped)])
     image_set = BoxSet(P, image::S)
     return mat::D, image_set
 end
 
 function construct_transfers(
-        g::IntervalBoxMap, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
+        g::IntervalBoxMap, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W};
+        show_progress=false
     ) where {N,T,R<:Box{N,T},Q,S,U,H,W}
+
+    prog = Progress(length(domain)+1; desc="Computing transfer weights...", enabled=show_progress, showspeed=true)
 
     P1, P2 = domain.partition, codomain.partition
     D = Dict{Tuple{keytype(H),keytype(Q)},T}
@@ -89,7 +111,9 @@ function construct_transfers(
         box = key_to_box(P1, key)
         c, r = box
         int = IntervalBox(box)
-        for subint in mince(int, g.n_subintervals(c, r))
+        minced = mince(int, g.n_subintervals(c, r))
+        show_progress && @reduce( n_ints_mapped = 0 + length(minced) )
+        for subint in minced
             fint = g.map(subint)
             fbox = Box(fint)
             isnothing(fbox) && continue
@@ -101,7 +125,10 @@ function construct_transfers(
                 @reduce( mat = D() ⊔ ((hit,key) => V) )
             end
         end
+        next!(prog)
     end
+    
+    next!(prog, showvalues=[("Total number of mapped intervals", n_ints_mapped)])
     return mat::D
 end
 

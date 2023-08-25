@@ -3,8 +3,10 @@ module CUDAExt
 using GAIO, Adapt, CUDA, StaticArrays, MuladdMacro
 
 import Base.Iterators: Stateful, take
+import Base: unsafe_trunc
+import Base: @propagate_inbounds
 import GAIO: BoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap
-import GAIO: typesafe_map, map_boxes, construct_transfers, ⊔, SVNT
+import GAIO: typesafe_map, map_boxes, construct_transfers, point_to_key, ⊔, SVNT
 
 #export GPUSampledBoxMap
 
@@ -76,7 +78,7 @@ function map_boxes_kernel!(g, P, domain_points, in_keys, out_keys)
         box  = key_to_box(P, key)
         c, r = box
         fp   = g(@muladd p .* r .+ c)
-        hit  = @inbounds point_to_key(P, fp)
+        hit  = @inbounds point_to_key(P, fp, Val(:gpu))
         out_keys[i] = isnothing(hit) ? out_of_bounds(P) : hit
     end
 end
@@ -321,6 +323,25 @@ function Adapt.adapt_structure(
     ) where {N,M,F<:AbstractFloat,V<:AbstractArray{<:SVNT{N,F},M}}
 
     CuArray{SVector{N,cu_reduce(F)},M}(x)
+end
+
+# hotfix to avoid errors due to cuda device-side printing
+@propagate_inbounds function point_to_key(partition::BoxPartition{N,T,I}, point, ::Val{:gpu}) where {N,T,I}
+    point in partition.domain || return nothing
+    xi = (point .- partition.left) .* partition.scale
+    x_ints = ntuple( i -> unsafe_trunc(I, xi[i]) + one(I), Val(N) )
+    @boundscheck if !checkbounds(Bool, partition, x_ints)
+        @cuprint(
+            "something went wrong in point_to_key. Fixing\n", 
+            #="point:\n    $(point.data) \n", 
+            "xi:\n    $(xi.data) \n", 
+            "x:ints:\n    $(x_ints.data) \n", 
+            "domain:\n    $(partition.domain.center.data)\n    $(partition.domain.radius.data) \n",
+            "dims:\n    $(partition.dims.data) \n"=#
+        )
+        x_ints = min.(max.(x_ints, ntuple(_->one(I),Val(N))), size(partition))
+    end
+    return x_ints
 end
 
 end # module
