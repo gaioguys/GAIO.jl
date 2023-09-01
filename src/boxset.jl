@@ -78,6 +78,7 @@ Return a subset of the partition or box set `P` based on the second argument.
 function cover(partition::P, points) where P<:AbstractBoxPartition
     eltype(points) <: Number && ndims(partition) > 1 && return cover(partition, (points,))
     eltype(points) <: Box && return cover_boxes(partition, points)
+    eltype(points) <: IntervalBox && return cover_boxes(partition, Box.(points))
     gen = (key for key in (point_to_key(partition, point) for point in points) if !isnothing(key))
     return BoxSet(partition, Set{keytype(P)}(gen))
 end

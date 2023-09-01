@@ -218,4 +218,82 @@ function Graphs.inneighbors(g::ModuloBoxGraph, v)
 end
 
 
+# ------------------------------------------------------------------------------------
+
+
+using CHomP
+using GAIO
+using IntervalArithmetic, StaticArrays, Chain
+#ENV["JULIA_DEBUG"] = all
+
+
+low(int::IntervalBox) = getfield.(int.v, :lo)
+low(box::Box) = box.center .- box.radius
+high(int::IntervalBox) = getfield.(int.v, :hi)
+high(box::Box) = box.center .+ box.radius
+
+function evaluate!(f, box_vec::Array{T}) where {T}
+    N = length(box_vec) ÷ 2
+    lo_hi = reinterpret(SVector{N,T}, box_vec)
+    int = IntervalBox(lo_hi...)
+    int = IntervalBox(f(int))
+    lo_hi[1] = low(int)
+    lo_hi[2] = high(int)
+    return box_vec
+end
+
+size_and_type(::Box{N,T}) where {N,T} = (N, T)
+
+function morse_set(partition::P, morse_graph, vertex) where {N,T,P<:AbstractBoxPartition{Box{N,T}}}
+    @chain vertex begin
+        morse_graph.morse_set_boxes(_)
+        PermutedDimsArray(_, (2,1))
+        reinterpret(SVector{N,T}, _)
+        eachcol(_)
+        IntervalBox.(_)
+        cover(partition, _)
+    end
+end
+
+function conley_morse_graph(F::BoxMap, depth)
+    domain = F.domain
+    𝓕(box_vec) = evaluate!(F.map, box_vec)
+
+    model = cmgdb.Model(depth, depth, low(F.domain), high(F.domain), 𝓕)
+    morse_graph, map_graph = cmgdb.ComputeConleyMorseGraph(model)
+
+    N, T = size_and_type(domain)
+    P = BoxPartition(TreePartition(domain), depth)
+
+    vertices_list = morse_graph.vertices()
+    edges_list = morse_graph.edges()
+
+    morse_sets = [morse_set(P, morse_graph, vert) for vert in vertices_list]
+
+    pyconleyindex = pybuiltin("getattr")(morse_graph, "annotations", [])
+    conley_indices = reshape(
+        [label for vert in vertices_list for label in pyconleyindex(vert)],
+        N+1, :
+    )
+
+    return vertices_list, edges_list, morse_sets, conley_indices
+end
+
+
+
+# Leslie map
+const th1 = 19.6
+const th2 = 23.68
+
+f((x, y)) = ( (th1*x + th2*y) * exp(-0.1*(x + y)), 0.7*x )
+
+depth = 21
+lower_bounds = [-0.001, -0.001]
+upper_bounds = [90., 70.]
+
+domain = Box(IntervalBox(lower_bounds, upper_bounds))
+P = BoxPartition(TreePartition(domain), depth)
+
+F = BoxMap(f, domain)
+vertices_list, edges_list, morse_sets, conley_indices = conley_morse_graph(F, depth)
 
