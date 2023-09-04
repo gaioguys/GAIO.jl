@@ -32,7 +32,7 @@ function neighborhood(B::BoxSet{R,Q}) where {N,R,Q<:BoxPartition{N}}
         union!(C, nbhd(key))
     end
 
-    return setdiff!(nbhd, B)
+    return setdiff!(C, B)
 end
 
 const nbhd = neighborhood
@@ -297,3 +297,168 @@ P = BoxPartition(TreePartition(domain), depth)
 F = BoxMap(f, domain)
 vertices_list, edges_list, morse_sets, conley_indices = conley_morse_graph(F, depth)
 
+
+
+using DataStructures
+using SparseArrays
+using MatrixNetworks, Graphs
+adj = sparse([
+    0 1 0 0 0 0 0 0;
+    0 0 1 1 0 0 0 0;
+    1 0 0 0 1 0 0 0;
+    0 0 0 0 0 1 0 0;
+    0 0 0 0 0 0 1 0;
+    0 0 0 0 0 0 0 1;
+    0 0 0 0 0 1 0 0;
+    0 0 0 0 0 0 1 0;
+])
+
+G = MatrixNetwork(adj)
+scomp = scomponents(G)
+scomp_enr = enrich(scomp)
+fieldnames(typeof(scomp))
+fieldnames(typeof(scomp_enr))
+
+
+Graphs.vertices(mat::AbstractSparseMatrix) = 1:size(mat, 1)
+Graphs.inneighbors(mat::AbstractSparseMatrix, v) = checkbounds(Bool, mat, :) ? findall(!iszero, mat[:, v]) : Int64[]
+Graphs.outneighbors(mat::AbstractSparseMatrix, u) = checkbounds(Bool, mat, :) ? findall(!iszero, mat[u, :]) : Int64[]
+Graphs.has_edge(mat::AbstractSparseMatrix, u, v) = checkbounds(Bool, mat, u, v) && !iszero(mat[u, v])
+Graphs.add_edge!(mat::AbstractSparseMatrix, u, v) = checkbounds(Bool, mat, u, v) && (mat[u, v] = 1; true)
+#Graphs.rem_vertex!(mat::AbstractSparseMatrix, v) = (n = size(mat, 1); vs = [1:v-1; v+1:n]; mat[vs, vs])
+#Graphs.rem_vertices!(mat::AbstractSparseMatrix, vs) = (n = size(mat, 1); ws = setdiff(1:n, vs); mat[ws, ws])
+isolate!(mat::AbstractSparseMatrix, v) = (mat[:, v] .= 0; mat[v, :] .= 0; mat)#; dropzeros!(mat))
+is_isolated(mat::AbstractSparseMatrix, v) = all(mat[:, v] .== 0) && all(mat[v, :] .== 0)
+
+function rem_components!(morse_map, isolated)
+    cumsum_isolated = cumsum(isolated)
+    for v in eachindex(morse_map)
+        morse_map[v] == -1 || (morse_map[v] -= cumsum_isolated[v])
+    end
+    return morse_map
+end
+
+function strong_components(mat)
+    G = MatrixNetwork(mat)
+
+    scomp = scomponents(G)
+    sizes, comp_map = scomp.sizes, scomp.map
+
+    scomp_enr = enrich(scomp)
+    reduced_adj = scomp_enr.transitive_map
+
+    return comp_map, sizes, reduced_adj
+end
+
+"""
+construct condensation graph and morse graph
+"""
+function reduce(mat::AbstractSparseMatrix)
+    comp_map, sizes, reduced_adj = strong_components(mat)
+    condensation_graph = copy(reduced_adj)
+
+    V = vertices(reduced_adj)
+    morse_map, to_search = collect(V), collect(V)
+    
+    while !isempty(to_search)
+        v = pop!(to_search)
+
+        if sizes[v] == 1 && !has_edge(reduced_adj, v, v)
+            for u in inneighbors(reduced_adj, v), w in outneighbors(reduced_adj, v)
+                add_edge!(reduced_adj, u, w)
+            end
+            isolate!(reduced_adj, v)
+            morse_map[v] = -1    # arbitrary: gradient-like portion gets ID -1
+        end
+    end
+
+    isolated = is_isolated.(Ref(reduced_adj), V)
+    morse_map = rem_components!(morse_map, isolated)
+    morse_graph = reduced_adj[.!isolated, .!isolated]
+
+    return condensation_graph, comp_map, morse_graph, morse_map
+end
+
+function generate_search(adj)
+    to_search = Deque{Int}()
+    search_set = Set{Int}()
+    for v in vertices(adj)
+        push!(to_search, v)
+        push!(search_set, v)
+    end
+    return to_search, search_set
+end
+
+"""
+Given an acyclic directed graph representing a poset (P, ≼), 
+construct the graph which has an edge 
+(u,v) ∈ P×P  iff  u ≼ v
+"""
+function comparability_graph(mat::AbstractSparseMatrix)
+    adj = copy(mat)
+    to_search, search_set = generate_search(adj)
+    
+    while !isempty(search_set)
+        v = pop!(to_search)
+        delete!(search_set, v)
+
+        for w in outneighbors(adj, v)
+            if w in search_set
+                pushfirst!(to_search, v)
+                push!(search_set, v)
+                break
+            end
+            for u in inneighbors(adj, v)
+                add_edge!(adj, u, w)
+            end
+        end
+    end
+
+    return adj
+end
+
+function morse_component_map(component_map, morse_map)
+    [morse_map[component_map[v]] for v in eachindex(component_map)]
+end
+
+function regions_of_attraction(
+        condensation_graph, 
+        morse_comparability_graph, 
+        morse_map
+    )
+
+    region_of_attraction = copy(morse_map)
+    to_search = PriorityQueue(Base.Order.Reverse, enumerate(region_of_attraction))
+    
+    while !isempty(to_search)
+        v, prio = dequeue_pair!(to_search)
+        is_rooted = true
+
+        for w in outneighbors(condensation_graph, v)
+            if haskey(to_search, w)
+                is_rooted = false
+                to_search[w] += 1
+            end
+        end
+
+        if is_rooted
+            roa_v = region_of_attraction[v]
+
+            for u in inneighbors(condensation_graph, v)
+                roa_u = region_of_attraction[u]
+
+                if roa_u == -1 || has_edge(morse_comparability_graph, u, v)
+                    region_of_attraction[u] = roa_v
+                end
+            end
+        else
+            to_search[v] = prio - 1
+        end
+    end
+
+    return region_of_attraction
+end
+
+function regions_of_attraction(roas, component_map)
+    [roas[component_map[v]] for v in eachindex(component_map)]
+end
