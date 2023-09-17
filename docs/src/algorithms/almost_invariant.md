@@ -91,8 +91,10 @@ ax1 = Axis3(fig[1,1], aspect=(1,1.2,1), azimuth=-3pi/10, viewmode=:fit) # hide
 ms1 = plot!(ax1, B1, color=(:blue, 0.4)) # hide
 ax2 = Axis3(fig[1,2], aspect=(1,1.2,1), azimuth=-3pi/10, viewmode=:fit) # hide
 ms2 = plot!(ax2, B2, color=(:red, 0.4)) # hide
-record(fig, "almost_inv_rotating.gif", 1:240) do frame
-    v = sin(2pi * frame / 240)
+n_frames = 200
+n_frames = Meta.parse(get(ENV, "n_frames", 200)) # hide
+record(fig, "almost_inv_rotating.gif", 1:n_frames) do frame
+    v = sin(2pi * frame / n_frames)
     ax1.elevation[] = pi/20 - pi * v / 20
     ax2.elevation[] = pi/20 - pi * v / 20
     ax1.azimuth[] = 3pi * v / 4
@@ -171,7 +173,11 @@ savefig(p, "gyre_almost_inv.svg"); nothing # hide
 Since the map is nonautonomous, this image should change if we vary the start time `t₀`. 
 
 ```@example 2
-anim = @animate for t in t₀:τ/4:t₁
+n_frames = 200
+n_frames = Meta.parse(get(ENV, "n_frames", 200)) # hide
+times = range(t₀, t₁, length=n_frames)
+
+anim = @animate for t in times
     Φₜ(z) = Φ(z, t, τ, steps)
 
     F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
@@ -187,7 +193,7 @@ anim = @animate for t in t₀:τ/4:t₁
 
     plot(μ, clims=(-1,1), colormap=:jet)
 end;
-gif(anim, "gyre_almost_inv.gif", fps=Tspan÷τ); nothing # hide
+gif(anim, "gyre_almost_inv.gif", fps=n_frames÷2); nothing # hide
 ```
 
 ![almost invariant sets changing over time](gyre_almost_inv.gif)

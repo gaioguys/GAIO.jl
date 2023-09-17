@@ -26,7 +26,3 @@ subdivide!
 ```@docs
 BoxSet
 ```
-
-```@docs
-BoxGraph
-```

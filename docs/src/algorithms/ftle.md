@@ -111,7 +111,11 @@ savefig("ftle1.svg"); nothing # hide
 Since this map is time-dependent, the FTLE field will change over time as well. 
 
 ```@example 1
-anim = @animate for t in t₀:τ/4:t₁
+n_frames = 200
+n_frames = Meta.parse(get(ENV, "n_frames", 200)) # hide
+times = range(t₀, t₁, length=n_frames)
+
+anim = @animate for t in times
     Φₜ(z) = Φ(z, t, τ, steps)
 
     F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
@@ -119,7 +123,7 @@ anim = @animate for t in t₀:τ/4:t₁
 
     plot(γ, clims=(0,2), colormap=:jet)
 end;
-gif(anim, "ftle1.gif", fps=Tspan÷τ); nothing # hide
+gif(anim, "ftle1.gif", fps=n_frames÷2); nothing # hide
 ```
 
 ![FTLE field](ftle1.gif)

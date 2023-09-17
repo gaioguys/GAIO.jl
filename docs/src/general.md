@@ -179,17 +179,14 @@ Similarly, finite signed measures can be given a vector space structure. This is
 2ν - μ/2
 ```
 
-## BoxGraph
+## Graphs of Boxes
 
-One could equivalently view the transfer operator as a weighted directed graph. That is, a transfer matrix in GAIO.jl is the (transposed) weighted adjacency matrix for a graph. This graph can be constructed using
+One could equivalently view the transfer operator as a weighted directed graph. That is, a transfer matrix in GAIO.jl is the (transposed) weighted adjacency matrix for a graph. This graph can be constructed using the `MetaGraphsNext.jl` package 
 ```@repl 1
-G = Graph(T)
+using Graphs, MetaGraphsNext
+G = MetaGraph(T)
 ```
-The return type is a `BoxGraph`. `Boxgraph` is hooked into the `Graphs.jl` interface, which means all algorithms or etc. from Graphs.jl should work "out of the box". To construct a BoxSet from some index / indices of vertices in a BoxGraph, call
-```julia
-BoxSet(G, vertex_index_or_indices)
-``` 
-See the docstring for `BoxGraph` for details on how to translate between GAIO.jl and Graphs.jl. 
+See the [MetaGraphsNext documentation](https://juliagraphs.org/MetaGraphsNext.jl/stable/) for how to interface with this data type. 
 
 ## Plotting
 

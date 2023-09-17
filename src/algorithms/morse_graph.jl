@@ -85,6 +85,10 @@ function morse_component_map(strong_components::Strong_components_output)
     morse_component_map(strong_components, morse_map_)
 end
 
+function morse_component_map(F♯::TransferOperator)
+    morse_component_map(scomponents(F♯))
+end
+
 """
 Given a `strong_components_output` from `MatrixNetworks` (in particular 
 the component map) as well as the morse map (see `morse_map`), compute 
@@ -114,6 +118,10 @@ end
 function morse_graph(strong_components::Strong_components_output)
     morse_map_ = morse_map(strong_components)
     morse_graph(strong_components, morse_map_)
+end
+
+function morse_graph(F♯::TransferOperator)
+    morse_graph(scomponents(F♯))
 end
 
 """

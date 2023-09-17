@@ -1,11 +1,12 @@
 using GAIO
-using Documenter, LinearAlgebra, SparseArrays, StaticArrays
+using Documenter, LinearAlgebra, SparseArrays, StaticArrays, Graphs, MetaGraphsNext, SIMD
 import Plots, MakieCore, GLMakie
 
-ENV["JULIA_DEBUG"] = Documenter
-#ENV["JULIA_DEBUG"] = nothing
-ENV["GKSwstype"] = "100"
 ci = get(ENV, "CI", "false") == "true"
+
+ENV["JULIA_DEBUG"] = Documenter #nothing
+ENV["n_frames"] = ci ? 200 : 10
+ENV["GKSwstype"] = "100"
 
 makedocs(
     modules = [GAIO],
@@ -45,28 +46,14 @@ makedocs(
             "Lyapunov Exponents / FTLEs" => "algorithms/ftle.md",
             #"Topological Entropy" => "algorithms/entropy.md"
         ],
+        "Conley-Morse Theory" => [
+            "Morse Graph" => "algorithms/morse_graph.md",
+            "Conley Index" => "algorithms/conley_index.md"
+        ],
         "Misceallenous Algorithms" => [
             "Root Covering" => "algorithms/root_covering.md",
             "Covering Implicitly Defined Manifolds" => "algorithms/implicit_manifold.md"
         ],
-        #=
-        "Algorithms" => [
-            "algorithms/relative_attractor.md",
-            "algorithms/unstable_manifold.md",
-            "algorithms/chain_recurrent_set.md",
-            "algorithms/transfer_operator.md",
-            "algorithms/root_covering.md",
-            "algorithms/ftle.md",
-            "algorithms/implicit_manifold.md",
-            "algorithms/seba.md",
-            "algorithms/box_dimension.md",
-            "algorithms/almost_invariant_coherent_sets.md",
-            "algorithms/entropy.md",
-            "algorithms/pareto_set.md",
-            "algorithms/control.md"
-        ],
-        "Algorithms" => "algorithms.md",
-        =#
         "Plotting" => "plotting.md",
         "Maximizing Performance" => [
             "simd.md",

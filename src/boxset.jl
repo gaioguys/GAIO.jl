@@ -208,6 +208,7 @@ Base.isempty(boxset::BoxSet) = isempty(boxset.set)
 Base.empty!(boxset::BoxSet) = (empty!(boxset.set); boxset)
 Base.copy(boxset::BoxSet) = BoxSet(boxset.partition, copy(boxset.set))
 Base.length(boxset::BoxSet) = length(boxset.set)
+Base.keys(boxset::BoxSet) = keys(boxset.set)
 Base.push!(boxset::BoxSet, key) = push!(boxset.set, key)
 Base.sizehint!(boxset::BoxSet, size) = sizehint!(boxset.set, size)
 Base.eltype(::Type{<:BoxSet{B}}) where B = B

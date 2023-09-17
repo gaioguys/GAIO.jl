@@ -96,7 +96,11 @@ savefig(p, "sv1.svg"); nothing # hide
 ![Second left singular measure](sv1.svg)
 
 ```@example 1
-anim = @animate for t in t₀:τ/4:t₁
+n_frames = 200
+n_frames = Meta.parse(get(ENV, "n_frames", 200)) # hide
+times = range(t₀, t₁, length=n_frames)
+
+anim = @animate for t in times
     Φₜ(z) = Φ(z, t, τ, steps)
 
     F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
@@ -116,7 +120,7 @@ anim = @animate for t in t₀:τ/4:t₁
 
     plot(μ, clims=(-1,1), colormap=:jet)
 end;
-gif(anim, "coherent.gif", fps=Tspan÷τ); nothing # hide
+gif(anim, "coherent.gif", fps=n_frames÷2); nothing # hide
 ```
 
 ![Coherent Sets](coherent.gif)

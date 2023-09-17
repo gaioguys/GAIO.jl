@@ -61,6 +61,8 @@ p = plot!(p, boundary[:, 1], boundary[:, 2], linewidth=4, fill=(0, RGBA(0.,0.,1.
 ```
 
 ```@repl 1
+using SIMD
+
 n_points = 256
 F = BoxMap(:montecarlo, :simd, f, domain, n_points = n_points)
 p = plot!(

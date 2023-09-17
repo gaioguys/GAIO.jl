@@ -41,8 +41,8 @@ export BoxFun
 export TransferOperator
 export construct_transfers, eigs, svds
 
-export BoxGraph, Graph
-export union_strongly_connected_components
+#export BoxGraph, Graph
+#øexport union_strongly_connected_components
 
 export BoxMap, map_boxes
 export SampledBoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap
