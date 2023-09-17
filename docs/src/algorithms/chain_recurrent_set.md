@@ -63,7 +63,7 @@ F = BoxMap(f, Q)
 C = chain_recurrent_set(F, S, steps=18)
 
 using Plots
-plot(C)
+p = plot(C);
 
 savefig(p, "chain_recurrent_set.svg"); nothing # hide
 ```
@@ -81,8 +81,9 @@ function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where 
     for k in 1:steps
         B = subdivide(B, (k % N) + 1)    # cycle through dimesions for subdivision
         P = TransferOperator(F, B, B)    # construct transfer matrix
-        G = Graph(P)                     # view it as a graph
-        B = union_strongly_connected_components(G)  # collect the strongly connected components
+        G = MatrixNetwork(P)             # view it as a graph
+        SCC = scomponents(G)             # strongly connected components
+        B = BoxSet(morse_tiles(P, SCC))  # collect the nontrivial strongly connected components
     end
     return B
 end

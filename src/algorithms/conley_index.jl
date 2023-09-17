@@ -122,17 +122,24 @@ key_2 -> {image_2, image_4, image_8, image_6}
 ```
 """
 macro save(object, kwargs...)
-    all(x -> Meta.isexpr(x, :(=)), kwargs) || throw(MethodError(var"@save", (F♯, kwargs...)))
+    all(x -> Meta.isexpr(x, :(=)), kwargs) || throw(MethodError(var"@save", (object, kwargs...)))
     variable_name = String(object)
     return quote
         _save(
             $(esc(object)),
-            generate_filename($variable_name; (Pair(kwarg.args...) for kwarg in $kwargs)...)
+            generate_filename(
+                $(esc(object)),
+                $variable_name;
+                (Pair(kwarg.args...) for kwarg in $kwargs)...
+            )
         )
     end
 end
 
-function generate_filename(variable_name; filename="", prefix::String="./", suffix::String=".dat")
+suffix(::Type{T}) where {T<:TransferOperator} = ".map"
+suffix(::Type{T}) where {T<:BoxSet} = ".cub"
+
+function generate_filename(::T, variable_name; filename="", prefix="./", suffix=suffix(T)) where {T}
     isempty(filename) ? prefix * variable_name * suffix : filename
 end
 
@@ -164,6 +171,3 @@ function _save(F♯::TransferOperator, filename)
     return filename
 end
 
-function _save(F::BoxMap, source::BoxSet, filename)
-    _save(TransferOperator(F, source), filename)
-end

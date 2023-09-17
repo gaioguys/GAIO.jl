@@ -670,11 +670,18 @@ tiles = morse_tiles(F♯, morse_comp)
 adj = morse_graph(strong_comps, morse)
 
 adj, tiles = morse_graph_and_tiles(F♯)
+G = MetaGraph(DiGraph(adj), tiles)
 
 B = BoxSet(P, Set(key for (key,val) in tiles.vals if val==3))
 P1, P0 = index_pair(F, B)
 
 P1, P0, Q1, Q0 = index_quad(F, B)
-@save P1 
+transfers = TransferOperator(F, P1, Q1)
 
-G = MetaGraph(DiGraph(adj), tiles)
+@save P1 
+@save P0
+@save Q1
+@save Q0
+@save transfers
+
+run(`/home/april/Downloads/old_chomp/bin/homcubes -i -g generators.dat transfers.map P1.cub P0.cub Q1.cub Q0.cub`)

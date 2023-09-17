@@ -81,7 +81,7 @@ Significantly faster than calling `preimage(F, B, B)`.
     ``F^{-1} (B)``. 
 """
 function preimage(F::BoxMap, B::BoxSet)
-    P = TransferOperator(F, B, B)
+    P  = TransferOperator(F, B, B)
     C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
     return BoxSet(P.domain, C⁻)
 end
@@ -109,10 +109,10 @@ C = C⁺ ∩ C⁻
 ```
 """
 function symmetric_image(F::BoxMap, B::BoxSet)
-    P = TransferOperator(F, B, B)
+    P  = TransferOperator(F, B, B)
     C⁺ = vec( sum(P.mat, dims=1) .> 0 ) # C⁺ = B ∩ F(B)
     C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
-    C = findall(C⁺ .& C⁻)   # C  =  C⁺ ∩ C⁻  =  F(B) ∩ B ∩ F⁻¹(B)
+    C  = C⁺ .& C⁻   # C  =  C⁺ ∩ C⁻  =  F(B) ∩ B ∩ F⁻¹(B)
     return BoxSet(P.domain, C)
 end
 
