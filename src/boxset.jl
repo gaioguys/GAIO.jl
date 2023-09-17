@@ -38,8 +38,12 @@ function BoxSet{B,P,S}(partition::P) where {B,P<:AbstractBoxPartition{B},S<:Abst
     return BoxSet{B,P,S}(partition, S())
 end
 
-function BoxSet(partition::P) where P <: AbstractBoxPartition
-    return BoxSet(partition, Set{keytype(P)}())
+function BoxSet(partition::P; settype=Set{keytype(P)}) where {B,P<:AbstractBoxPartition{B}}
+    return BoxSet{B,P,settype}(partition)
+end
+
+function BoxSet(N::BoxSet, filters; settype=Set)
+    BoxSet(N.partition, settype(key for (key,filt) in zip(N.set, filters) if filt))
 end
 
 Base.show(io::IO, boxset::BoxSet) = print(io, "$(length(boxset)) - element BoxSet in ", boxset.partition)
@@ -229,6 +233,33 @@ function SplittablesBase.halve(boxset::BoxSet)
         for key in right
     )
     return (liter, riter)
+end
+
+function neighborhood(B::BoxSet)
+    P = B.partition
+    nbhd = empty!(copy(B))
+    for (c, r) in B
+        box = Box(c, 1.1 .* r)
+        union!(nbhd, cover(P, box))
+    end
+    return setdiff!(nbhd, B)
+end
+
+function neighborhood(B::BoxSet{R,Q}) where {N,R,Q<:BoxPartition{N}}
+    P = B.partition
+    C = empty!(copy(B))
+
+    surrounding = CartesianIndices(ntuple(_-> -1:1, N))
+    function nbhd(key)
+        keygen = (key .+ Tuple(cartesian_ind) for cartesian_ind in surrounding)
+        (x for x in keygen if checkbounds(Bool, P, x))
+    end
+
+    for key in B.set
+        union!(C, nbhd(key))
+    end
+
+    return setdiff!(C, B)
 end
 
 function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}

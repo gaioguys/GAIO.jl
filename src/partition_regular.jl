@@ -1,3 +1,5 @@
+# TODO: replace NTuple{N,I} where I<:Integer index with simpler CartesianIndex{N}
+
 """
     BoxPartition(domain::Box{N}, dims::NTuple{N,<:Integer} = ntuple(_->1, N)) 
 

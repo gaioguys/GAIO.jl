@@ -92,7 +92,7 @@ end
 
 function TransferOperator(g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q,W}; kwargs...) where {B,P,S,R,Q,W}
     dom = BoxSet(domain.partition, OrderedSet(domain.set))
-    codom = BoxSet(codomain.partition, OrderedSet(codomain.set))
+    codom = domain == codomain ? dom : BoxSet(codomain.partition, OrderedSet(codomain.set))
     TransferOperator(g, dom, codom; kwargs...)
 end
 
@@ -242,6 +242,18 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
             return mul!(y, g, x)
         end
 
+        function Base.:(*)(F♯::$type, S::BoxSet)
+            dom = F♯.domain
+            supp = matching_partitions(dom, S) ? S : cover(dom, S)
+            ν = BoxFun(supp)
+    
+            T = $func(F♯)
+            ν = T * ν
+            return BoxSet(ν)
+        end
+    
+        (F♯::$type)(S::BoxSet) = F♯ * S
+
     end
 end
 
@@ -252,6 +264,7 @@ _rehash!(dict::IdDict) = Base.rehash!(dict)
 _rehash!(set::Union{Set,OrderedSet}) = _rehash!(set.dict)
 _rehash!(d::Union{AbstractDict,AbstractSet}) = d
 _rehash!(boxset::BoxSet) = _rehash!(boxset.set)
+_rehash!(g::TransferOperator) = (_rehash!(g.domain); g.codomain === g.domain || _rehash!(g.codomain))
 
 # helper function to access `Set` / `OrderedSet` internals
 # converts partition-key to index if a set is enumerated 1..n, or nothing if key not in set

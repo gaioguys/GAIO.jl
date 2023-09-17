@@ -15,7 +15,9 @@ using SplitOrderedCollections
 using IntervalArithmetic
 
 # graph / linear algebra algorithms
-using Graphs
+#using Graphs
+using MatrixNetworks
+using MatrixNetworks: Strong_components_output, Strong_components_rich_output
 using SparseArrays
 using Arpack
 
@@ -32,7 +34,7 @@ export key_to_box, point_to_key, bounded_point_to_key, point_to_box
 export depth, tree_search
 
 export BoxSet
-export cover, subdivide, subdivide!
+export cover, neighborhood, nbhd, subdivide, subdivide!
 
 export BoxFun
 
@@ -50,6 +52,8 @@ export IntervalBoxMap
 
 export rk4, rk4_flow_map
 export preimage, symmetric_image
+export morse_map, morse_component_map, morse_graph, morse_tiles, morse_graph_and_tiles
+export index_pair, index_quad, @save
 
 export relative_attractor, maximal_forward_invariant_set, maximal_invariant_set
 export unstable_set, chain_recurrent_set
@@ -83,8 +87,17 @@ include("boxmap.jl")
 
 include("boxfun.jl")  
 include("transfer_operator.jl")
-include("boxgraph.jl")
-include("algorithms.jl")
+#include("boxgraph.jl")
+
+include("algorithms/invariant_sets.jl")
+include("algorithms/scalar_diagnostics.jl")
+include("algorithms/optimization.jl")
+include("algorithms/seba.jl")
+include("algorithms/morse_graph.jl")
+include("algorithms/conley_index.jl")
+include("algorithms/maps.jl")
+
+const nbhd = neighborhood
 
 include("precompile.jl")
 

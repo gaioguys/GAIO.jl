@@ -23,10 +23,10 @@ function neighborhood(B::BoxSet{R,Q}) where {N,R,Q<:BoxPartition{N}}
     C = empty!(copy(B))
 
     surrounding = CartesianIndices(ntuple(_-> -1:1, N))
-    nbhd(key) = Iterators.filter(
-        x -> checkbounds(Bool, P, x),
-        (key .+ Tuple(cartesian_ind) for cartesian_ind in surrounding)
-    )
+    function nbhd(key)
+        keygen = (key .+ Tuple(cartesian_ind) for cartesian_ind in surrounding)
+        (x for x in keygen if checkbounds(Bool, P, x))
+    end
 
     for key in B.set
         union!(C, nbhd(key))
@@ -143,6 +143,7 @@ for (type, func) in Dict(
         return BoxSet(μ)
     end
 
+    @eval (F♯::$type)(S::BoxSet) = F♯ * S
 end
 
 function positive_invariant_part(F♯)
@@ -163,6 +164,92 @@ function negative_invariant_part(F♯)
         S₁ = F♯'S₁ ∩ S₂
     end
     return S₁
+end
+
+
+
+# -----------------------------------------------------
+
+
+
+using Dates: format, now
+
+function save_multivalued_map(X, A, Y, B, F♯)
+    @assert A ⊆ X && B ⊆ Y
+    @assert X ⊆ F♯.domain && Y ⊆ F♯.codomain
+    G = BoxGraph(F♯)
+
+    tm = format(now(), "yyyy-mm-dd-HH-MM-SS")
+    X_dat = open("./$tm-X.dat", "w")
+    A_dat = open("./$tm-A.dat", "w")
+    F_map = open("./$tm-F.map", "w")
+
+    for key in X.set
+        println(X_dat, key)
+        key in A.set && println(A_dat, key)
+        println(
+            F_map,
+            key, " -> {", join(outneighbors(G, key), ", "), "}"
+        )
+    end
+
+    close(X_dat); close(A_dat); close(F_map)
+    Y_dat = open("./$tm-Y.dat", "w")
+    B_dat = open("./$tm-B,dat", "w")
+
+    for key in Y.set
+        println(Y_dat, key)
+        key in B.set && println(B_dat, key)
+    end
+
+    close(Y_dat); close(B_dat)
+
+    return "./$tm-X.dat", "./$tm-A.dat", "./$tm-Y.dat", "./$tm-B,dat", "./$tm-F.map"
+end
+
+function save_keys(boxset::BoxSet; filename::String="./boxset-$(format(now(), "yyyy-mm-dd-HH-MM-SS")).boxset")
+    file = open(filename, "w")
+    for key in boxset.set
+        println(file, key)
+    end
+    close(file)
+    return filename
+end
+
+function save_map(F♯::TransferOperator; filename::String="./map-$(format(now(), "yyyy-mm-dd-HH-MM-SS")).boxmap")
+    _rehash!(F♯)
+    file = open(filename, "w")
+
+    adj = F♯.mat
+    dom = F♯.domain.set
+    codom = F♯.codomain.set
+    rows = rowvals(adj)
+
+    for (col_j, key_j) in enumerate(dom)
+        out = join([index_to_key(codom, rows[i]) for i in nzrange(adj, col_j)], ", ")
+        println(file, "$key_j -> {$out}")
+    end
+
+    close(file)
+    return filename
+end
+
+macro save(boxset::BoxSet; prefix="./", suffix=".boxset")
+    filename = prefix * String(boxset) * suffix
+    return :(save_keys($boxset, $filename))
+end
+
+macro save(boxset::BoxSet; filename::String)
+    return :(save_keys($boxset, $filename))
+end
+
+macro save(F♯::TransferOperator; prefix="./", suffix=".boxmap")
+    filename = prefix * String(F♯) * suffix
+    return :(save_map($(F♯), $filename))
+end
+
+macro save(F♯::TransferOperator; filename::String)
+    return :(save_map($(F♯), $filename))
 end
 
 
@@ -500,3 +587,94 @@ plot(fun)
 
 # ----------------------------------------------------
 
+
+using MetaGraphsNext, Graphs
+
+function MetaGraphsNext.MetaGraph(F♯::TransferOperator{B,T}) where {N,W,B<:Box{N,W},T}
+    _rehash!(F♯)
+
+    P = F♯.domain.partition
+    adj = F♯.mat
+    rows = rowvals(adj)
+    vals = nonzeros(adj)
+
+    G = MetaGraph(
+        DiGraph();
+        label_type = keytype(typeof(P)),
+        edge_data_type = T,
+        graph_data = P,
+        weight_function = identity,
+        default_weight = one(T)
+    )
+
+    for (col_j, key_j) in enumerate(F♯.domain.set)
+        haskey(G, key_j) || G[key_j] = nothing
+
+        for i in nzrange(adj, col_j)
+            row_i = rows[i]
+            key_i = index_to_key(F♯.codomain.set, row_i)
+            weight = vals[i]
+
+            haskey(G, key_i) || G[key_i] = nothing
+            G[key_j, key_i] = weight
+        end
+    end
+    
+    return G
+end
+
+function MetaGraphsNext.MetaGraph(digraph::AbstractGraph{Code}, tiles::BoxFun{B,K,V}; settype=OrderedSet{K}) where {Code,B,K,V}
+    P = tiles.partition
+    edge_data = [(i,j) => nothing for (i,j) in edges(digraph)]
+
+    tiles = [v => BoxSet(P, settype()) for v in vertices(digraph)]
+    for (key,val) in tiles.vals
+        push!(last(tiles[val]), key)
+    end
+    
+    return MetaGraph(
+        digraph,
+        tiles,
+        edge_data,
+        P
+    )
+end
+
+
+# ------------------------------
+
+using GAIO, IntervalArithmetic, SparseArrays, MatrixNetworks, Plots, Graphs, MetaGraphsNext
+const th1 = 20.
+const th2 = 20.
+
+f((x, y)) = ( (th1*x + th2*y) * exp(-0.1*(x + y)), 0.7*x )
+
+depth = 21
+lower_bounds = [-0.001, -0.001]
+upper_bounds = [74., 52.]
+
+domain = Box(IntervalBox(lower_bounds, upper_bounds))
+P = BoxPartition(TreePartition(domain), depth)
+S = cover(P, :)
+
+F = BoxMap(:interval, f, domain, n_subintervals=(1,1))
+F♯ = TransferOperator(F, S, S)
+
+strong_comps = scomponents(F♯)
+strong_comps_enr = enrich(strong_comps);
+
+morse = morse_map(strong_comps)
+morse_comp = morse_component_map(strong_comps, morse)
+tiles = morse_tiles(F♯, morse_comp)
+
+adj = morse_graph(strong_comps, morse)
+
+adj, tiles = morse_graph_and_tiles(F♯)
+
+B = BoxSet(P, Set(key for (key,val) in tiles.vals if val==3))
+P1, P0 = index_pair(F, B)
+
+P1, P0, Q1, Q0 = index_quad(F, B)
+@save P1 
+
+G = MetaGraph(DiGraph(adj), tiles)
