@@ -2,6 +2,12 @@
 
 (TODO)
 
+```@docs; canonical=false
+index_pair
+index_quad
+@save
+```
+
 ### Example
 
 ```@example 1

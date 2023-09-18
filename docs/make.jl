@@ -1,11 +1,11 @@
 using GAIO
-using Documenter, LinearAlgebra, SparseArrays, StaticArrays, Graphs, MetaGraphsNext, SIMD
+using Documenter, LinearAlgebra, SparseArrays, StaticArrays, Graphs, MetaGraphsNext, SIMD, Arpack
 import Plots, MakieCore, GLMakie
 
 ci = get(ENV, "CI", "false") == "true"
 
 ENV["JULIA_DEBUG"] = Documenter #nothing
-ENV["n_frames"] = ci ? 200 : 10
+ENV["n_frames"] = ci ? 200 : 30
 ENV["GKSwstype"] = "100"
 
 makedocs(

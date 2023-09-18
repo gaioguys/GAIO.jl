@@ -14,7 +14,7 @@ The method used to compute ``D`` follows that of [1]: it is difficult to make ``
 
 Using this method we have everything we need to compute the box dimension for general objects. All that is required is a sequence of successively finer box sets which cover the object. 
 
-```@docs
+```@docs; canonical=false
 box_dimension
 ```
 

@@ -193,7 +193,7 @@ anim = @animate for t in times
 
     plot(μ, clims=(-1,1), colormap=:jet)
 end;
-gif(anim, "gyre_almost_inv.gif", fps=n_frames÷2); nothing # hide
+gif(anim, "gyre_almost_inv.gif", fps=30); nothing # hide
 ```
 
 ![almost invariant sets changing over time](gyre_almost_inv.gif)

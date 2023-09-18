@@ -52,7 +52,7 @@ Using an extension of the Birkhoff ergodic theorem it can be proven that this me
 ```
 where ``\mu`` is a measure which is ergodic and invariant under ``f``. 
 
-```@docs
+```@docs; canonical=false
 finite_time_lyapunov_exponents
 ```
 
@@ -123,7 +123,7 @@ anim = @animate for t in times
 
     plot(γ, clims=(0,2), colormap=:jet)
 end;
-gif(anim, "ftle1.gif", fps=n_frames÷2); nothing # hide
+gif(anim, "ftle1.gif", fps=30); nothing # hide
 ```
 
 ![FTLE field](ftle1.gif)

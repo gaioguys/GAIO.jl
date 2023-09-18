@@ -31,7 +31,7 @@ export volume, center, vertices, rescale
 
 export AbstractBoxPartition, BoxPartition, TreePartition
 export key_to_box, point_to_key, bounded_point_to_key, point_to_box
-export depth, tree_search
+export depth, tree_search, find_at_depth, leaves, hidden_keys
 
 export BoxSet
 export cover, neighborhood, nbhd, subdivide, subdivide!
@@ -40,6 +40,7 @@ export BoxFun
 
 export TransferOperator
 export construct_transfers, eigs, svds
+export key_to_index, index_to_key
 
 #export BoxGraph, Graph
 #øexport union_strongly_connected_components

@@ -4,12 +4,14 @@
 Pages = ["data_structures.md"]
 ```
 
-```@docs
+```@docs; canonical=false
 Box
 volume(box::Box)
+center
+radius
 ```
 
-```@docs
+```@docs; canonical=false
 BoxPartition
 point_to_key
 bounded_point_to_key
@@ -18,11 +20,42 @@ point_to_box
 subdivide(P::BoxPartition{N,T,I}, dim) where {N,T,I}
 ```
 
-```@docs
+```@docs; canonical=false
 TreePartition
 subdivide!
+depth
+tree_search
+find_at_depth
+leaves
+hidden_keys
 ```
 
-```@docs
+```@docs; canonical=false
 BoxSet
+neighborhood
+```
+
+```@docs; canonical=false
+BoxMap
+SampledBoxMap
+AdaptiveBoxMap
+PointDiscretizedBoxMap
+GridBoxMap
+MonteCarloBoxMap
+IntervalBoxMap
+```
+
+```@docs; canonical=false
+BoxFun
+sum(f, boxfun::BoxFun{B,K,V,P,D}; init...) where {B,K,V,P,D}
+∘(f, boxfun::BoxFun)
+
+```
+
+```@docs; canonical=false
+TransferOperator
+eigs(g::TransferOperator, B; kwargs...)
+svds(g::TransferOperator; kwargs...)
+key_to_index
+index_to_key
 ```

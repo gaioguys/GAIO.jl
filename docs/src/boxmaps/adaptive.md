@@ -6,7 +6,7 @@ The above approaches may not necessarily be effective for covering the setwise i
 ```
 where the operations ``| \cdot |`` and `` \leq `` are to be understood elementwise. The function `AdaptiveBoxMap` attempts to approximate ``L`` before choosing an adaptive grid of test points in each box, as described in [1]. 
 
-```@docs
+```@docs; canonical=false
 AdaptiveBoxMap
 ```
 

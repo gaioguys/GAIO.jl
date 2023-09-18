@@ -14,7 +14,7 @@ The idea for the algorithm is to construct a directed graph ``G`` whose vertices
 
 If we repeadetly refine the strongly connected box set through ``k`` subdivision steps, then the algorithm converges to the chain recurrent set as ``k \to \infty`` in the Hausdorff metric. 
 
-```@docs
+```@docs; canonical=false
 chain_recurrent_set
 ```
 

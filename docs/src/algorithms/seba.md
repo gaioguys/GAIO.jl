@@ -18,7 +18,7 @@ Note that the final heuristic does not return a strict partition of the features
 
 By default when calling GAIO.jl's `seba`, hard partitioning is performed. 
 
-```@docs
+```@docs; canonical=false
 seba
 ```
 

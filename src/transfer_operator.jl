@@ -186,8 +186,8 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         All keyword arguments from `Arpack.eigs` can be passed. See the 
         documentation for `Arpack.eigs`. 
         """
-        Arpack.eigs(g::$type, B::UniformScaling=I; kwargs...) = _eigs(g, B; kwargs...)
         Arpack.eigs(g::$type, B; kwargs...) = _eigs(g, B; kwargs...)
+        Arpack.eigs(g::$type, B::UniformScaling=I; kwargs...) = _eigs(g, B; kwargs...)
 
         function _svds(g::$type; nsv=3, ritzvec=true, kwargs...)
             Σ, ext... = Arpack._svds(g; nsv=nsv, ritzvec=true, kwargs...)

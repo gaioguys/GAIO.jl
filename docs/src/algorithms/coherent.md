@@ -118,9 +118,9 @@ anim = @animate for t in times
     M = maximum(abs ∘ μ)
     μ = s/M * μ
 
-    plot(μ, clims=(-1,1), colormap=:jet)
+    plot(μ, clims=(-1,1), colormap=:redsblues)
 end;
-gif(anim, "coherent.gif", fps=n_frames÷2); nothing # hide
+gif(anim, "coherent.gif", fps=30); nothing # hide
 ```
 
 ![Coherent Sets](coherent.gif)

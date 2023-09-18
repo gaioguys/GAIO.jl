@@ -39,7 +39,7 @@ M = Matrix(F♯)
 ```
 It is important to note that `TransferOperator` is only supported over the box set `B`, but if one lets a `TransferOperator` act on a `BoxFun` via multiplication (see the example below), then the support `B` is extended "on the fly" to include the support of the `BoxFun`.
 
-```@docs
+```@docs; canonical=false
 TransferOperator
 BoxFun
 sum(::Any, ::BoxFun)

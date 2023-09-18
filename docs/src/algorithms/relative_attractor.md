@@ -15,7 +15,7 @@ In each iteration, two steps happen:
 
 If we repeatedly refine the box set `B` through ``k`` subdivision steps, then as ``k \to \infty`` the collection of boxes ``B`` converges to the relative global attractor ``A_Q`` in the Hausdorff metric.
 
-```@docs
+```@docs; canonical=false
 relative_attractor
 ```
 

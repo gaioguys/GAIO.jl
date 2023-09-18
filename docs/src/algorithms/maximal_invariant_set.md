@@ -31,7 +31,7 @@ The idea of the algorithm [1] is to cover the desired set with boxes and recursi
 
 This algorithm can be analogously performed to find the _maximal forward invariant set_ by replacing the selection step with selecting `C = B ∩ F⁻¹(B)`, or the _maximal backward invariant set_ by selecting `C = F(B) ∩ B`. The astute documentation reader might notice that the latter is precisely the algorithm for the _relative attractor_. 
 
-```@docs
+```@docs; canonical=false
 maximal_invariant_set
 maximal_forward_invariant_set
 preimage

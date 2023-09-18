@@ -19,7 +19,7 @@ The idea behind the algorithm [1] to compute the unstable manifold can be explai
     One might not be able to compute the parts of the unstable manifold whose preimage lies outside the domain ``Q``.
     Thus, it is important to choose ``Q`` large enough.
 
-```@docs
+```@docs; canonical=false
 unstable_set
 ```
 

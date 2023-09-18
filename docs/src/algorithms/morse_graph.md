@@ -2,6 +2,14 @@
 
 (TODO)
 
+```@docs; canonical=false
+morse_graph_and_tiles
+morse_graph
+morse_tiles
+morse_component_map
+morse_map
+```
+
 ### Example
 
 ```@example 1

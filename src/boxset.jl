@@ -236,6 +236,12 @@ function SplittablesBase.halve(boxset::BoxSet)
     return (liter, riter)
 end
 
+"""
+    neighborhood(B::BoxSet) -> BoxSet
+    nbhd(B::BoxSet) -> BoxSet
+
+Return a one-box wide neighborhood of a BoxSet `B`. 
+"""
 function neighborhood(B::BoxSet)
     P = B.partition
     nbhd = empty!(copy(B))
