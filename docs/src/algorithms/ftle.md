@@ -111,8 +111,8 @@ savefig("ftle1.svg"); nothing # hide
 Since this map is time-dependent, the FTLE field will change over time as well. 
 
 ```@example 1
-n_frames = 200
-n_frames = Meta.parse(get(ENV, "n_frames", 200)) # hide
+n_frames = 120
+n_frames = Meta.parse(get(ENV, "n_frames", 120)) # hide
 times = range(t₀, t₁, length=n_frames)
 
 anim = @animate for t in times
@@ -123,7 +123,7 @@ anim = @animate for t in times
 
     plot(γ, clims=(0,2), colormap=:jet)
 end;
-gif(anim, "ftle1.gif", fps=30); nothing # hide
+gif(anim, "ftle1.gif", fps=20); nothing # hide
 ```
 
 ![FTLE field](ftle1.gif)

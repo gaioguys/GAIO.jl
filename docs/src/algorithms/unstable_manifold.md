@@ -65,9 +65,9 @@ fig = Figure();
 ax = Axis3(fig[1,1], viewmode=:fit)
 ms = plot!(ax, W, color=(:red, 0.6))
 
-n_frames = 200
-n_frames = Meta.parse(get(ENV, "n_frames", 200)) # hide
-record(fig, "unstable.gif", 1:n_frames) do frame
+n_frames = 120
+n_frames = Meta.parse(get(ENV, "n_frames", 120)) # hide
+record(fig, "unstable.gif", 1:n_frames, framerate=20) do frame
     v = sin(2pi * frame / n_frames)
     ax.elevation[] = pi/8 - pi * v / 10
     ax.azimuth[] = pi * v / 2
@@ -116,7 +116,7 @@ fig = Figure(); # hide
 ax = Axis3(fig[1,1], azimuth=0.62*pi, viewmode=:fit) # hide
 ms = plot!(ax, W2, color=(:red, 0.6)) # hide
 
-record(fig, "stable.gif", 1:n_frames) do frame
+record(fig, "stable.gif", 1:n_frames, framerate=20) do frame
     v = sin(2pi * frame / n_frames)
     ax.elevation[] = pi/10 - pi * v / 20
     ax.azimuth[] = -pi / 5 + 2pi * v / 5

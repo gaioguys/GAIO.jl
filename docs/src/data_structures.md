@@ -7,8 +7,8 @@ Pages = ["data_structures.md"]
 ```@docs; canonical=false
 Box
 volume(box::Box)
-center
-radius
+GAIO.center
+GAIO.radius
 ```
 
 ```@docs; canonical=false
@@ -32,7 +32,7 @@ hidden_keys
 
 ```@docs; canonical=false
 BoxSet
-neighborhood
+GAIO.neighborhood
 ```
 
 ```@docs; canonical=false

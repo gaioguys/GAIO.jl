@@ -91,9 +91,9 @@ ax1 = Axis3(fig[1,1], aspect=(1,1.2,1), azimuth=-3pi/10, viewmode=:fit) # hide
 ms1 = plot!(ax1, B1, color=(:blue, 0.4)) # hide
 ax2 = Axis3(fig[1,2], aspect=(1,1.2,1), azimuth=-3pi/10, viewmode=:fit) # hide
 ms2 = plot!(ax2, B2, color=(:red, 0.4)) # hide
-n_frames = 200
-n_frames = Meta.parse(get(ENV, "n_frames", 200)) # hide
-record(fig, "almost_inv_rotating.gif", 1:n_frames) do frame
+n_frames = 120
+n_frames = Meta.parse(get(ENV, "n_frames", 120)) # hide
+record(fig, "almost_inv_rotating.gif", 1:n_frames, framerate=20) do frame
     v = sin(2pi * frame / n_frames)
     ax1.elevation[] = pi/20 - pi * v / 20
     ax2.elevation[] = pi/20 - pi * v / 20
@@ -193,7 +193,7 @@ anim = @animate for t in times
 
     plot(μ, clims=(-1,1), colormap=:jet)
 end;
-gif(anim, "gyre_almost_inv.gif", fps=30); nothing # hide
+gif(anim, "gyre_almost_inv.gif", fps=20); nothing # hide
 ```
 
 ![almost invariant sets changing over time](gyre_almost_inv.gif)

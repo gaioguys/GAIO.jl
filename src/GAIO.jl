@@ -27,7 +27,7 @@ import Base: ∘
 import Base: @propagate_inbounds
 
 export Box
-export volume, center, vertices, rescale
+export volume, center, radius, vertices, rescale
 
 export AbstractBoxPartition, BoxPartition, TreePartition
 export key_to_box, point_to_key, bounded_point_to_key, point_to_box
@@ -43,7 +43,7 @@ export construct_transfers, eigs, svds
 export key_to_index, index_to_key
 
 #export BoxGraph, Graph
-#øexport union_strongly_connected_components
+#export union_strongly_connected_components
 
 export BoxMap, map_boxes
 export SampledBoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap

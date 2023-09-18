@@ -5,7 +5,7 @@ import Plots, MakieCore, GLMakie
 ci = get(ENV, "CI", "false") == "true"
 
 ENV["JULIA_DEBUG"] = Documenter #nothing
-ENV["n_frames"] = ci ? 200 : 30
+ENV["n_frames"] = ci ? 120 : 20
 ENV["GKSwstype"] = "100"
 
 makedocs(
