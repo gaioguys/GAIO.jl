@@ -60,6 +60,7 @@ makedocs(
             "cuda.md"
         ],
         "Other Examples" => "examples.md",
+        "Data Structures" => "data_structrues.md",
         "Library Reference" => "library_reference.md"
     ],
     doctest = false,
