@@ -170,8 +170,7 @@ end
 
 function morse_tiles(F♯::TransferOperator)
     strong_components = scomponents(F♯)
-    morse_component_map_ = morse_component_map(strong_components)
-    morse_tiles(F♯, morse_component_map_)
+    morse_tiles(F♯, strong_components)
 end
 
 function morse_tiles(F::BoxMap, B::BoxSet)
