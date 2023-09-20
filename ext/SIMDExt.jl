@@ -183,7 +183,7 @@ end
 function CPUSampledBoxMap(boxmap::SampledBoxMap{N,T}) where {N,T}
     simd = Int(pick_vector_width(T))
     idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
-    temp_vec = Vector{T}(undef, N*simd*nthreads())
+    temp_vec = Vector{T}(undef, N*simd*(nthreads() + nthreads(:interactive)))
     temp_points = reinterpret(SVector{N,T}, temp_vec)
     CPUSampledBoxMap(boxmap, idx_base, temp_points)
 end

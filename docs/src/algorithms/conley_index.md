@@ -13,32 +13,55 @@ index_quad
 ```@example 1
 using GAIO 
 
-const θ₁, θ₂ = 20., 20.
-f((x, y)) = ( (θ₁*x + θ₂*y) * exp(-0.1*(x + y)), 0.7*x )
+# Henon map
+const a, b = 1.4, 0.2
+f((x,y)) = (1 - a*x^2 + y/5, 5*b*x)
 
-center, radius = (38, 26), (38, 26)
-Q = Box(center, radius)
-P = BoxPartition(Q, (256,256))
+center, radius = (0, 0), (3, 3)
+P = BoxPartition(Box(center, radius))
+F = BoxMap(:interval, f, P)
 S = cover(P, :)
-
-F = BoxMap(:interval, f, Q)
-F♯ = TransferOperator(F, S, S)
-
-adjacencies, tiles = morse_graph_and_tiles(F♯)    # less computation than doing separately
 ```
 
 ```@example 1
-B = BoxSet(P, Set(key for (key,val) in tiles.vals if val==3))   # choose an arbitrary tile
+using SparseArrays, LinearAlgebra
+function period_n_orbit(F, B; n=2)
+    F♯ = TransferOperator(F, B, B)
+
+    M = sparse(F♯)         # transfer matrix
+    N = F♯.domain
+
+    for _ in 2:n
+        M .= F♯.mat * M    # Mⁿ :  n-fold transfer matrix
+    end
+                           # nonzero diagonal elements are
+    v = diag(M)            # (candidates for) fixed points under n-fold iteration
+    BoxSet(N, v .> 0)
+end
 ```
 
 ```@example 1
-P1, P0 = index_pair(F, B)
+A = relative_attractor(F, S, steps = 20)
+per = [period_n_orbit(F, A; n=n) for n in 1:6]
+```
+
+```@example 1
+B = union(per[2:end]...)
+B = setdiff!(B, per[1])     # periodic points, excluding fixed points
+```
+
+```@example 1
+N = isolating_neighborhood(F, B)
+```
+
+```@example 1
+P1, P0 = index_pair(F, N)
 ```
 
 Compute pairs to construct the index map ``F:\ (P_1,\ P_0) \to (Q_1,\ Q_0)``
 
 ```@example 1
-P1, P0, Q1, Q0 = index_quad(F, B)
+P1, P0, Q1, Q0 = index_quad(F, N)
 ```
 
 ```@example 1

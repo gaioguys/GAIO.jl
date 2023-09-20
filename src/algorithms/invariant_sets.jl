@@ -1,20 +1,4 @@
 """
-    relative_attractor(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
-
-Compute the attractor relative to `B`. `B` should be 
-a (coarse) covering of the relative attractor, e.g. 
-`B = cover(P, :)` for a partition `P`.
-"""
-function relative_attractor(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
-    B = copy(B₀)
-    for k = 1:steps
-        B = subdivide(B, (k % N) + 1)
-        B = B ∩ F(B)
-    end
-    return B
-end
-
-"""
     unstable_set(F::BoxMap, B::BoxSet) -> BoxSet
 
 Compute the unstable set for a box set `B`. Generally, `B` should be 
@@ -117,21 +101,27 @@ function symmetric_image(F::BoxMap, B::BoxSet)
 end
 
 """
+    relative_attractor(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
+    maximal_backward_invariant_set(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
+
+Compute the attractor relative to `B`. `B` should be 
+a (coarse) covering of the relative attractor, e.g. 
+`B = cover(P, :)` for a partition `P`.
+"""
+function maximal_backward_invariant_set end
+
+const relative_attractor = maximal_backward_invariant_set
+
+"""
     maximal_forward_invariant_set(F::BoxMap, B::BoxSet; steps=12)
 
 Compute the maximal forward invariant set contained in `B`. 
 `B` should be a (coarse) covering of a forward invariant set, 
 e.g. `B = cover(P, :)` for a partition `P`.
 """
-function maximal_forward_invariant_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
-    F⁻¹(B) = preimage(F, B)
-    B = copy(B₀)
-    for k in 1:steps
-        B = subdivide(B, (k % N) + 1)
-        B = F⁻¹(B)  # is technically B ∩ F⁻¹(B)
-    end
-    return B
-end
+function maximal_forward_invariant_set end
+
+restricted_image(F, B) = F(B) ∩ B
 
 """
     maximal_invariant_set(F::BoxMap, B::BoxSet; steps=12)
@@ -140,11 +130,134 @@ Compute the maximal invariant set contained in `B`.
 `B` should be a (coarse) covering of an invariant set, 
 e.g. `B = cover(P, :)` for a partition `P`.
 """
-function maximal_invariant_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
-    B = copy(B₀)
-    for k in 1:steps
-        B = subdivide(B, (k % N) + 1)
-        B = symmetric_image(F, B)    # F(B) ∩ B ∩ F⁻¹(B)
+function maximal_invariant_set end
+
+
+for (algorithm, func) in [
+        :maximal_forward_invariant_set  => restricted_image,
+        :maximal_backward_invariant_set => preimage,
+        :maximal_invariant_set          => symmetric_image
+    ]
+
+    @eval function $(algorithm)(
+            F::BoxMap, B₀::BoxSet{Box{N,T}}, subdivision::Val{true}; steps=12
+        ) where {N,T}
+
+        H(B) = $(func)(F, B)
+        B = copy(B₀)
+        for k in 1:steps
+            B = subdivide(B, (k % N) + 1)
+            B = H(B)
+        end
+        return B
     end
-    return B
+
+    @eval function $(algorithm)(
+            F::BoxMap, B₀::BoxSet{Box{N,T}}, subdivision::Val{false}; steps=12, 
+        ) where {N,T}
+
+        H(B) = $(func)(F, B)
+        B = copy(B₀)
+        for k in 1:steps
+            C = H(B)
+            B == C && break
+            B = C
+        end
+        return B
+    end
+
+    @eval function $(algorithm)(
+            F::BoxMap, B₀::BoxSet{Box{N,T}};
+            steps=12, subdivision::Bool=true
+        ) where {N,T}
+
+        $(algorithm)(F, B₀, Val(subdivision); steps=steps)
+    end
+
 end
+
+#=
+"""
+helper function to compute intersections
+"""
+⊓(a, b) = a != 0 && b != 0
+
+for (algorithm, func) in [
+        maximal_forward_invariant_set  => identity,
+        maximal_backward_invariant_set => transpose
+    ]
+
+    @eval function $(algorithm)(
+            F♯::TransferOperator, v⁺::AbstractVector, v⁻::AbstractVector; 
+            steps=12, subdivision::Val{false}
+        )
+
+        fill!(v⁺, 1); fill(v⁻, 0)
+        M = $func(F♯.mat)
+        for _ in 1:steps
+            v⁺ == v⁻ && break
+            v⁻ .= v⁺
+            v⁺  = mul!(v⁺, M, v⁻)
+            v⁺ .= v⁺ .⊓ v⁻
+        end
+        return BoxSet(F♯.domain, v⁺ .!= 0)
+    end
+
+    @eval function $(algorithm)(
+            F::BoxMap, B::BoxSet{Box{N,T}}, v⁺::AbstractVector, v⁻::AbstractVector; 
+            steps=12, subdivision::Val{false}
+        ) where {N,T}
+
+        F♯ = TransferOperator(F, B, B)
+        resize!(v⁺, length(B)); resize!(v⁻, length(B))
+        return $(algorithm)(F♯, v⁺, v⁻; steps=steps, subdivision=subdivision)
+    end
+
+    @eval function $(algorithm)(
+            F::BoxMap, B::BoxSet{Box{N,T}}; 
+            steps=12, subdivision::Val{false}
+        ) where {N,T}
+        
+        return $(algorithm)(F, B, Float64[], Float64[]; steps=steps, subdivision=subdivision)
+    end
+
+end
+
+function maximal_invariant_set(
+        F♯::TransferOperator, 
+        v⁺::AbstractVector, v⁰::AbstractVector, v⁻::AbstractVector;
+        steps=12, subdivision::Val{false}
+    )
+
+    fill!(v⁻, 1); fill!(v⁰, 0); fill!(v⁺, 0)
+    M = F♯.mat
+    for _ in 1:steps
+        v⁻ == v⁺ && break
+        v⁺ .= v⁻
+        v⁻ .= mul!(v⁻, M, v⁺)
+        v⁰ .= mul!(v⁰, M, v⁺)
+        v⁻ .= v⁺ .⊓ v⁻
+        v⁻ .= v⁰ .⊓ v⁻
+    end
+    return BoxSet(F♯.domain, v⁻ .!= 0)
+end
+
+function maximal_invariant_set(
+        F::BoxMap, B::BoxSet{Box{N,T}}, 
+        v⁺::AbstractVector, v⁰::AbstractVector, v⁻::AbstractVector;
+        steps=12, subdivision::Val{false}
+    ) where {N,T}
+
+    F♯ = TransferOperator(F, B, B)
+    resize!(v⁺, length(B)); resize!(v⁰, length(B)); resize!(v⁻, length(B))
+    maximal_invariant_set(F♯, v⁺, v⁰, v⁻; steps=steps, subdivision=subdivision)
+end
+
+function maximal_invariant_set(
+        F::BoxMap, B::BoxSet{Box{N,T}}; 
+        steps=12, subdivision::Val{false}
+    ) where {N,T}
+
+    maximal_invariant_set(F, B, Float64[], Float64[], Float64[], steps=steps, subdivision=subdivision)
+end
+=#

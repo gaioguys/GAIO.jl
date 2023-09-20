@@ -29,7 +29,7 @@ end
 ⊔(set1::AbstractSet, ::Nothing) = set1
 
 ⊔(d::AbstractDict...) = mergewith!(+, d...)
-⊔(d::AbstractDict, p::Pair...) = foreach(q -> d ⊔ q, p)
+⊔(d::AbstractDict, p::Pair...) = ( foreach(q -> d ⊔ q, p); d )
 ⊔(d::AbstractDict, ::Nothing) = d
 function ⊔(d::AbstractDict, p::Pair)
     k, v = p

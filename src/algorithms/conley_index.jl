@@ -1,59 +1,4 @@
 """
-helper function to compute intersections
-"""
-⊓(a, b) = a != 0 && b != 0
-
-"""
-    fast_forward_invariant_part(F♯::TransferOperator, v⁺, v⁻) -> BoxSet
-
-Given a TransferOperator and preallocated vectors `v⁺`, `v⁻`
-(representing boolean vectors as subsets of `F♯.domain`), 
-compute the subset of `F♯.domain` which is forward invariant. 
-
-This is equivalent to calling 
-```julia
-maximal_forward_invariant_set(F, F♯.domain)
-```
-
-.
-"""
-function fast_forward_invariant_part(F♯, v⁺, v⁻)
-    fill!(v⁺, 1); fill(v⁻, 0)
-    M = F♯.mat
-    while v⁺ != v⁻
-        v⁻ .= v⁺
-        v⁺ .= M*v⁻
-        v⁺ .= v⁺ .⊓ v⁻
-    end
-    return BoxSet(F♯.domain, v⁺ .!= 0)
-end
-
-"""
-    fast_backward_invariant_part(F♯::TransferOperator, v⁺, v⁻) -> BoxSet
-
-Given a TransferOperator and preallocated vectors `v⁺`, `v⁻`
-(representing boolean vectors as subsets of `F♯.domain`), 
-compute the subset of `F♯.domain` which is backward invariant. 
-
-This is equivalent to calling 
-```julia
-maximal_backward_invariant_set(F, F♯.domain)
-```
-
-.
-"""
-function fast_backward_invariant_part(F♯, v⁺, v⁻)
-    fill!(v⁻, 1); fill!(v⁺, 0)
-    M = F♯.mat
-    while v⁻ != v⁺
-        v⁺ .= v⁻
-        v⁻ .* M'v⁺
-        v⁻ .= v⁺ .⊓ v⁻
-    end
-    return BoxSet(F♯.domain, v⁻ .!= 0)
-end
-
-"""
     index_pair(F::BoxMap, N::BoxSet) -> (P₁, P₀)
 
 Compute an index pair of `BoxSet`s P₀ ⊆ P₁ ⊆ M where M = N ∪ nbhd(N). 
@@ -61,15 +6,16 @@ Compute an index pair of `BoxSet`s P₀ ⊆ P₁ ⊆ M where M = N ∪ nbhd(N).
 function index_pair(F::BoxMap, N::BoxSet)
     N = N ∪ nbhd(N)
 
-    F♯ = TransferOperator(F, N, N)
-    v⁺ = Vector{Float64}(undef, length(N))
-    v⁻ = Vector{Float64}(undef, length(N))
+    #F♯ = TransferOperator(F, N, N)
+    #v⁺ = Vector{Float64}(undef, length(N))
+    #v⁻ = Vector{Float64}(undef, length(N))
 
-    S⁺ = fast_forward_invariant_part(F♯, v⁺, v⁻)
-    S⁻ = fast_backward_invariant_part(F♯, v⁺, v⁻)
+    S⁺ = maximal_forward_invariant_set(F, N; subdivision=false)#F♯, v⁺, v⁻; subdivision=false)
+    S⁻ = maximal_backward_invariant_set(F, N; subdivision=false)#F♯, v⁺, v⁻: subdivision=false)
 
     P₁ = S⁻
     P₀ = setdiff(S⁻, S⁺)
+
     return P₁, P₀
 end
 
@@ -86,6 +32,25 @@ function index_quad(F::BoxMap, N::BoxSet)
     P̄₀ = P₀ ∪ setdiff(FP₁, P₁)
     return P₁, P₀, P̄₁, P̄₀
 end
+
+function isolating_neighborhood(F::BoxMap, B::BoxSet)
+    N = copy(B)
+    inv_N = copy(B)
+
+    #v⁺ = Vector{Float64}(undef, length(N))
+    #v⁰ = Vector{Float64}(undef, length(N))
+    #v⁻ = Vector{Float64}(undef, length(N))
+
+    while inv_N ∪ nbhd(inv_N) ⊈ N
+        @debug "iteration" N=N invariant_part=inv_N
+        N = union!(N, nbhd(N))
+        inv_N = maximal_invariant_set(F, N; subdivision=false)#, v⁺, v⁰, v⁻; subdivision=false)
+    end
+
+    return N
+end
+
+const isolating_nbhd = isolating_neighborhood
 
 """
     @save boxset prefix="./" suffix=".boxset" -> filename

@@ -54,7 +54,7 @@ function Base.show(io::IO, m::MIME"text/plain", boxset::BoxSet)
 end
 
 function Base.getindex(partition::P, key) where P<:AbstractBoxPartition
-    eltype(point) <: Number || return map(x->partition[x], key)
+    #eltype(point) <: Number || return map(x->partition[x], key)
     return key_to_box(P, key)
 end
 
@@ -79,59 +79,54 @@ Base.getindex(partition::P, c::CartesianIndex) where P<:AbstractBoxPartition = p
 
 Return a subset of the partition or box set `P` based on the second argument. 
 """
-function cover(partition::P, points) where P<:AbstractBoxPartition
-    eltype(points) <: Number && ndims(partition) > 1 && return cover(partition, (points,))
-    eltype(points) <: Box && return cover_boxes(partition, points)
-    eltype(points) <: IntervalBox && return cover_boxes(partition, Box.(points))
-    gen = (key for key in (point_to_key(partition, point) for point in points) if !isnothing(key))
-    return BoxSet(partition, Set{keytype(P)}(gen))
+function cover end
+
+iscoverable(::T) where {T<:Union{<:Box,<:IntervalBox,<:Nothing,<:Colon}} = true
+iscoverable(::T) where {T<:Union{<:AbstractArray{<:Number},NTuple{<:Any,<:Number}}} = true
+iscoverable(::T) where {T} = false
+
+function cover(B::BoxSet, x)
+    A = cover(B.partition, x)
+    return B ∩ A
 end
 
-cover(partition::P, box::Box) where P<:AbstractBoxPartition = cover(partition, (box,))
-cover(partition::P, int::IntervalBox) where P<:AbstractBoxPartition = cover(partition, Box(int))
-cover(partition::P, ::Nothing) where P<:AbstractBoxPartition = nothing
+function cover(partition::P, x) where {P<:AbstractBoxPartition}
+    S = BoxSet(partition, Set{keytype(P)}())
+    for object in x
+        iscoverable(object) || throw(MethodError(cover, (partition, object)))
+        union!(S, cover(partition, object))
+    end
+    return S
+end
 
 function cover(partition::P, ::Colon) where {P<:AbstractBoxPartition}
     return BoxSet(partition, Set{keytype(P)}(keys(partition)))
 end
 
-function cover(B::BoxSet, points)
-    A = getindex(B.partition, points)
-    return B ∩ A
+cover(partition::P, int::IntervalBox) where {P<:AbstractBoxPartition} = cover(partition, Box(int))
+cover(partition::P, ::Nothing) where {P<:AbstractBoxPartition} = BoxSet(partition, Set{keytype(P)}())
+cover(partition::P, x::Number) where {T,P<:AbstractBoxPartition{<:Box{1,T}}} = cover(partition, (x,))
+
+function cover(partition::P, point::T) where {P<:AbstractBoxPartition,N,W<:Number,T<:Union{<:AbstractArray{W},<:NTuple{N,W}}}
+    key = point_to_key(partition, point)
+    B = BoxSet(partition, Set{keytype(P)}())
+    isnothing(key) || push!(B, key)
+    return B
 end
 
-"""
-    cover_boxes(partition::BoxPartition, boxes)
-
-Return a covering of an iterator of `Box`es using `Box`es from `partition`. 
-Only covers the part of `boxes` which lies within `partition.domain`. 
-This is returned by `cover(partition, boxes)`. 
-"""
-function cover_boxes(partition::P, boxes) where {N,T,I,P<:BoxPartition{N,T,I}}
-    K = keytype(P)
-    keys = Set{K}()
-    vertex_keys = Matrix{I}(undef, N, 2)
-    for box_in in boxes
-        isnothing(box_in) && continue
-        (any(isnan, box_in.center) || any(isnan, box_in.radius)) && continue
-        box = Box{N,T}(box_in.center .- 10*eps(T), box_in.radius .- 10*eps(T))
-        vertex_keys[:, 1] .= vertex_keys[:, 2] .= bounded_point_to_key(partition, box.center)
-        for point in vertices(box)
-            ints = bounded_point_to_key(partition, point)
-            #@debug point, ints
-            vertex_keys[:, 1] .= min.(vertex_keys[:, 1], ints)
-            vertex_keys[:, 2] .= max.(vertex_keys[:, 2], ints)
-        end
-        C = CartesianIndices(ntuple(i -> vertex_keys[i, 1] : vertex_keys[i, 2], Val(N)))
-        union!(keys, (K(i.I) for i in C))
-    end
-    return BoxSet(partition, keys)
+function cover(partition::P, box::Box{N,T}) where {N,T,P<:BoxPartition}
+    c = box.center
+    r = box.radius .- 10*eps(T)
+    key_lo = bounded_point_to_key(partition, c .- r)
+    key_hi = bounded_point_to_key(partition, c .+ r)
+    carts = CartesianIndices(ntuple(i -> key_lo[i]:key_hi[i], Val(N)))
+    return BoxSet(partition, Set{keytype(P)}(Tuple(c) for c in carts))
 end
 
-function cover_boxes(partition::P, box_in::Box) where {N,T,I,P<:TreePartition{N,T,I}}
+function cover(partition::P, box::Box{N,R}) where {N,R,T,I,P<:TreePartition{N,T,I}}
     K = keytype(P)
     keys = Set{K}()
-    box = partition.domain ∩ box_in
+    box = partition.domain ∩ box
     isnothing(box) && return keys
 
     queue = Tuple{I,K}[(1, K((1, ntuple(_->1,N))))]
@@ -156,15 +151,6 @@ function cover_boxes(partition::P, box_in::Box) where {N,T,I,P<:TreePartition{N,
             isnothing(box1 ∩ box) || push!(queue, (c1_idx, key1))
             isnothing(box2 ∩ box) || push!(queue, (c2_idx, key2))
         end
-    end
-    return keys
-end
-
-function cover_boxes(partition::P, boxes) where {N,T,I,P<:TreePartition{N,T,I}}
-    K = keytype(P)
-    keys = Set{K}()
-    for box in boxes
-        union!(keys, cover_boxes(partition, box))
     end
     return BoxSet(partition, keys)
 end
@@ -209,8 +195,8 @@ Base.empty!(boxset::BoxSet) = (empty!(boxset.set); boxset)
 Base.copy(boxset::BoxSet) = BoxSet(boxset.partition, copy(boxset.set))
 Base.length(boxset::BoxSet) = length(boxset.set)
 Base.keys(boxset::BoxSet) = keys(boxset.set)
-Base.push!(boxset::BoxSet, key) = push!(boxset.set, key)
-Base.sizehint!(boxset::BoxSet, size) = sizehint!(boxset.set, size)
+Base.push!(boxset::BoxSet, key) = (push!(boxset.set, key); boxset)
+Base.sizehint!(boxset::BoxSet, size) = (sizehint!(boxset.set, size); boxset)
 Base.eltype(::Type{<:BoxSet{B}}) where B = B
 SplittablesBase.amount(boxset::BoxSet) = SplittablesBase.amount(boxset.set)
 
@@ -243,12 +229,7 @@ end
 Return a one-box wide neighborhood of a BoxSet `B`. 
 """
 function neighborhood(B::BoxSet)
-    P = B.partition
-    nbhd = empty!(copy(B))
-    for (c, r) in B
-        box = Box(c, 1.1 .* r)
-        union!(nbhd, cover(P, box))
-    end
+    nbhd = cover( B.partition, (Box(c, 1.2 .* r) for (c, r) in B) )
     return setdiff!(nbhd, B)
 end
 
@@ -257,13 +238,13 @@ function neighborhood(B::BoxSet{R,Q}) where {N,R,Q<:BoxPartition{N}}
     C = empty!(copy(B))
 
     surrounding = CartesianIndices(ntuple(_-> -1:1, N))
-    function nbhd(key)
+    function _nbhd(key)
         keygen = (key .+ Tuple(cartesian_ind) for cartesian_ind in surrounding)
         (x for x in keygen if checkbounds(Bool, P, x))
     end
 
     for key in B.set
-        union!(C, nbhd(key))
+        union!(C.set, _nbhd(key))
     end
 
     return setdiff!(C, B)
