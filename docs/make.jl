@@ -64,6 +64,7 @@ makedocs(
         "Library Reference" => "library_reference.md"
     ],
     doctest = false,
+    draft = false,
     format = Documenter.HTML(prettyurls = ci)
     #format = Documenter.LaTeX(platform = "none")
 )

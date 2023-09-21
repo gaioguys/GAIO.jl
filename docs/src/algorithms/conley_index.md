@@ -41,7 +41,7 @@ end
 ```
 
 ```@example 1
-A = relative_attractor(F, S, steps = 20)
+A = maximal_invariant_set(F, S, steps = 20)
 per = [period_n_orbit(F, A; n=n) for n in 1:6]
 ```
 
@@ -105,74 +105,123 @@ Get `homcubes` at [Pawel Pilarczyk's website](http://www.pawelpilarczyk.com/chom
 ```
 $ homcubes -g P1_generators.dat -g Q1_generators.dat -g graph_generators.dat transfers.map P1.cub P0.cub Q1.cub Q0.cub
 
-
 HOMCUBES, ver. 3.07, 09/25/15. Copyright (C) 1997-2020 by Pawel Pilarczyk.
 This is free software. No warranty. Consult 'license.txt' for details.
-Reading cubes to X from 'P1.cub'... 8662 cubes read.
-Reading cubes to A from 'P0.cub'... 566 cubes read.
-Computing X\A... 0 cubes removed from X, 8662 left.
-Restricting A to the neighbors of X\A... 0 cubes removed, 566 left.
-Reading cubes to Y from 'Q1.cub'... 8662 cubes read.
-Reading cubes to B from 'Q0.cub'... 760 cubes read.
-Computing Y\B... 0 cubes removed from Y, 8662 left.
+Note: The empty file 'P0.cub' is assumed to contain cubes.
+Reading cubes to X from 'P1.cub'... 334 cubes read.
+Reading cubes to A from 'P0.cub'... 0 cubes read.
+Reading cubes to Y from 'Q1.cub'... 574 cubes read.
+Reading cubes to B from 'Q0.cub'... 240 cubes read.
+Computing Y\B... 240 cubes removed from Y, 334 left.
 300 bit fields allocated (0 MB) to speed up 2-dimensional reduction.
-Reducing full-dim cubes from (X,A)... 179 removed, 9049 left.
-Reading the map on X\A from 'transfers.map' for extended reduction... Done.
-Verifying if the image of X\A is contained in Y... Passed.
-Expanding A in X... 6590 moved to A, 2072 left in X\A, 7794 added to B.
-Restricting A to the neighbors of X\A... 5287 cubes removed, 1690 left.
-Reducing full-dim cubes from (X,A)... 490 removed, 3272 left.
+Reducing full-dim cubes from X... 314 removed, 20 left.
 Note: The program assumes that the input map is acyclic.
-Reading the map on X\A from 'transfers.map'... Done.
-Reading the map on A from 'transfers.map'... Done.
-Verifying if the image of A is contained in B... Failed.
-WARNING: The image of A is NOT contained in B.
-Verifying if the image of A is disjoint from Y\B... Failed.
-SERIOUS WARNING: The image of A is NOT disjoint from Y\B.
-Computing the image of the map... 4590 cubes.
-Expanding B in Y... 867 cubes moved to B, 1 left in Y\B.
-Restricting B to the neighbors of Y\B... 4832 cubes removed, 4589 left.
-Reducing full-dim cubes from (Y,B)... 0 removed, 4590 left.
-Transforming X\A into cells... 2072 cells added.
-Transforming A into cells... 1200 cells added.
-Transforming Y\B into cells... 1 cells added.
-Transforming B into cells... 4589 cells added.
-Collapsing faces in X and A... .. 0 removed, 10104 left.
-There are 7153 faces of dimension up to 2 left in A.
-Creating the map F on cells in X... 105698 cubes added.
-Creating the map F on cells in A... 56344 cubes added.
-Creating a cell map for F... ... Done.     
+Reading the map on X from 'transfers.map'... Done.
+Verifying if the image of X is contained in Y... Passed.
+Computing the image of the map... 63 cubes.
+Expanding B in Y... 273 cubes moved to B, 61 left in Y\B.
+Restricting B to the neighbors of Y\B... 401 cubes removed, 112 left.
+Reducing full-dim cubes from (Y,B)... 67 removed, 106 left.
+Transforming X into cells... 20 cells added.
+Transforming Y\B into cells... 22 cells added.
+Transforming B into cells... 84 cells added.
+Collapsing faces in X... .. 160 removed, 20 left.
+Note: The dimension of X decreased from 2 to 0.
+Creating the map F on cells in X... 63 cubes added.
+Creating a cell map for F... . Done.
 Note: It has been verified successfully that the map is acyclic.
-Creating the graph of F... .. 55227 cells added.
-Adding boundaries of cubical cells in Y and B... 0 cubical cells added.
-Forgetting 5375 cells from B.
-Computing the image of F... 1 cells added.
-Collapsing Y towards F(X)... .. 0 cells removed, 1 left.
-Creating the chain complex of the graph of F... .. Done.
-Creating the chain complex of Y... .. Done.
+Creating the graph of F...  20 cells added.
+Adding boundaries of cubical cells in Y and B... 91 cubical cells added.
+Forgetting 256 cells from B.
+Computing the image of F... 2 cells added.
+Collapsing Y towards F(X)... .. 86 cells removed, 27 left.
+Note: The dimension of Y decreased from 2 to 1.
+Creating the chain complex of the graph of F... Done.
+Creating the chain complex of Y... . Done.
 Creating the chain map of the projection... Done.
-Time used so far: 0.87 sec (0.014 min).
+Time used so far: 0.00 sec (0.000 min).
 Computing the homology of the graph of F over the ring of integers...
-Reducing D_2: 0 + 15428 reductions made. 
-Reducing D_1: 6977 + 1881 reductions made. 
-H_0 = 0
-H_1 = 0
-H_2 = Z
-Saving generators of X to 'P1_gen.dat'... Done.
-Saving generators of the graph of F to 'graph_gen.dat'... Done.
+H_0 = Z^20
+Saving generators of X to 'P1_generators.dat'... Done.
+Saving generators of the graph of F to 'graph_generators.dat'... Done.
 Computing the homology of Y over the ring of integers...
-Reducing D_2: 
-Reducing D_1: 
-H_0 = 0
-H_1 = 0
-H_2 = Z
-Saving generators of Y to 'Q1_gen.dat'... Done.
+Reducing D_1: 0 + 4 reductions made. 
+H_0 = Z^2
+H_1 = Z^17
+Saving generators of Y to 'Q1_generators.dat'... Done.
 The map induced in homology is as follows:
-Dim 0:  0
-Dim 1:  0
-Dim 2:  f (x1) = y1
-Total time used: 1.09 sec (0.018 min).
+Dim 0:  f (x1) = 0
+        f (x2) = 0
+        f (x3) = 0
+        f (x4) = y1
+        f (x5) = 0
+        f (x6) = 0
+        f (x7) = y2
+        f (x8) = 0
+        f (x9) = 0
+        f (x10) = 0
+        f (x11) = 0
+        f (x12) = 0
+        f (x13) = 0
+        f (x14) = 0
+        f (x15) = 0
+        f (x16) = 0
+        f (x17) = 0
+        f (x18) = 0
+        f (x19) = 0
+        f (x20) = 0
+Total time used: 0.00 sec (0.000 min).
 Thank you for using this software. We appreciate your business.
 ```
 
-We see that the map induced on homology is what we expect: ``H_2 (P_1,\ P_0) \cong \mathbb{Z}``, ``H_2 (Q_1,\ Q_0) \cong \mathbb{Z}`` and ``f_*`` sends the generator of ``H_2 (P_1,\ P_0)`` to the generator of ``H_2 (Q_1,\ Q_0)``. 
+We can take a look at the generators in homology within the *_generators.dat files:
+
+```
+$ cat Q1_generators.dat
+
+The 2 generators of H_0 follow:
+generator 1
+1 * [(703,542)(703,542)]
+generator 2
+1 * [(700,543)(700,543)]
+
+The 17 generators of H_1 follow:
+generator 1
+1 * [(455,683)(456,683)]
+generator 2
+1 * [(621,403)(622,403)]
+generator 3
+1 * [(394,702)(395,702)]
+generator 4
+1 * [(629,408)(630,408)]
+generator 5
+1 * [(546,632)(547,632)]
+generator 6
+-1 * [(614,618)(615,618)]
+1 * [(615,617)(615,618)]
+generator 7
+1 * [(314,313)(315,313)]
+generator 8
+1 * [(401,695)(402,695)]
+generator 9
+1 * [(568,619)(569,619)]
+generator 10
+-1 * [(653,590)(654,590)]
+1 * [(653,590)(653,591)]
+generator 11
+1 * [(546,649)(547,649)]
+generator 12
+1 * [(447,677)(448,677)]
+generator 13
+1 * [(590,605)(591,605)]
+generator 14
+1 * [(604,393)(605,393)]
+generator 15
+1 * [(411,697)(412,697)]
+generator 16
+1 * [(692,458)(692,459)]
+1 * [(692,459)(693,459)]
+generator 17
+1 * [(676,442)(676,443)]
+1 * [(675,442)(676,442)]
+```
