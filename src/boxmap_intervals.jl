@@ -52,6 +52,10 @@ function Base.show(io::IO, g::IntervalBoxMap)
     print(io, "IntervalBoxMap with $(n) subintervals")
 end
 
+function typesafe_map(g::IntervalBoxMap{N,T}, x) where {N,T}
+    SVector{N,Interval{T}}(g.map(x)...)
+end
+
 # BoxMap API
 
 function map_boxes(
@@ -62,7 +66,7 @@ function map_boxes(
     @floop for box in source
         c, r = box
         for subint in mince(box, g.n_subintervals(c, r))
-            fint = g.map(subint)
+            fint = typesafe_map(g, subint)
             fSet = cover(P, fint)
             @reduce() do (image = BoxSet(P, S()); fSet)     # Initialize `image = BoxSet(P, S())` empty boxset
                 image = image ⊔ fSet                        # Add `fSet` to `image`
@@ -83,7 +87,7 @@ function construct_transfers(
         box = key_to_box(P, key)
         c, r = box
         for subint in mince(box, g.n_subintervals(c, r))
-            fint = g.map(subint)
+            fint = typesafe_map(g, subint)
             fSet = cover(P, fint)
             @reduce() do (image = BoxSet(P, S()); fSet)     # Initialize `image = BoxSet(P, S())` empty boxset
                 image = image ⊔ fSet                        # Add `fSet` to `image`
@@ -113,7 +117,7 @@ function construct_transfers(
         box = key_to_box(P1, key)
         c, r = box
         for subint in mince(box, g.n_subintervals(c, r))
-            fint = g.map(subint)
+            fint = typesafe_map(g, subint)
             fSet = cover(P2, fint)
 
             for hit in keys(fSet)

@@ -19,24 +19,25 @@ using SparseArrays
 using Arpack
 
 # misc
-import Base: unsafe_trunc
+import Base: unsafe_trunc, IteratorEltype, HasEltype, OneTo
 import Base: ∘
 import Base: @propagate_inbounds
 
 export Box
-export volume, center, vertices, rescale
+export volume, center, radius, vertices, rescale
 
 export AbstractBoxPartition, BoxPartition, TreePartition
 export key_to_box, point_to_key, bounded_point_to_key, point_to_box
-export depth, tree_search
+export depth, tree_search, find_at_depth, leaves, hidden_keys
 
 export BoxSet
-export cover, subdivide, subdivide!
+export cover, neighborhood, nbhd, subdivide, subdivide!
 
 export BoxFun
 
 export TransferOperator
 export construct_transfers, eigs, svds
+export key_to_index, index_to_key
 
 export BoxGraph, Graph
 export union_strongly_connected_components
@@ -98,7 +99,14 @@ include("boxmap.jl")
 include("boxfun.jl")  
 include("transfer_operator.jl")
 include("boxgraph.jl")
-include("algorithms.jl")
+
+include("algorithms/invariant_sets.jl")
+include("algorithms/scalar_diagnostics.jl")
+include("algorithms/optimization.jl")
+include("algorithms/seba.jl")
+include("algorithms/maps.jl")
+
+const nbhd = neighborhood
 
 include("precompile.jl")
 

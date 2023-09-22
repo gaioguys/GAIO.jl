@@ -76,6 +76,12 @@ Base.copy(tr::TreePartition) = TreePartition(tr.domain, copy(tr.nodes))
 Base.length(tr::TreePartition) = length(keys(tr))
 Base.sizehint!(tr::TreePartition, s) = sizehint!(tr.nodes, s)
 
+"""
+    tree_search(tree, point, max_depth=Inf) -> key, node_idx
+
+Find the key and correspoinding node index within the tree 
+data structure containing a point. 
+"""
 function tree_search(tree::TR, point, max_depth=Inf) where {N,T,I,TR<:TreePartition{N,T,I}}
     point in tree.domain || return nothing, 1
     
