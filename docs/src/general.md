@@ -120,6 +120,7 @@ where the output `C` is also a `BoxSet`.
 
 For long running computations, GAIO.jl can also display a progress meter
 ```@repl 1
+using ProgressMeter
 C = F(B; show_progress = true)
 ```
 (Adding a progress meter adds a little bit of overhead, so for super short computations like the above it isn't recommended)
@@ -137,6 +138,7 @@ T = TransferOperator(F, B, B)
 ```
 Again, a progress meter can be displayed for long computations
 ```@repl 1
+using ProgressMeter
 T = TransferOperator(F, B, B; show_progress = true)
 ```
 To convert this to the underlying transfer matrix described in [3], one can simply call the `sparse` function from `SparseArrays` 

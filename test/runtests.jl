@@ -4,6 +4,7 @@ using SafeTestsets
 
 using SIMD
 using CUDA
+using ProgressMeter
 using GAIO
 
 ENV["JULIA_DEBUG"] = GAIO
@@ -50,6 +51,11 @@ ENV["JULIA_DEBUG"] = GAIO
     @info "testing boxmap_interval.jl"
     @safetestset "IntervalBoxMap" begin
         include("boxmap_interval.jl")
+    end
+
+    @info "testing progressmeter.jl"
+    @safetestset "Progrss Meter" begin
+        include("progressmeter.jl")
     end
 
     @info "testing boxfun.jl"

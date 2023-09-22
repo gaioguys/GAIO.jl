@@ -1,4 +1,5 @@
 using GAIO
+using ProgressMeter
 using Test
 
 @testset "exported functionality" begin
@@ -13,13 +14,13 @@ using Test
     P = BoxPartition(domain, (128,128,128))
     S = cover(P, x)
 
-    for (name, args) in Dict(
-        "montecarlo"        => (:montecarlo,),
-        "grid"              => (:grid,),
-        "adaptive"          => (:adaptive,),
-        "simd montecarlo"   => (:montecarlo, :simd),
-        "simd grid"         => (:grid, :simd)
-    )
+    for (name, args) in [
+            "montecarlo"        => (:montecarlo,),
+            "grid"              => (:grid,),
+            "adaptive"          => (:adaptive,),
+            "simd montecarlo"   => (:montecarlo, :simd),
+            "simd grid"         => (:grid, :simd)
+        ]
 
         @testset "$name" begin
             F = BoxMap(args..., f, domain)
@@ -30,9 +31,30 @@ using Test
             @time W = unstable_set(F, S);
         
             T = TransferOperator(F, W)
+            T = TransferOperator(F, W, W)
             λ, ev, nconv = eigs(T, nev=1)
             @test ev[1] isa BoxFun  # passes if no error is thrown    
         end
 
     end
+
+    for (name, args) in [
+            "montecarlo"        => (:montecarlo,),
+            "grid"              => (:grid,),
+            "adaptive"          => (:adaptive,)
+        ]
+
+        @testset "$name with progress meter" begin
+            F = BoxMap(args..., f, domain)
+            W = unstable_set(F, S)
+            @test W isa BoxSet  # passes if no error is thrown
+        
+            T = TransferOperator(F, W; show_progress=true)
+            T = TransferOperator(F, W, W; show_progress=true)
+            λ, ev, nconv = eigs(T, nev=1)
+            @test ev[1] isa BoxFun  # passes if no error is thrown    
+        end
+
+    end
+
 end

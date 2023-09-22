@@ -110,6 +110,11 @@ function Base.intersect(b1::Box{N}, b2::Box{N}) where {N}
     return Box((hi .+ lo) ./ 2, (hi .- lo) ./ 2)
 end
 
+Base.intersect(b1::IntervalBox, b2::Box) = Box(b1) ∩ b2
+Base.intersect(b1::NTuple{N,<:Interval}, b2::Box{N}) where {N} = Box(b1) ∩ b2
+Base.intersect(b1::Box, b2::IntervalBox) = b1 ∩ Box(b2)
+Base.intersect(b1::Box{N}, b2::NTuple{N,<:Interval}) where {N} = b1 ∩ Box(b2)
+
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
 Base.length(::Box{N}) where {N} = N
 Base.ndims(::Box{N}) where {N} = N
@@ -117,6 +122,9 @@ Base.ndims(::Box{N}) where {N} = N
 Base.iterate(b::Box, i...) = (b.center, Val(:radius))
 Base.iterate(b::Box, ::Val{:radius}) = (b.radius, Val(:done))
 Base.iterate(b::Box, ::Val{:done}) = nothing
+
+IntervalArithmetic.mince(b::Box{N,T}, n::Int) where {N,T} = mince(IntervalBox(b), n)
+IntervalArithmetic.mince(b::Box{N,T}, ncuts::NTuple{N,Int}) where {N,T} = mince(IntervalBox(b), ncuts)
 
 """
     volume(box::Box)
