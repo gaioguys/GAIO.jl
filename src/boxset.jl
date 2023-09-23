@@ -108,7 +108,7 @@ end
 
     return quote
         S = BoxSet(partition, Set{keytype(P)}())
-        $expr
+        $expression
         return S
     end
 end
