@@ -4,7 +4,7 @@ using GAIO, MetaGraphsNext, SparseArrays, OrderedCollections
 using MetaGraphsNext.Graphs: AbstractGraph, DiGraph, vertices, edges, src, dst
 
 import MetaGraphsNext: MetaGraph
-import GAIO: index_to_key, key_to_index, _rehash!
+import GAIO: index_to_key, key_to_index, _rehash!, morse_adjacencies_and_tiles, morse_graph, BoxFun, AbstractBoxPartition
 
 function MetaGraph(F♯::TransferOperator{B,T}) where {N,W,B<:Box{N,W},T}
     _rehash!(F♯)
@@ -56,8 +56,33 @@ function MetaGraph(digraph::AbstractGraph{Code}, tiles::BoxFun{B,K,V}; settype=S
     )
 end
 
-function MetaGraph(adj::AbstractMatrix, tiles::BoxFun)
+"""
+    morse_graph(F::BoxMap, B::BoxSet) -> MetaGraph
+    morse_graph(F♯::TransferOperator) -> MetaGraph
+
+Construct the morse graph
+"""
+function morse_graph(F♯::TransferOperator)
+    adj, tiles = morse_adjacencies_and_tiles(F♯)
     MetaGraph(DiGraph(adj), tiles)
+end
+
+function morse_graph(F::BoxMap, B::BoxSet)
+    morse_graph(TransferOperator(F, B, B))
+end
+
+function BoxFun(G::MetaGraph{<:Any,<:Any,L,<:BoxSet,<:Any,P}) where {L,P<:AbstractBoxPartition}
+    fun = BoxFun(G[], OrderedDict{keytype(P),L}())
+    sizehint!(fun, sum(x -> length(G[x]), labels(G)))
+
+    for label in labels(G)
+        morse_set = G[label]
+        for key in keys(morse_set)
+            fun[key] = label
+        end
+    end
+
+    return fun
 end
 
 end # module

@@ -98,13 +98,13 @@ Given a `strong_components_output` from `MatrixNetworks` (in particular
 the component map) as well as the morse map (see `morse_map`), compute 
 the adjacency matrix for the morse graph. 
 """
-function morse_graph(strong_components::Strong_components_output, morse_map)
+function morse_adjacencies(strong_components::Strong_components_output, morse_map)
     strong_components_enrich = enrich(strong_components)
     sizes = strong_components.sizes
     condensation_graph = strong_components_enrich.transitive_map
 
     n = maximum(morse_map)  # size of morse graph
-    morse_graph = spzeros(Int, n, n)
+    morse_adjacencies = spzeros(Int, n, n)
     nontrivials = ( morse_map .> 0 )
     
     vertices = 1:size(condensation_graph)[1]
@@ -112,24 +112,24 @@ function morse_graph(strong_components::Strong_components_output, morse_map)
         if !istrivial(condensation_graph, sizes, vertex)
             dists, _ = bfs(condensation_graph, vertex)
             morse_vertex = morse_map[vertex]
-            morse_graph[morse_vertex, :] .+= ( dists[nontrivials] .> -1 )
+            morse_adjacencies[morse_vertex, :] .+= ( dists[nontrivials] .> -1 )
         end
     end
 
-    return morse_graph
+    return morse_adjacencies
 end
 
-function morse_graph(strong_components::Strong_components_output)
+function morse_adjacencies(strong_components::Strong_components_output)
     morse_map_ = morse_map(strong_components)
-    morse_graph(strong_components, morse_map_)
+    morse_adjacencies(strong_components, morse_map_)
 end
 
-function morse_graph(F♯::TransferOperator)
-    morse_graph(scomponents(F♯))
+function morse_adjacencies(F♯::TransferOperator)
+    morse_adjacencies(scomponents(F♯))
 end
 
-function morse_graph(F::BoxMap, B::BoxSet)
-    morse_graph(TransferOperator(F, B, B))
+function morse_adjacencies(F::BoxMap, B::BoxSet)
+    morse_adjacencies(TransferOperator(F, B, B))
 end
 
 """
@@ -182,19 +182,21 @@ Given a transfer operator (interpreted as a transfer graph),
 compute the adjacency matrix for the mose graph as well as 
 the boxes representing the vertices for the morse graph. 
 """
-function morse_graph_and_tiles(F♯::TransferOperator)
+function morse_adjacencies_and_tiles(F♯::TransferOperator)
     adj = MatrixNetwork(F♯)
     strong_components = scomponents(adj)
 
     morse_map_F♯ = morse_map(strong_components)
-    morse_graph_F♯ = morse_graph(strong_components, morse_map_F♯)
+    morse_adjacencies_F♯ = morse_adjacencies(strong_components, morse_map_F♯)
     
     morse_component_map_F♯ = morse_component_map(strong_components, morse_map_F♯)
     morse_tiles_F♯ = morse_tiles(F♯.domain, morse_component_map_F♯)
 
-    return morse_graph_F♯, morse_tiles_F♯
+    return morse_adjacencies_F♯, morse_tiles_F♯
 end
 
-function morse_graph_and_tiles(F::BoxMap, B::BoxSet)
-    morse_graph_and_tiles(TransferOperator(F, B, B))
+function morse_adjacencies_and_tiles(F::BoxMap, B::BoxSet)
+    morse_adjacencies_and_tiles(TransferOperator(F, B, B))
 end
+
+function morse_graph end

@@ -63,8 +63,6 @@ export armijo_rule, adaptive_newton_step, cover_roots, cover_manifold
 export nth_iterate_jacobian
 export seba, partition_unity, partition_disjoint, partition_likelihood
 
-export plotboxes, plotboxes!
-
 # ENV["JULIA_DEBUG"] = all
 
 const SVNT{N,T} = Union{<:NTuple{N,T}, <:StaticVector{N,T}}

@@ -8,3 +8,4 @@ Manifest.toml
 GAIO-remote.code-workspace
 *LocalPreferences.toml
 *.DS_Store
+*.jats
