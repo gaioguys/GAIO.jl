@@ -1,7 +1,9 @@
 using GAIO
-using Documenter, LinearAlgebra, SparseArrays, StaticArrays, Graphs, MetaGraphsNext, SIMD, Arpack
-import Plots, MakieCore, GLMakie
+using Documenter, DocumenterCitations#, JSServe
+using LinearAlgebra, SparseArrays, StaticArrays, Graphs, MetaGraphsNext, SIMD, Arpack
+import Plots, GLMakie#, WGLMakie
 
+bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"))
 ci = get(ENV, "CI", "false") == "true"
 
 ENV["JULIA_DEBUG"] = Documenter #nothing
@@ -13,9 +15,10 @@ makedocs(
     sitename = "GAIO.jl",
     pages = [
         "Home" => "index.md",
+        #"Testing Page" => "test.md",
         "Getting started" => "getting_started.md",
         "General usage" => "general.md",
-        "BoxMaps" => [
+       "BoxMaps" => [
             "boxmaps/boxmaps_general.md",
             "boxmaps/montecarlo.md",
             "boxmaps/grid.md",
@@ -31,7 +34,7 @@ makedocs(
         "Invariant Sets" => [
             "Relative Attractor" => "algorithms/relative_attractor.md",
             "Chain Reccurent Set" => "algorithms/chain_recurrent_set.md",
-            "Maximal Invariant Set" => "algorithms/maximal_invariant_set.md",
+            "Maximal Invariant Set" => "algorithms/maximal_invariant_set.md", 
             "Stable and Unstable Manifold" => "algorithms/unstable_manifold.md"
         ],
         "Transfer- and Koopman Operators" => [
@@ -60,13 +63,20 @@ makedocs(
             "cuda.md"
         ],
         "Other Examples" => "examples.md",
-        "Data Structures" => "data_structures.md",
-        "Library Reference" => "library_reference.md"
+        "Data Structures" => "data_structures.md", 
+        "Library Reference" => "library_reference.md",
+        "References" => "references.md"
     ],
+    pagesonly = true,
     doctest = false,
     draft = false,
-    format = Documenter.HTML(prettyurls = ci)
-    #format = Documenter.LaTeX(platform = "none")
+    #format = Documenter.LaTeX(platform = "none"),
+    format = Documenter.HTML(
+        prettyurls = ci, 
+        size_threshold = nothing, 
+        assets = String["assets/citations.css"]
+    ),
+    plugins = [bib]
 )
 
 if ci

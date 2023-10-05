@@ -11,7 +11,7 @@ W^U(x_0) = \{x: \lim_{k \to - \infty} f^k(x) = x_0 \}
 ```
 where ``x_0`` is a fixed point of ``f``.
 
-The idea behind the algorithm [1] to compute the unstable manifold can be explained in two steps. Before starting we need to identify a hyperbolic fixed point and the region ``Q``, which we are going to compute the manifold in. The region ``Q`` needs to be already partitioned into small boxes.
+The idea behind the algorithm [subalg](@cite) to compute the unstable manifold can be explained in two steps. Before starting we need to identify a hyperbolic fixed point and the region ``Q``, which we are going to compute the manifold in. The region ``Q`` needs to be already partitioned into small boxes.
 1. **initialization step** Since a fixed point is always part of the unstable manifold, we need to identify a small region/box containing this fixed point. This box may be known a-priori, or one can use the `relative_attractor` around a small region where one suspects a fixed point to exist. 
 2. **continuation step** The small box containing the fixed point is then mapped forward by `F` and the boxes that are hit under the image are added to the box collection. Then those newly included boxes are mapped forward and the procedure is repeated until no new boxes are added. 
 
@@ -139,7 +139,3 @@ function unstable_set(F::BoxMap, B::BoxSet)
     return B₀
 end
 ```
-
-### References
-
-[1] Michael Dellnitz and Adreas Hohmann. “The Computation of Unstable Manifolds Using Subdivision”. In: _Nonlinear Systems and Chaos_. Ed. by Haim Brezis. Vol. 19. Progress in Nonlinear Differential Equations and their Applications. 1996, pp. 449–459. doi: https://doi.org/10.1007/978-3-0348-7518-9.
