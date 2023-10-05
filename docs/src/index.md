@@ -21,7 +21,7 @@ GAIO.jl provides algorithms for
   * entropy and box dimension
 * root finding problems
 * multi-objective optimization problems
-* computing implicitely defined manifolds
+* computing implicitly defined manifolds
 
 ## Installation
 

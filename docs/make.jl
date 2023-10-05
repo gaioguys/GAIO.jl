@@ -70,10 +70,11 @@ makedocs(
     pagesonly = true,
     doctest = false,
     draft = false,
+    warnonly = !ci,
     #format = Documenter.LaTeX(platform = "none"),
     format = Documenter.HTML(
         prettyurls = ci, 
-        size_threshold = nothing, 
+        size_threshold = 11981529, 
         assets = String["assets/citations.css"]
     ),
     plugins = [bib]

@@ -172,9 +172,8 @@ savefig(p, "gyre_almost_inv.svg"); nothing # hide
 
 Since the map is nonautonomous, this image should change if we vary the start time `t₀`. 
 
-```@example 2
-n_frames = 200
-n_frames = Meta.parse(get(ENV, "n_frames", 200)) # hide
+```julia
+n_frames = 120
 times = range(t₀, t₁, length=n_frames)
 
 anim = @animate for t in times
@@ -193,10 +192,10 @@ anim = @animate for t in times
 
     plot(μ, clims=(-1,1), colormap=:jet)
 end;
-gif(anim, "gyre_almost_inv.gif", fps=20); nothing # hide
+gif(anim, "gyre_almost_inv.gif", fps=20)
 ```
 
-![almost invariant sets changing over time](gyre_almost_inv.gif)
+![almost invariant sets changing over time](../assets/gyre_almost_inv.gif)
 
 ### References
 

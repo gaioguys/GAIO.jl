@@ -95,9 +95,8 @@ savefig(p, "sv1.svg"); nothing # hide
 
 ![Second left singular measure](sv1.svg)
 
-```@example 1
+```julia
 n_frames = 120
-n_frames = Meta.parse(get(ENV, "n_frames", 120)) # hide
 times = range(t₀, t₁, length=n_frames)
 
 anim = @animate for t in times
@@ -120,10 +119,10 @@ anim = @animate for t in times
 
     plot(μ, clims=(-1,1), colormap=:redsblues)
 end;
-gif(anim, "coherent.gif", fps=20); nothing # hide
+gif(anim, "coherent.gif", fps=20)
 ```
 
-![Coherent Sets](coherent.gif)
+![Coherent Sets](../assets/coherent.gif)
 
 
 ### References
