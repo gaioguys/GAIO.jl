@@ -126,7 +126,7 @@ C = F(B; show_progress = true)
 
 ## TransferOperator
 
-The _Perron-Frobenius operator_ (or _transfer operator_) [2] is discretized in GAIO.jl using the `TransferOperator` type. To initialize a `TransferOperator` that acts on a subdomain of ``Q``, type
+The _Perron-Frobenius operator_ (or _transfer operator_) [lasotamackey](@cite) is discretized in GAIO.jl using the `TransferOperator` type. To initialize a `TransferOperator` that acts on a subdomain of ``Q``, type
 ```@repl 1
 B = cover(P, :)
 T = TransferOperator(F, B)   # T operates on the domain covered by the box set B
@@ -139,7 +139,7 @@ Again, a progress meter can be displayed for long computations
 ```@repl 1
 T = TransferOperator(F, B, B; show_progress = true)
 ```
-To convert this to the underlying transfer matrix described in [3], one can simply call the `sparse` function from `SparseArrays` 
+To convert this to the underlying transfer matrix described in [algGAIO](@cite), one can simply call the `sparse` function from `SparseArrays` 
 ```@repl 1
 using SparseArrays
 sparse(T)
@@ -197,11 +197,3 @@ using GLMakie: plot
 plot(B)
 ```
 Plotting works with all the functionality of either package. This means you can set box plots as subplots, add colorbars, etc., using the Plots or Makie interface. For an example, see `examples/invariant_measure_2d.jl`. 
-
-## References
-
-[1] Oliver Junge. “Rigorous discretization of subdivision techniques”. In: _International Conference on Differential Equations_. Ed. by B. Fiedler, K. Gröger, and J. Sprekels. 1999.
-
-[2] Andrzej Lasota and Michael C. Mackey. _Chaos, Fractals, and Noise. Stochastic Aspects of Dynamics_. Springer New York, NY, 1994. doi: https://doi.org/10.1007/978-1-4612-4286-4.
-
-[3] Michael Dellnitz, Oliver Junge, and Gary Froyland. “The Algorithms Behind GAIO - Set Oriented Numerical Methods for Dynamical Systems”. In: _Ergodic Theory, Analysis, and Efficient Simulations of Dynamical Systems_. Ed. by Bernold Fiedler. Springer Berlin, 2001, pp. 145–174. doi: https://doi.org/10.1007/3-540-35593-6.

@@ -46,7 +46,7 @@ S = cover(P, x)
 @time W = unstable_set(F, S)
 ```
 
-Using CUDA, one can achieve a more than 100-fold increase in performance. However, the performance increase is dependent on the complexity of the map `f`. For "simple" maps (eg. `f` from above with 20 steps), the GPU accelerated version will actually perform _worse_ because computation time is dominated by the time required to transfer data across the (comparatively slow) PCIe bus. The GPU accelerated version only beats the CPU accelerated version if `f` is set to use more than 40 steps. Hence it is highly recommended to use the GPU if the map `f` is not dominated by memory transfer speed, but not recommended otherwise. For more detail, see [1]. 
+Using CUDA, one can achieve a more than 100-fold increase in performance. However, the performance increase is dependent on the complexity of the map `f`. For "simple" maps (eg. `f` from above with 20 steps), the GPU accelerated version will actually perform _worse_ because computation time is dominated by the time required to transfer data across the (comparatively slow) PCIe bus. The GPU accelerated version only beats the CPU accelerated version if `f` is set to use more than 40 steps. Hence it is highly recommended to use the GPU if the map `f` is not dominated by memory transfer speed, but not recommended otherwise. For more detail, see [GAIO.jl](@cite). 
 
 ![performance metrics](assets/flops_gpu_loglog.png)
 
@@ -55,7 +55,3 @@ Using CUDA, one can achieve a more than 100-fold increase in performance. Howeve
 CUDA.jl generally give somewhat cryptic error messages. An `unsupported dynamic function invocation` can be caused by a simple error in the code. Hence, first try algorithms with `f` WITHOUT using the GPU, and ensure that no errors occur. 
 
 If you still recieve dynamic function invocations, there likely is an operation somewhere in `f` which is not supported in CUDA.jl. A deliberately unsupported function can be for example matrix factorization, matrix-matrix multiplication, etc. because this is typically a performance trap if done on a single GPU thread. One option for linear algebra based functions which cause unsupported dynamic function invocations is to use `StaticArrays`. `StaticArrays` implements specialized methods for many low-dimensional linear algebra routines, allowing one to escape the standard methods which may cause unsupported dynamic function invocations. However, this is not a solution for all such problems, so a read through the [CUDA.jl documentation](https://cuda.juliagpu.org/stable/), [opening an issue on the GAIO.jl repo](https://github.com/gaioguys/GAIO.jl/issues), or posting a question on the [GPU category of julia Discourse](https://discourse.julialang.org/c/domain/gpu/) for help may be necessary. 
-
-## References
-
-[1] April Herwig. “GAIO.jl: Set-oriented Methods for Approximating Invariant Objects, and their Implementation in Julia”.Thesis. 2022. url: https://github.com/April-Hannah-Lena/schoolwork/blob/2eada059678d91bad8a813c3e6b657a1ac72e86f/Thesis/main.pdf. 

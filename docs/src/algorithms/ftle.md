@@ -30,7 +30,7 @@ From this we see why ``\sigma (x)`` is called the _maximal finite-time lyapunov 
 
 The definition of ``\sigma (x)`` leads to a natural _ansatz_ for approximating the FTLE: compute ``\frac{1}{T} \ln \left( \sup_{\delta x_0} \frac{ \| \delta x (t_0 + T) \|_2 }{ \| \delta x_0 \|_2 } \right)`` for each of a set of test points ``\| \delta x_0 \|`` of fixed order ``\epsilon > 0`` and set ``\sigma (x)`` to be the maximum over this set of test points. 
 
-An extension of this technique can be made for _ergodic_ systems, as shown in [1]: 
+An extension of this technique can be made for _ergodic_ systems, as shown in [beyn](@cite): 
 
 when calculating the maximal Lyapunov exponent for a discrete dynamical system ``x_{n+1} = f(x_k)`` defined as 
 ```math
@@ -155,7 +155,3 @@ T = TransferOperator(F, A, A)
 
 σ = 2*σ16 - σ8
 ```
-
-### References
-
-[1] Beyn, WJ., Lust, A. A hybrid method for computing Lyapunov exponents. _Numer. Math._ 113, 357–375 (2009). https://doi.org/10.1007/s00211-009-0236-4

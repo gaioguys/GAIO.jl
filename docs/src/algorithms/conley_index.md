@@ -1,6 +1,28 @@
 # Conley Index
 
-(TODO)
+### Mathematical Background
+
+Continuing the discussion on Conley-Morse theory, the recurrent components of a dynamical system can be described by the Conley index. 
+
+The first notion within the Conley index theory is that of an _isolating neighborhood_. A compact set ``N`` is called _isolating_ if 
+```math
+\text{Inv} (f, N) = \bigcup_{n \in \mathbb{Z}} f^n (N) \subset \text{int} (N) \, .
+```
+A set ``S`` is called an _isolated invariant set_ with _isolating neighborhood_ ``N`` if ``S = \text{Inv} (f, N)`` and ``N`` is isolating. 
+
+An _index pair_ is a tuple of sets ``(P_1, P_0)`` such that where ``P_0 \subset P_1`` satisfying
+1. _(isolation)_ ``\overline{P_1 \setminus P_0}`` is isolating,
+2. _(forward invariance)_ ``f(P_0) \cap P_1 \subset P_0``,
+3. _(exit set)_ \overline{f(P_1) \setminus P_1} \cap P_1 \subset P_0. 
+This definition is quite abstract. One way to intuitively understand this definition is as follows: we find an invariant set and cover it with a set ``P_1``. Within the boundary of ``P_1``, we collect all points where the dynamical system points "outward", that is, points along ``P_0`` leave ``P_1`` immediately. Pictorally this can be thought of in the case of flows:
+
+![intuitive example of the Conley index](../assets/conley_demo.jpeg)
+
+Letting ``Q_1 = f(P_1)``, ``Q_0 = P_0 \cup ( Q_1 \setminus P_1 )``, we consider the relative homology groups ``H_\bullet (P_1, P_0)`` and ``H_\bullet (Q_1, Q_0)``. We further consider the map induced by ``f`` on homology
+```math
+f_\bullet :\, H_\bullet (P_1, P_0) \to H_\bullet (Q_1, Q_0) \, . 
+```
+Then the _Conley index_ is the topological shift equivalence class of ``\iota_\bullet^{-1} \circ f_\bullet``, where ``\iota :\, (P_1, P_0) \to (Q_1, Q_0)`` is the inclusion map. A full introduction of (relative) homology and induced maps is outside of the scope of this page, but is explained in [computationalhomology](@cite). 
 
 ```@docs; canonical=false
 index_pair
@@ -25,6 +47,7 @@ S = cover(P, :)
 
 ```@example 1
 using SparseArrays, LinearAlgebra
+
 function period_n_orbit(F, B; n=2)
     F♯ = TransferOperator(F, B, B)
 
