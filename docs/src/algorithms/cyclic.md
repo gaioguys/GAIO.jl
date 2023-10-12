@@ -96,7 +96,7 @@ We see that the ``6``th roots of unity clearly seem to be part of the spectrum. 
 μ = real .∘ μ
 
 # threshhold to extract support of each μᵢ
-# This is correct up to a sign depending on the result from ARPACK, 
+# This depends on the result from ARPACK, 
 # so it might be necessary to flip the `>`
 τ = eps()
 A = [
@@ -104,12 +104,10 @@ A = [
     for μᵢ in μ
 ]
 
-if length(A[1]) > 1000 # hide
-    A = [ # hide
-        BoxSet( P, Set(key for key in keys(μᵢ) if μᵢ[key] < -τ) ) # hide
-        for μᵢ in μ # hide
-    ] # hide
-end # hide
+# we won't rely on chance to get ARPACK right # hide
+using Serialization # hide
+A = deserialize("../assets/cyclic.ser") # hide
+A
 ```
 
 ```@example 1

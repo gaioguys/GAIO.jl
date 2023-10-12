@@ -6,7 +6,7 @@ using MetaGraphsNext
 import Plots, GLMakie#, WGLMakie
 import GraphRecipes, GraphMakie
 import SIMD, CUDA
-using LinearAlgebra, SparseArrays, StaticArrays, Graphs, Arpack
+using LinearAlgebra, SparseArrays, StaticArrays, Graphs, Arpack, Serialization
 
 const center = GAIO.center
 const radius = GAIO.radius

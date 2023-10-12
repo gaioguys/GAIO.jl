@@ -2,7 +2,7 @@
 
 ### Mathematical Background
 
-In applied dynamical systems research we often wish to determine regions of phase space which "resist mixing". These regions can provide valuable information on the system, e.g. oceanic eddies are good transporters of water that is warmer/cooler/saltier than surrounding water [1]. 
+In applied dynamical systems research we often wish to determine regions of phase space which "resist mixing". These regions can provide valuable information on the system, e.g. oceanic eddies are good transporters of water that is warmer/cooler/saltier than surrounding water [coherent](@cite). 
 
 In the context of autonomous dynamics these sets which mitigate transport between their interior and the surrounding phase space are referred to as _almost invariant_ or _metastable_. Mathematically, we wish to find sets ``A \subset Q`` of the domain ``Q`` which satisfy ``A \approx f^{-1} (A)`` or in the context of ``\mu``-measure satisfy 
 ```math
@@ -196,7 +196,3 @@ gif(anim, "gyre_almost_inv.gif", fps=20)
 ```
 
 ![almost invariant sets changing over time](../assets/gyre_almost_inv.gif)
-
-### References
-
-[1] Froyland, G., Padberg-Gehle, K. (2014). Almost-Invariant and Finite-Time Coherent Sets: Directionality, Duration, and Diffusion. In: Bahsoun, W., Bose, C., Froyland, G. (eds) Ergodic Theory, Open Dynamics, and Coherent Structures. Springer Proceedings in Mathematics & Statistics, vol 70. Springer, New York, NY. https://doi.org/10.1007/978-1-4939-0419-8_9

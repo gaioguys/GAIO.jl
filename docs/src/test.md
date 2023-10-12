@@ -21,13 +21,3 @@ S = cover(P, x)
 
 W = unstable_set(F, S)
 ```
-
-```@example 1
-using JSServe # hide
-Page(exportable=true, offline=true) # hide
-
-using WGLMakie
-fig, ax, ms = plot(W, size=(1200,900))
-
-fig # hide
-```
