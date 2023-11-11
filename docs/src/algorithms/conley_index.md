@@ -64,13 +64,13 @@ end
 ```
 
 ```@example 1
-A = maximal_invariant_set(F, S, steps = 20)
-per = [period_n_orbit(F, A; n=n) for n in 1:6]
+A = maximal_invariant_set(F, S, steps = 16)
 ```
 
 ```@example 1
-B = union(per[2:end]...)
-B = setdiff!(B, per[1])     # periodic points, excluding fixed points
+fix = period_n_orbit(F, A; n=1)
+per2 = period_n_orbit(F, A; n=2)
+B = setdiff(per2, fix)
 ```
 
 ```@example 1

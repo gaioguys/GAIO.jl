@@ -28,7 +28,7 @@ Compute a tuple of index pairs such that
 function index_quad(F::BoxMap, N::BoxSet)
     P₁, P₀ = index_pair(F, N)
     FP₁ = F(P₁)
-    P̄₁ = P₁ ∪ FP₁
+    P̄₁ = P₀ ∪ FP₁
     P̄₀ = P₀ ∪ setdiff(FP₁, P₁)
     return P₁, P₀, P̄₁, P̄₀
 end
