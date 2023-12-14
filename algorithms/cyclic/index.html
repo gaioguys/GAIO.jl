@@ -19,26 +19,26 @@ p = plot(C)</code></pre><p><img src="../chain.svg" alt="Chain Recurrent Set"/></
 λ, ev = eigs(T; nev=32, which=:LM)
 
 λ</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">32-element Vector{ComplexF64}:
-   0.9999999999999984 + 0.0im
-   0.4999996671161586 + 0.8660253816376029im
-   0.4999996671161586 - 0.8660253816376029im
- -0.49999996257728413 + 0.866024789898455im
- -0.49999996257728413 - 0.866024789898455im
-  -0.9999992700378543 + 0.0im
-   0.8630061226535592 + 0.08474797237161051im
-   0.8630061226535592 - 0.08474797237161051im
-   0.5048957483412266 + 0.7050116685671813im
-   0.5048957483412266 - 0.7050116685671813im
+   1.0000000000000013 + 0.0im
+  0.49999966711615995 + 0.8660253816376071im
+  0.49999966711615995 - 0.8660253816376071im
+ -0.49999996257728574 + 0.8660247898984549im
+ -0.49999996257728574 - 0.8660247898984549im
+  -0.9999992700378495 + 0.0im
+    0.863006122653559 + 0.08474797237161044im
+    0.863006122653559 - 0.08474797237161044im
+   0.5048957483412264 + 0.7050116685671837im
+   0.5048957483412264 - 0.7050116685671837im
                       ⋮
-  -0.8110847919669412 + 0.0im
-  -0.3486953259390575 + 0.7055562580020083im
-  -0.3486953259390575 - 0.7055562580020083im
-    0.436690510001567 + 0.654747890812031im
-    0.436690510001567 - 0.654747890812031im
-  -0.7853702000863259 + 0.05078854956992017im
-  -0.7853702000863259 - 0.05078854956992017im
-   0.7853616536917827 + 0.05081435475398858im
-   0.7853616536917827 - 0.05081435475398858im</code></pre><pre><code class="language-julia hljs">p = scatter(λ)</code></pre><p><img src="../evs.svg" alt="Eigenvalues"/></p><p>We see that the <span>$6$</span>th roots of unity clearly seem to be part of the spectrum. We therefore can conclude that there is an approximate 6-cycle, and can extract the sets corresponding to the cycle. </p><pre><code class="language-julia hljs"># by inspection we see that λ[1:6] are ω₆ᵏ, k = 0, ..., 5
+  -0.8110847919669419 + 0.0im
+ -0.34869532593905983 + 0.7055562580020107im
+ -0.34869532593905983 - 0.7055562580020107im
+   0.4366905100015681 + 0.6547478908120342im
+   0.4366905100015681 - 0.6547478908120342im
+  -0.7853702000863256 + 0.050788549569920766im
+  -0.7853702000863256 - 0.050788549569920766im
+   0.7853616536917787 + 0.05081435475398809im
+   0.7853616536917787 - 0.05081435475398809im</code></pre><pre><code class="language-julia hljs">p = scatter(λ)</code></pre><p><img src="../evs.svg" alt="Eigenvalues"/></p><p>We see that the <span>$6$</span>th roots of unity clearly seem to be part of the spectrum. We therefore can conclude that there is an approximate 6-cycle, and can extract the sets corresponding to the cycle. </p><pre><code class="language-julia hljs"># by inspection we see that λ[1:6] are ω₆ᵏ, k = 0, ..., 5
 ω = λ[1:6]
 ν = ev[1:6]
 
@@ -60,4 +60,4 @@ A = [BoxSet(P, Set(key for key in keys(μᵢ) if μᵢ[key] &gt; τ)) for μᵢ 
 for (Ai, color) in zip(A, [:red, :green, :blue, :yellow, :pink, :cyan])
     global p;
     p = plot!(p, Ai, color=color, fillalpha=0.6);
-end</code></pre><p><img src="../supps.svg" alt="Cyclic Sets"/></p><p>Note that we can also approximate the cyclic sets from the measures <code>μ</code> using sparse eigenbasis approximation (SEBA) as described in the corresponding section of the documentation. </p><h3 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h3><p>[1] Michael Dellnitz and Oliver Junge. “On the Approximation of Complicated Dynamical Behavior”. In: <em>SIAM Journal on Numerical Analysis</em> 2.36 (1999).</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../almost_invariant/">« Almost Invariant (metastable) Sets</a><a class="docs-footer-nextpage" href="../coherent/">Coherent Sets »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Thursday 29 June 2023 16:50">Thursday 29 June 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><p><img src="../supps.svg" alt="Cyclic Sets"/></p><p>Note that we can also approximate the cyclic sets from the measures <code>μ</code> using sparse eigenbasis approximation (SEBA) as described in the corresponding section of the documentation. </p><h3 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h3><p>[1] Michael Dellnitz and Oliver Junge. “On the Approximation of Complicated Dynamical Behavior”. In: <em>SIAM Journal on Numerical Analysis</em> 2.36 (1999).</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../almost_invariant/">« Almost Invariant (metastable) Sets</a><a class="docs-footer-nextpage" href="../coherent/">Coherent Sets »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Thursday 14 December 2023 13:28">Thursday 14 December 2023</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

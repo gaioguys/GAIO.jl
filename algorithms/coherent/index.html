@@ -31,25 +31,25 @@ U, σ, V = svds(T; nsv=32, maxiter=maxiter, tol=tol, v0=v0)
 
 σ</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">32-element Vector{Float64}:
  1.0
- 0.9999667529824419
- 0.9998753180044355
- 0.999871180502744
- 0.9998276390873232
- 0.9998233162413778
- 0.9997971943727437
- 0.9996932575197639
- 0.999614581392833
- 0.9995697900007194
+ 0.9999667529824399
+ 0.9998753180044352
+ 0.9998711805027438
+ 0.9998276390873275
+ 0.9998233162413771
+ 0.9997971943727376
+ 0.9996932575197677
+ 0.999614581392834
+ 0.9995697900007191
  ⋮
- 0.9990048108041214
- 0.9989567143661741
- 0.9989224953108329
- 0.9989116047695609
- 0.9989001857072939
- 0.9988661553791502
- 0.9987727359682228
- 0.9987053450068201
- 0.9986717107382416</code></pre><pre><code class="language-julia hljs">μ = U[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BoxFun in 256 x 128 - element BoxPartition with 32768 stored weights</code></pre><pre><code class="language-julia hljs">using Plots
+ 0.9990048108041204
+ 0.9989567143661742
+ 0.9989224953108324
+ 0.9989116047695624
+ 0.9989001857072929
+ 0.99886615537915
+ 0.9987727359682215
+ 0.9987053450068207
+ 0.9986717107382432</code></pre><pre><code class="language-julia hljs">μ = U[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BoxFun in 256 x 128 - element BoxPartition with 32768 stored weights</code></pre><pre><code class="language-julia hljs">using Plots
 
 p = plot(sign ∘ μ, colormap=:redsblues);</code></pre><p><img src="../sv1.svg" alt="Second left singular measure"/></p><pre><code class="language-julia hljs">anim = @animate for t in t₀:τ/4:t₁
     Φₜ(z) = Φ(z, t, τ, steps)
@@ -70,4 +70,4 @@ p = plot(sign ∘ μ, colormap=:redsblues);</code></pre><p><img src="../sv1.svg"
     μ = s/M * μ
 
     plot(μ, clims=(-1,1), colormap=:jet)
-end;</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">[ Info: Saved animation to /home/runner/work/GAIO.jl/GAIO.jl/docs/build/algorithms/coherent.gif</code></pre><p><img src="../coherent.gif" alt="Coherent Sets"/></p><h3 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h3><p>[1] Froyland, G., Padberg-Gehle, K. (2014). Almost-Invariant and Finite-Time Coherent Sets: Directionality, Duration, and Diffusion. In: Bahsoun, W., Bose, C., Froyland, G. (eds) Ergodic Theory, Open Dynamics, and Coherent Structures. Springer Proceedings in Mathematics &amp; Statistics, vol 70. Springer, New York, NY. https://doi.org/10.1007/978-1-4939-0419-8_9</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../cyclic/">« Cyclic Sets</a><a class="docs-footer-nextpage" href="../seba/">Extracting Multiple Sets via SEBA »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Thursday 29 June 2023 16:50">Thursday 29 June 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end;</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">[ Info: Saved animation to /home/runner/work/GAIO.jl/GAIO.jl/docs/build/algorithms/coherent.gif</code></pre><p><img src="../coherent.gif" alt="Coherent Sets"/></p><h3 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h3><p>[1] Froyland, G., Padberg-Gehle, K. (2014). Almost-Invariant and Finite-Time Coherent Sets: Directionality, Duration, and Diffusion. In: Bahsoun, W., Bose, C., Froyland, G. (eds) Ergodic Theory, Open Dynamics, and Coherent Structures. Springer Proceedings in Mathematics &amp; Statistics, vol 70. Springer, New York, NY. https://doi.org/10.1007/978-1-4939-0419-8_9</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../cyclic/">« Cyclic Sets</a><a class="docs-footer-nextpage" href="../seba/">Extracting Multiple Sets via SEBA »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Thursday 14 December 2023 13:28">Thursday 14 December 2023</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
