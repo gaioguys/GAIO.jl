@@ -84,6 +84,7 @@ end
 
 cover(partition::P, box::Box) where P<:AbstractBoxPartition = cover(partition, (box,))
 cover(partition::P, int::IntervalBox) where P<:AbstractBoxPartition = cover(partition, Box(int))
+cover(partition::P, ints::NTuple{<:Any,<:Interval}) where P<:AbstractBoxPartition = cover(partition, IntervalBox(ints))
 cover(partition::P, ::Nothing) where P<:AbstractBoxPartition = nothing
 
 function cover(partition::P, ::Colon) where {P<:AbstractBoxPartition}
@@ -203,6 +204,7 @@ Base.isempty(boxset::BoxSet) = isempty(boxset.set)
 Base.empty!(boxset::BoxSet) = (empty!(boxset.set); boxset)
 Base.copy(boxset::BoxSet) = BoxSet(boxset.partition, copy(boxset.set))
 Base.length(boxset::BoxSet) = length(boxset.set)
+Base.keys(boxset::BoxSet) = boxset.set
 Base.push!(boxset::BoxSet, key) = push!(boxset.set, key)
 Base.sizehint!(boxset::BoxSet, size) = sizehint!(boxset.set, size)
 Base.eltype(::Type{<:BoxSet{B}}) where B = B

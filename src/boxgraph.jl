@@ -200,7 +200,7 @@ end
 function union_strongly_connected_components(g::BoxGraph)
     P = g.gstar.domain.partition
 
-    sccs = Graphs.strongly_connected_components(Graphs.IsDirected{typeof(g)}, g)
+    sccs = Graphs.strongly_connected_components_tarjan(Graphs.IsDirected{typeof(g)}, g)
     connected_vertices = OrderedSet{keytype(typeof(P))}()
 
     for scc in sccs

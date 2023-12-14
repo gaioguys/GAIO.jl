@@ -1,4 +1,5 @@
 using GAIO
+using CUDA
 
 # This example demonstrates how to get a vast speedup
 # in your code using nvidia CUDA. The speedup factor
@@ -27,11 +28,12 @@ F(x) = rk4_flow_map(f, x)
 # explicit 32-bit literals like
 # center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
 center, radius = (0,0,25), (30,30,30)
+domain = Box(center, radius)
 
-P = BoxPartition(Box(center, radius), (128,128,128))
+P = BoxPartition(domain, (128,128,128))
 
 # All we need to do now is pass :gpu to the BoxMap command.
-G = BoxMap(:montecarlo, :gpu, F, P)
+G = BoxMap(:montecarlo, :gpu, F, domain)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
 S = cover(P, x)

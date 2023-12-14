@@ -7,3 +7,5 @@ Manifest.toml
 .vscode
 GAIO-remote.code-workspace
 *LocalPreferences.toml
+*.DS_Store
+*logs

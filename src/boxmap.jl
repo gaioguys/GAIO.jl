@@ -30,3 +30,15 @@ for str in (
 end
 
 Base.show(io::IO, g::BoxMap) = print(io, "BoxMap over $(g.domain)")
+
+function (g::BoxMap)(source::BoxSet; show_progress::Bool=false, kwargs...) 
+    map_boxes(g, source, Val(show_progress); kwargs...)
+end
+
+function map_boxes(g::BoxMap, source::BoxSet, show_progress::Val{false}; kwargs...)
+    map_boxes(g, source; kwargs...)
+end
+
+function map_boxes(g::BoxMap, source::BoxSet, show_progress::Val{true}; kwargs...)
+    @error "Progress meter code not loaded. Run `using ProgressMeter` to get progress meters."
+end

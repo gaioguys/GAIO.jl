@@ -37,73 +37,7 @@ struct IntervalBoxMap{N,T} <: BoxMap
     end
 end
 
-function map_boxes(g::IntervalBoxMap, source::BS) where {B,Q,S,BS<:BoxSet{B,Q,S}}
-    P = source.partition
-    @floop for box in source
-        c, r = box
-        int = IntervalBox(box)
-        for subint in mince(int, g.n_subintervals(c, r))
-            fint = g.map(subint)
-            fbox = Box(fint)
-            isnothing(fbox) && continue
-            fSet = cover(P, fbox)
-            @reduce(image = BoxSet(P, S()) ⊔ fSet)
-        end
-    end
-    return image::BS
-end
-
-function construct_transfers(
-        g::IntervalBoxMap, domain::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q,S}
-
-    P, D = domain.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
-    @floop for key in domain.set
-        box = key_to_box(P, key)
-        c, r = box
-        int = IntervalBox(box)
-        for subint in mince(int, g.n_subintervals(c, r))
-            fint = g.map(subint)
-            fbox = Box(fint)
-            isnothing(fbox) && continue
-            fSet = cover(P, fbox)
-            for hit in fSet.set
-                @reduce( image = S() ⊔ hit )
-                hitbox = key_to_box(P, hit)
-                V = volume(fbox ∩ hitbox)
-                @reduce( mat = D() ⊔ ((hit,key) => V) )
-            end
-        end
-    end
-    image_set = BoxSet(P, image::S)
-    return mat::D, image_set
-end
-
-function construct_transfers(
-        g::IntervalBoxMap, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
-    ) where {N,T,R<:Box{N,T},Q,S,U,H,W}
-
-    P1, P2 = domain.partition, codomain.partition
-    D = Dict{Tuple{keytype(H),keytype(Q)},T}
-    @floop for key in domain.set
-        box = key_to_box(P1, key)
-        c, r = box
-        int = IntervalBox(box)
-        for subint in mince(int, g.n_subintervals(c, r))
-            fint = g.map(subint)
-            fbox = Box(fint)
-            isnothing(fbox) && continue
-            fSet = cover(P2, fbox)
-            for hit in fSet.set
-                hit in codomain.set || continue
-                hitbox = key_to_box(P2, hit)
-                V = volume(fbox ∩ hitbox)
-                @reduce( mat = D() ⊔ ((hit,key) => V) )
-            end
-        end
-    end
-    return mat::D
-end
+# Constructors
 
 function IntervalBoxMap(map, domain::Box{N,T}; n_subintervals=ntuple(_->4,N)) where {N,T}
     IntervalBoxMap(map, domain, n_subintervals)
@@ -116,4 +50,82 @@ end
 function Base.show(io::IO, g::IntervalBoxMap)
     n = g.n_subintervals(g.domain...)
     print(io, "IntervalBoxMap with $(n) subintervals")
+end
+
+# BoxMap API
+
+function map_boxes(
+        g::IntervalBoxMap, source::BS
+    ) where {B,Q,S,BS<:BoxSet{B,Q,S}}
+
+    P = source.partition
+    @floop for box in source
+        c, r = box
+        for subint in mince(box, g.n_subintervals(c, r))
+            fint = g.map(subint)
+            fSet = cover(P, fint)
+            @reduce() do (image = BoxSet(P, S()); fSet)     # Initialize `image = BoxSet(P, S())` empty boxset
+                image = image ⊔ fSet                        # Add `fSet` to `image`
+            end
+        end
+    end
+    return image::BS
+end
+
+function construct_transfers(
+        g::IntervalBoxMap, domain::BS
+    ) where {N,T,R<:Box{N,T},Q,S,BS<:BoxSet{R,Q,S}}
+
+    P = domain.partition
+    D = Dict{Tuple{keytype(Q),keytype(Q)},T}
+
+    @floop for key in keys(domain)
+        box = key_to_box(P, key)
+        c, r = box
+        for subint in mince(box, g.n_subintervals(c, r))
+            fint = g.map(subint)
+            fSet = cover(P, fint)
+            @reduce() do (image = BoxSet(P, S()); fSet)     # Initialize `image = BoxSet(P, S())` empty boxset
+                image = image ⊔ fSet                        # Add `fSet` to `image`
+            end
+
+            for hit in fSet.set
+                hitbox = key_to_box(P, hit)
+                weight = (hit,key) => volume(fint ∩ hitbox)
+                @reduce() do (mat = D(); weight)            # Initialize dict-of-keys sparse matrix
+                    mat = mat ⊔ weight                      # Add weight to mat[hit, key]
+                end
+            end
+
+        end
+    end
+    return mat::D, image::BS
+end
+
+function construct_transfers(
+        g::IntervalBoxMap, domain::BoxSet{R,Q}, codomain::BoxSet{U,H}
+    ) where {N,T,R<:Box{N,T},Q,U,H}
+
+    P1, P2 = domain.partition, codomain.partition
+    D = Dict{Tuple{keytype(H),keytype(Q)},T}
+
+    @floop for key in keys(domain)
+        box = key_to_box(P1, key)
+        c, r = box
+        for subint in mince(box, g.n_subintervals(c, r))
+            fint = g.map(subint)
+            fSet = cover(P2, fint)
+
+            for hit in keys(fSet)
+                hit in codomain.set || continue
+                hitbox = key_to_box(P2, hit)
+                weight = (hit,key) => volume(fint ∩ hitbox)
+                @reduce() do (mat = D(); weight)            # Initialize dict-of-keys sparse matrix
+                    mat = mat ⊔ weight                      # Add weight to mat[hit, key]
+                end
+            end
+
+        end
+    end
+    return mat::D
 end

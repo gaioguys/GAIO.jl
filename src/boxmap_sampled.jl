@@ -22,99 +22,7 @@ struct SampledBoxMap{N,T} <: BoxMap
     image_points
 end
 
-# we need a small helper function because of 
-# how julia dispatches on `union!`
-⊔(set1::AbstractSet, set2::AbstractSet) = union!(set1, set2)
-⊔(set1::AbstractSet, object) = union!(set1, (object,))
-⊔(set1::AbstractSet, ::Nothing) = set1
-
-⊔(d::AbstractDict...) = mergewith!(+, d...)
-⊔(d::AbstractDict, p::Pair...) = foreach(q -> d ⊔ q, p)
-⊔(d::AbstractDict, ::Nothing) = d
-function ⊔(d::AbstractDict, p::Pair)
-    k, v = p
-    d[k] = haskey(d, k) ? d[k] + v : v
-    d
-end
-
-function typesafe_map(g::SampledBoxMap{N,T}, x::SVNT{N}) where {N,T}
-    convert(SVector{N,T}, g.map(x))
-end
-
-function map_boxes(g::SampledBoxMap, source::BoxSet{B,Q,S}) where {B,Q,S}
-    P = source.partition
-    @floop for box in source
-        c, r = box
-        for p in g.domain_points(c, r)
-            fp = typesafe_map(g, p)
-            hitbox = point_to_box(P, fp)
-            isnothing(hitbox) && continue
-            _, r = hitbox
-            for ip in g.image_points(fp, r)
-                hit = point_to_key(P, ip)
-                isnothing(hit) && continue
-                @reduce(image = S() ⊔ hit)
-            end
-        end
-    end
-    return BoxSet(P, image::S)
-end 
-
-function construct_transfers(
-        g::SampledBoxMap, domain::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q,S<:OrderedSet}
-
-    P, D = domain.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
-    @floop for key in domain.set
-        box = key_to_box(P, key)
-        c, r = box
-        for p in g.domain_points(c, r)
-            c = typesafe_map(g, p)
-            hitbox = point_to_box(P, c)
-            isnothing(hitbox) && continue
-            _, r = hitbox
-            for ip in g.image_points(c, r)
-                hit = point_to_key(P, ip)
-                isnothing(hit) && continue
-                @reduce( image = S() ⊔ hit )
-                @reduce( mat = D() ⊔ ((hit,key) => 1) )
-            end
-        end
-    end
-    codomain = BoxSet(P, image::S)
-    return mat::D, codomain
-end
-
-function construct_transfers(
-        g::SampledBoxMap, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
-    ) where {N,T,R<:Box{N,T},Q,S,U,H,W}
-
-    P1, P2 = domain.partition, codomain.partition
-    D = Dict{Tuple{keytype(H),keytype(Q)},T}
-    @floop for key in domain.set
-        box = key_to_box(P1, key)
-        c, r = box
-        for p in g.domain_points(c, r)
-            c = typesafe_map(g, p)
-            hitbox = point_to_box(P2, c)
-            isnothing(hitbox) && continue
-            _, r = hitbox
-            for ip in g.image_points(c, r)
-                hit = point_to_key(P2, ip)
-                isnothing(hit) && continue
-                hit in codomain.set || continue
-                @reduce( mat = D() ⊔ ((hit,key) => 1) )
-            end
-        end
-    end
-    return mat::D
-end
-
-function Base.show(io::IO, g::SampledBoxMap)
-    center, radius = g.domain
-    n = length(g.domain_points(center, radius))
-    print(io, "SampledBoxMap with $(n) sample points")
-end
+# Constructors
 
 """
     BoxMap(:pointdiscretized, map, domain, points) -> SampledBoxMap
@@ -269,3 +177,92 @@ Cannot calculate a test point grid.
 Make sure that the dynamical system is well-defined 
 or use a different `BoxMap` discretization. 
 """
+
+function Base.show(io::IO, g::SampledBoxMap)
+    center, radius = g.domain
+    n = length(g.domain_points(center, radius))
+    print(io, "SampledBoxMap with $(n) sample points")
+end
+
+function typesafe_map(g::SampledBoxMap{N,T}, x::SVNT{N}) where {N,T}
+    convert(SVector{N,T}, g.map(x))
+end
+
+# BoxMap API
+
+function map_boxes(
+        g::SampledBoxMap, source::BoxSet{B,Q,S}
+    ) where {B,Q,S}
+
+    P = source.partition
+    @floop for box in source
+        c, r = box
+        for p in g.domain_points(c, r)
+            c = typesafe_map(g, p)
+            hitbox = point_to_box(P, c)
+            isnothing(hitbox) && continue
+            _, r = hitbox
+            for ip in g.image_points(c, r)
+                hit = point_to_key(P, ip)
+                @reduce() do (image = S(); hit)     # Initialize empty key set
+                    image = image ⊔ hit             # Add hit key to image
+                end
+            end
+        end
+    end
+    return BoxSet(P, image::S)
+end 
+
+function construct_transfers(
+        g::SampledBoxMap, domain::BoxSet{R,Q,S}
+    ) where {N,T,R<:Box{N,T},Q,S}
+
+    P = domain.partition
+    D = Dict{Tuple{keytype(Q),keytype(Q)},T}
+    @floop for key in keys(domain)
+        box = key_to_box(P, key)
+        c, r = box
+        for p in g.domain_points(c, r)
+            c = typesafe_map(g, p)
+            hitbox = point_to_box(P, c)
+            isnothing(hitbox) && continue
+            _, r = hitbox
+            for ip in g.image_points(c, r)
+                hit = point_to_key(P, ip)
+                weight = (hit,key) => 1
+                @reduce() do (image = S(); hit), (mat = D(); weight)    # Initialize empty key set and dict-of-keys sparse matrix
+                    image = image ⊔ hit                                 # Add hit key to image
+                    mat = mat ⊔ weight                                  # Add weight to mat[hit, key]
+                end
+            end
+        end
+    end
+    return mat::D, BoxSet(P, image::S)
+end
+
+function construct_transfers(
+        g::SampledBoxMap, domain::BoxSet{R,Q}, codomain::BoxSet{U,H}
+    ) where {N,T,R<:Box{N,T},Q,U,H}
+
+    P1, P2 = domain.partition, codomain.partition
+    D = Dict{Tuple{keytype(H),keytype(Q)},T}
+    @floop for key in keys(domain)
+        box = key_to_box(P1, key)
+        c, r = box
+        for p in g.domain_points(c, r)
+            c = typesafe_map(g, p)
+            hitbox = point_to_box(P2, c)
+            isnothing(hitbox) && continue
+            _, r = hitbox
+            for ip in g.image_points(c, r)
+                hit = point_to_key(P2, ip)
+                hit in codomain.set || continue
+                weight = (hit,key) => 1
+                @reduce() do (mat = D(); weight)     # Initialize dict-of-keys sparse matrix
+                    mat = mat ⊔ weight               # Add weight to mat[hit, key]
+                end
+            end
+        end
+    end
+    return mat::D
+end

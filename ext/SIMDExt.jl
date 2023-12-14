@@ -8,10 +8,6 @@ import GAIO: typesafe_map, map_boxes, construct_transfers, ⊔, SVNT
 
 #export CPUSampledBoxMap
 
-BoxMap(::Val{Symbol("CPUSampled")}, args...; kwargs...) = CPUSampledBoxMap(args...; kwargs...)
-BoxMap(::Val{Symbol("cpusampled")}, args...; kwargs...) = CPUSampledBoxMap(args...; kwargs...)
-BoxMap(accel::Val{:simd}, args...; kwargs...) = BoxMap(Val(:grid), accel, args...; kwargs...)
-
 """
     BoxMap(:cpu, map, domain; n_points) -> CPUSampledBoxMap
 
@@ -24,7 +20,7 @@ Uses the CPU's SIMD acceleration capabilities.
 By default uses a grid of sample points. 
 
 
-    BoxMap(:sampled, :cpu, boxmap, idx_base, temp_vec, temp_points)
+    BoxMap(:sampled, :cpu, boxmap, idx_base)
 
 Type representing a discretization of a map using 
 sample points which are explicitly vectorized. This 
@@ -45,120 +41,24 @@ Fields:
                     `Vector{SVector{N, SIMD.Vec{S,T}}}`
                     into a 
                     `Vector{SVector{N,T}}`. 
-* `temp_points`:    Raw data `Vector{SVector{N,T}}` 
-                    which holds the `S` temporary pointwise 
-                    images of a `SVector{N, SIMD.Vec{S,T}}`
-                    under the point map. 
 
 .
 """
-struct CPUSampledBoxMap{simd,N,T,F<:SampledBoxMap{N,T},V} <: BoxMap
+struct CPUSampledBoxMap{simd,N,T,F<:SampledBoxMap{N,T}} <: BoxMap
     boxmap::F
     idx_base::SIMD.Vec{simd,Int}
-    temp_points::V
 end
 
-function typesafe_map(g::CPUSampledBoxMap{simd,N,T}, x::SVNT{N}) where {simd,N,T}
-    convert(SVector{N,SIMD.Vec{simd,T}}, g.boxmap.map(x))
-end
+# Constuctors
 
-@inbounds @muladd function map_boxes(G::CPUSampledBoxMap{simd,N}, source::BoxSet{B,Q,S}) where {simd,N,B,Q,S}
-    P = source.partition
-    g, idx_base, temp_points = G
-    @floop for box in source
-        tid = (threadid() - 1) * simd
-        idx = idx_base + tid * N
-        mapped_points = @view temp_points[tid+1:tid+simd]
-        c, r = box
-        for p in g.domain_points(c, r)
-            fp = typesafe_map(G, p)
-            tuple_vscatter!(temp_points, fp, idx)
-            for q in mapped_points
-                hitbox = point_to_box(P, q)
-                isnothing(hitbox) && continue
-                _, r = hitbox
-                for ip in g.image_points(q, r)
-                    hit = point_to_key(P, ip)
-                    isnothing(hit) && continue
-                    @reduce(image = S() ⊔ hit)
-                end
-            end
-        end
-    end
-    return BoxSet(P, image::S)
-end
+BoxMap(::Val{Symbol("CPUSampled")}, args...; kwargs...) = CPUSampledBoxMap(args...; kwargs...)
+BoxMap(::Val{Symbol("cpusampled")}, args...; kwargs...) = CPUSampledBoxMap(args...; kwargs...)
+BoxMap(accel::Val{:simd}, args...; kwargs...) = BoxMap(Val(:grid), accel, args...; kwargs...)
 
-@inbounds @muladd function construct_transfers(
-        G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q,S}
-    ) where {simd,N,T,R<:Box{N,T},Q,S}
-    
-    P, D = domain.partition, Dict{Tuple{keytype(Q),keytype(Q)},T}
-    g, idx_base, temp_points = G
-    @floop for key in domain.set
-        tid = (threadid() - 1) * simd
-        idx = idx_base + tid * N
-        mapped_points = @view temp_points[tid+1:tid+simd]
-        box = key_to_box(P, key)
-        c, r = box
-        for p in g.domain_points(c, r)
-            fp = typesafe_map(G, p)
-            tuple_vscatter!(temp_points, fp, idx)
-            for q in mapped_points
-                hitbox = point_to_box(P, q)
-                isnothing(hitbox) && continue
-                _, r = hitbox
-                for ip in g.image_points(q, r)
-                    hit = point_to_key(P, ip)
-                    isnothing(hit) && continue
-                    @reduce( image = S() ⊔ hit )
-                    @reduce( mat = D() ⊔ ((hit,key) => 1) )
-                end
-            end
-        end
-    end
-    codomain = BoxSet(P, image::S)
-    return mat::D, codomain
-end
-
-@inbounds @muladd function construct_transfers(
-        G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q,S}, codomain::BoxSet{U,H,W}
-    ) where {simd,N,T,R<:Box{N,T},Q,S,U,H,W}
-
-    P1, P2 = domain.partition, codomain.partition
-    D = Dict{Tuple{keytype(H),keytype(Q)},T}
-    g, idx_base, temp_points = G
-    @floop for key in domain.set
-        tid = (threadid() - 1) * simd
-        idx = idx_base + tid * N
-        mapped_points = @view temp_points[tid+1:tid+simd]
-        box = key_to_box(P1, key)
-        c, r = box
-        for p in g.domain_points(c, r)
-            fp = typesafe_map(G, p)
-            tuple_vscatter!(temp_points, fp, idx)
-            for q in mapped_points
-                hitbox = point_to_box(P2, q)
-                isnothing(hitbox) && continue
-                _, r = hitbox
-                for ip in g.image_points(q, r)
-                    hit = point_to_key(P2, ip)
-                    isnothing(hit) && continue
-                    hit in codomain.set || continue
-                    @reduce( mat = D() ⊔ ((hit,key) => 1) )
-                end
-            end
-        end
-    end
-    return mat::D
-end
-
-# constuctors
 function CPUSampledBoxMap(boxmap::SampledBoxMap{N,T}) where {N,T}
     simd = Int(pick_vector_width(T))
     idx_base = SIMD.Vec{simd,Int}(ntuple( i -> N*(i-1), Val(simd) ))
-    temp_vec = Vector{T}(undef, N*simd*nthreads())
-    temp_points = reinterpret(SVector{N,T}, temp_vec)
-    CPUSampledBoxMap(boxmap, idx_base, temp_points)
+    CPUSampledBoxMap(boxmap, idx_base)
 end
 
 """
@@ -228,7 +128,6 @@ function MonteCarloBoxMap(c::Val{:simd}, map, P::Q; n_points=16*N) where {N,T,Q<
     MonteCarloBoxMap(c, map, P.domain; n_points=n_points)
 end
 
-# helper + compatibility functions
 function Base.show(io::IO, G::CPUSampledBoxMap{simd}) where {simd}
     g = G.boxmap
     center, radius = g.domain
@@ -236,9 +135,112 @@ function Base.show(io::IO, G::CPUSampledBoxMap{simd}) where {simd}
     print(io, "CPUSampledBoxMap with $(n) sample points")
 end
 
+function typesafe_map(g::CPUSampledBoxMap{simd,N,T}, x::SVNT{N}) where {simd,N,T}
+    convert(SVector{N,SIMD.Vec{simd,T}}, g.boxmap.map(x))
+end
+
+# BoxMap API
+
+@inbounds function map_boxes(
+        G::CPUSampledBoxMap{simd,N,T}, source::BoxSet{B,Q,S}
+    ) where {simd,N,T,B,Q,S}
+
+    P = source.partition
+    g, idx_base = G
+    @floop for box in source
+        @init mapped_points = Vector{SVector{N,T}}(undef, simd)
+        c, r = box
+        for p in g.domain_points(c, r)
+            fp = typesafe_map(G, p)
+            tuple_vscatter!(mapped_points, fp, idx_base)
+            for q in mapped_points
+                hitbox = point_to_box(P, q)
+                isnothing(hitbox) && continue
+                _, r = hitbox
+                for ip in g.image_points(q, r)
+                    hit = point_to_key(P, ip)
+                    @reduce() do (image = S(); hit)     # Initialize empty key set
+                        image = image ⊔ hit             # Add hit key to image
+                    end
+                end
+            end
+        end
+    end
+    return BoxSet(P, image::S)
+end
+
+@inbounds function construct_transfers(
+        G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q,S}
+    ) where {simd,N,T,R<:Box{N,T},Q,S}
+    
+    P = domain.partition
+    D = Dict{Tuple{keytype(Q),keytype(Q)},T}
+    g, idx_base = G
+
+    @floop for key in keys(domain)
+        @init mapped_points = Vector{SVector{N,T}}(undef, simd)
+        box = key_to_box(P, key)
+        c, r = box
+        for p in g.domain_points(c, r)
+            fp = typesafe_map(G, p)
+            tuple_vscatter!(mapped_points, fp, idx_base)
+            for q in mapped_points
+                hitbox = point_to_box(P, q)
+                isnothing(hitbox) && continue
+                _, r = hitbox
+                for ip in g.image_points(q, r)
+                    hit = point_to_key(P, ip)
+                    weight = (hit,key) => one(T)
+                    @reduce() do (image = S(); hit), (mat = D(); weight)    # Initialize empty key set and dict-of-keys sparse matrix
+                        image = image ⊔ hit                                 # Add hit key to image
+                        mat = mat ⊔ weight                                  # Add weight to mat[hit, key]
+                    end
+                end
+            end
+        end
+    end
+
+    codomain = BoxSet(P, image::S)
+    return mat::D, codomain
+end
+
+@inbounds @muladd function construct_transfers(
+        G::CPUSampledBoxMap{simd}, domain::BoxSet{R,Q}, codomain::BoxSet{U,H}
+    ) where {simd,N,T,R<:Box{N,T},Q,U,H}
+
+    P1, P2 = domain.partition, codomain.partition
+    D = Dict{Tuple{keytype(H),keytype(Q)},T}
+    g, idx_base = G
+
+    @floop for key in keys(domain)
+        @init mapped_points = Vector{SVector{N,T}}(undef, simd)
+        box = key_to_box(P1, key)
+        c, r = box
+        for p in g.domain_points(c, r)
+            fp = typesafe_map(G, p)
+            tuple_vscatter!(mapped_points, fp, idx_base)
+            for q in mapped_points
+                hitbox = point_to_box(P2, q)
+                isnothing(hitbox) && continue
+                _, r = hitbox
+                for ip in g.image_points(q, r)
+                    hit = point_to_key(P2, ip)
+                    hit in codomain.set || continue
+                    weight = (hit,key) => one(T)
+                    @reduce() do (mat = D(); weight)     # Initialize dict-of-keys sparse matrix
+                        mat = mat ⊔ weight               # Add weight to mat[hit, key]
+                    end
+                end
+            end
+        end
+    end
+    return mat::D
+end
+
+# helper + compatibility functions
+
 Base.iterate(c::CPUSampledBoxMap, i...) = (c.boxmap, Val(:idx_base))
-Base.iterate(c::CPUSampledBoxMap, ::Val{:idx_base}) = (c.idx_base, Val(:temp_points))
-Base.iterate(c::CPUSampledBoxMap, ::Val{:temp_points}) = (c.temp_points, Val(:done))
+Base.iterate(c::CPUSampledBoxMap, ::Val{:idx_base}) = (c.idx_base, Val(:done))
 Base.iterate(c::CPUSampledBoxMap, ::Val{:done}) = nothing
 
 @propagate_inbounds function tuple_vgather(
@@ -250,7 +252,7 @@ Base.iterate(c::CPUSampledBoxMap, ::Val{:done}) = nothing
     return vo
 end
 
-@propagate_inbounds function tuple_vgather(
+@propagate_inbounds @muladd function tuple_vgather(
         v::V, simd::Integer
     ) where {N,T,V<:AbstractArray{<:SVNT{N,T}}}
 
@@ -296,7 +298,7 @@ end
     return vo
 end
 
-@propagate_inbounds function tuple_vscatter!(
+@propagate_inbounds @muladd function tuple_vscatter!(
         vo::VO, vi::VI
     ) where {N,T,simd,VO<:AbstractArray{T},VI<:AbstractArray{<:SVNT{N,SIMD.Vec{simd,T}}}}
 

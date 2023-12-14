@@ -82,25 +82,36 @@ mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMat
     mat::SparseMatrixCSC{T,Int}
 end
 
-construct_transfers(g::TransferOperator, domain::BoxSet) = construct_transfers(g.boxmap, domain)
+construct_transfers(g::TransferOperator, domain::BoxSet; kwargs...) = construct_transfers(g.boxmap, domain; kwargs...)
+construct_transfers(g::BoxMap, domain::BoxSet, show_progress::Val{false}; kwargs...) = construct_transfers(g, domain; kwargs...)
+construct_transfers(g::BoxMap, domain::BoxSet, codomain::BoxSet, show_progress::Val{false}; kwargs...) = construct_transfers(g, domain, codomain; kwargs...)
 
-# ensure that `TransferOperator` uses an `OrderedSet`
-function TransferOperator(g::BoxMap, domain::BoxSet{B,P,S}) where {B,P,S}
-    dom = BoxSet(domain.partition, OrderedSet(domain.set))
-    TransferOperator(g, dom)
+function construct_transfers(g::BoxMap, domain::BoxSet, show_progress::Val{true}; kwargs...)
+    @error "Progress meter code not loaded. Run `using ProgressMeter` to get progress meters."
 end
 
-function TransferOperator(g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q,W}) where {B,P,S,R,Q,W}
+function construct_transfers(g::BoxMap, domain::BoxSet, codomain::BoxSet, show_progress::Val{true}; kwargs...)
+    @error "Progress meter code not loaded. Run `using ProgressMeter` to get progress meters."
+end
+
+# ensure that `TransferOperator` uses an `OrderedSet`
+function TransferOperator(g::BoxMap, domain::BoxSet{B,P,S}; kwargs...) where {B,P,S}
+    dom = BoxSet(domain.partition, OrderedSet(domain.set))
+    TransferOperator(g, dom; kwargs...)
+end
+
+function TransferOperator(g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q,W}; kwargs...) where {B,P,S,R,Q,W}
     dom = BoxSet(domain.partition, OrderedSet(domain.set))
     codom = BoxSet(codomain.partition, OrderedSet(codomain.set))
-    TransferOperator(g, dom, codom)
+    TransferOperator(g, dom, codom; kwargs...)
 end
 
 function TransferOperator(
-        g::BoxMap, domain::BoxSet{B,P,S}
+        g::BoxMap, domain::BoxSet{B,P,S};
+        show_progress::Bool=false, kwargs...
     ) where {B,P,S<:OrderedSet}
 
-    dict, codomain = construct_transfers(g, domain)
+    dict, codomain = construct_transfers(g, domain, Val(show_progress); kwargs...)
     mat = sparse(dict, domain, codomain)
 
     s = vec(sum(mat, dims=1))
@@ -111,10 +122,11 @@ function TransferOperator(
 end
 
 function TransferOperator(
-        g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q,W}
+        g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q,W};
+        show_progress::Bool=false, kwargs...
     ) where {B,P,S<:OrderedSet,R,Q,W<:OrderedSet}
 
-    dict = construct_transfers(g, domain, codomain)
+    dict = construct_transfers(g, domain, codomain, Val(show_progress); kwargs...)
     mat = sparse(dict, domain, codomain)
 
     s = vec(sum(mat, dims=1))
