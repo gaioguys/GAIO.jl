@@ -53,7 +53,7 @@ function Base.show(io::IO, g::IntervalBoxMap)
 end
 
 function typesafe_map(g::IntervalBoxMap{N,T}, x) where {N,T}
-    SVector{N,Interval{T}}(g.map(x)...)
+    SVector{N,Interval{T}}(g.map(x)...) |> IntervalBox{N,T} |> Box{N,T}
 end
 
 # BoxMap API

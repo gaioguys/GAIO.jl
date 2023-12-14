@@ -26,11 +26,10 @@ e.g. `B = cover(P, :)` for a partition `P`.
 function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     B = copy(B₀)
     for k in 1:steps
-        B   = subdivide(B, (k % N) + 1)
-        F♯  = TransferOperator(F, B, B)
-        G   = MatrixNetwork(F♯)
-        SCC = scomponents(G)
-        B   = BoxSet(morse_tiles(F♯, SCC))
+        B = subdivide(B, (k % N) + 1)
+        P = TransferOperator(F, B, B)
+        G = Graph(P)
+        B = union_strongly_connected_components(G)
     end
     return B
 end
