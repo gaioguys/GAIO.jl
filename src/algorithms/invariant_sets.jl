@@ -133,8 +133,8 @@ function maximal_invariant_set end
 
 
 for (algorithm, func) in [
-        :maximal_forward_invariant_set  => restricted_image,
-        :maximal_backward_invariant_set => preimage,
+        :maximal_forward_invariant_set  => preimage,
+        :maximal_backward_invariant_set => restricted_image,
         :maximal_invariant_set          => symmetric_image
     ]
 
