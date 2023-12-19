@@ -4,7 +4,8 @@
 
 PrecompileTools.@setup_workload begin
 
-    __f(x::T, tail...) where T = (x+T(0.25), tail...)
+    # shift first argument by 1/4
+    __f(x, tail...) = (x+0.25f0, tail...)
     _f(x) = __f(x...)
 
     PrecompileTools.@compile_workload begin

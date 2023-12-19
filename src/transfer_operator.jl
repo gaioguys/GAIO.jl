@@ -63,7 +63,7 @@ include the support of the `BoxFun`.
 
 Methods Implemented: 
 ```julia
-:(==), axes, size, eltype, getindex, setindex!, SparseArrays.sparse, Arpack.eigs, LinearAlgebra.mul! #, etc ...
+:(==), size, eltype, getindex, setindex!, SparseArrays.sparse, Arpack.eigs, LinearAlgebra.mul! #, etc ...
 ```
 
 Implementation detail:
@@ -102,7 +102,7 @@ end
 
 function TransferOperator(g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q,W}; kwargs...) where {B,P,S,R,Q,W}
     dom = BoxSet(domain.partition, OrderedSet(domain.set))
-    codom = BoxSet(codomain.partition, OrderedSet(codomain.set))
+    codom = domain == codomain ? dom : BoxSet(codomain.partition, OrderedSet(codomain.set))
     TransferOperator(g, dom, codom; kwargs...)
 end
 
@@ -155,10 +155,11 @@ end
 Base.:(==)(g1::TransferOperator, g2::TransferOperator) = g1.mat == g2.mat
 Base.eltype(::Type{<:TransferOperator{B,T}}) where {B,T} = T
 Base.keytype(::Type{<:TransferOperator{B,T,I}}) where {B,T,I} = I
+Base.keys(g::TransferOperator) = (keys(g.codomain), keys(g.domain))
 Base.size(g::TransferOperator) = size(g.mat)
 Base.Matrix(g::TransferOperator) = Matrix(g.mat)
 SparseArrays.sparse(g::TransferOperator) = copy(g.mat)
-Base.axes(g::TransferOperator) = (collect(g.domain), collect(g.codomain))
+Base.axes(g::TransferOperator) = (OneTo(length(g.codomain)), OneTo(length(g.domain)))
 
 @propagate_inbounds function Base.getindex(g::TransferOperator{T,I}, u, v) where {T,I}
     @boundscheck checkbounds(Bool, g, u, v) || throw(BoundsError(g, (u,v)))
@@ -195,9 +196,9 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         All keyword arguments from `Arpack.eigs` can be passed. See the 
         documentation for `Arpack.eigs`. 
         """
-        Arpack.eigs(g::$type, B::UniformScaling=I; kwargs...) = _eigs(g, B; kwargs...)
         Arpack.eigs(g::$type, B; kwargs...) = _eigs(g, B; kwargs...)
-
+        Arpack.eigs(g::$type, B::UniformScaling=I; kwargs...) = _eigs(g, B; kwargs...)
+        
         function _svds(g::$type; nsv=3, ritzvec=true, kwargs...)
             Σ, ext... = Arpack._svds(g; nsv=nsv, ritzvec=true, kwargs...)
             S = $gmap.domain
@@ -261,6 +262,7 @@ _rehash!(dict::IdDict) = Base.rehash!(dict)
 _rehash!(set::Union{Set,OrderedSet}) = _rehash!(set.dict)
 _rehash!(d::Union{AbstractDict,AbstractSet}) = d
 _rehash!(boxset::BoxSet) = _rehash!(boxset.set)
+_rehash!(g::TransferOperator) = (_rehash!(g.domain); g.codomain === g.domain || _rehash!(g.codomain))
 
 # helper function to access `Set` / `OrderedSet` internals
 # converts partition-key to index if a set is enumerated 1..n, or nothing if key not in set

@@ -1,10 +1,11 @@
 module CUDAExt
 
-using GAIO, Adapt, CUDA, StaticArrays, MuladdMacro
+using GAIO, CUDA, StaticArrays, MuladdMacro
 
 import Base.Iterators: Stateful, take
 import Base: unsafe_trunc
 import Base: @propagate_inbounds
+import CUDA: Adapt
 import GAIO: BoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap
 import GAIO: typesafe_map, map_boxes, construct_transfers, point_to_key, ⊔, SVNT
 
