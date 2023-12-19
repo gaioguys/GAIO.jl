@@ -86,6 +86,23 @@ function subdivide(P::BoxPartition{N,T,I}, dim) where {N,T,I}
 end
 
 """
+    marginal(P::BoxPartition{N}; dim) -> BoxPartition{N-1}
+
+Construct the projection of a `BoxPartition` along an axis given by 
+its dimension `dim`. 
+"""
+function marginal(P⁺::BoxPartition; dim)
+    cen⁺, rad⁺ = P⁺.domain
+    dims⁺ = size(P⁺)
+
+    cen = deleteat(Tuple(cen⁺), dim)
+    rad = deleteat(Tuple(rad⁺), dim)
+    dims = deleteat(dims⁺, dim)
+
+    return BoxPartition( Box(cen, rad), dims )
+end
+
+"""
     key_to_box(P::BoxPartition, key)
 
 Return the box associated with the index 

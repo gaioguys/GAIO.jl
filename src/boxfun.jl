@@ -133,6 +133,24 @@ Base.copy(boxfun::BoxFun) = BoxFun(boxfun.partition, copy(boxfun.vals))
 Base.deepcopy(boxfun::BoxFun) = BoxFun(boxfun.partition, deepcopy(boxfun.vals))
 SparseArrays.findnz(boxfun::BoxFun) = (collect(keys(boxfun)), collect(values(boxfun)))
 
+"""
+    marginal(μ::BoxFun{Box{N}}; dim) -> BoxFun{Box{N-1}}
+
+Compute the marginal distribution of μ along an axis given
+by its dimension `dim`. 
+"""
+function marginal(μ⁺::BoxFun; dim)
+    support = marginal(BoxSet(μ⁺); dim=dim)
+    μ = BoxFun(support, eltype(μ⁺))
+
+    for key⁺ in keys(μ⁺)
+        key = deleteat(key⁺, dim)
+        μ[key] += μ⁺[key⁺]
+    end
+
+    return μ
+end
+
 function Base.isapprox(
         l::BoxFun{B,K,V}, r::BoxFun{R,J,W}; 
         atol=0, rtol=Base.rtoldefault(V,W,atol), kwargs...

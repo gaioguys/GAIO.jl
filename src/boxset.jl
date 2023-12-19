@@ -280,3 +280,45 @@ function subdivide(boxset::BoxSet{B,P,S}, dim=1) where {B,P<:TreePartition,S}
 
     return boxset_new
 end
+
+"""
+    neighborhood(B::BoxSet) -> BoxSet
+    nbhd(B::BoxSet) -> BoxSet
+
+Return a one-box wide neighborhood of a BoxSet `B`. 
+"""
+function neighborhood(B::BoxSet)
+    nbhd = cover( B.partition, (Box(c, 1.2 .* r) for (c, r) in B) )
+    return setdiff!(nbhd, B)
+end
+
+function neighborhood(B::BoxSet{R,Q}) where {N,R,Q<:BoxPartition{N}}
+    P = B.partition
+    C = empty!(copy(B))
+
+    surrounding = CartesianIndices(ntuple(_-> -1:1, N))
+    function nbhd(key)
+        keygen = (key .+ Tuple(cartesian_ind) for cartesian_ind in surrounding)
+        (x for x in keygen if checkbounds(Bool, P, x))
+    end
+
+    for key in B.set
+        union!(C.set, nbhd(key))
+    end
+
+    return setdiff!(C, B)
+end
+
+"""
+    marginal(B::BoxSet{Box{N}}; dim) -> BoxSet{Box{N-1}}
+
+Construct the projection of the `BoxSet` along an axis given by 
+its dimension `dim`. This means that all boxes are projected to 
+dimension N-1. Overlapping boxes are counted only once. 
+"""
+function marginal(B⁺::BoxSet; dim)
+    P⁺ = B⁺.partition
+    P = marginal(P⁺; dim=dim)
+    B = BoxSet(P)
+    return union!( B, deleteat.(keys(B⁺), dim) )
+end

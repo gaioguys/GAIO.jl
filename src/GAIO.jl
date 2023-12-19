@@ -31,7 +31,7 @@ export key_to_box, point_to_key, bounded_point_to_key, point_to_box
 export depth, tree_search, find_at_depth, leaves, hidden_keys
 
 export BoxSet
-export cover, subdivide, subdivide!#, neighborhood, nbhd,
+export cover, subdivide, subdivide!, neighborhood, nbhd
 
 export BoxFun
 
@@ -106,7 +106,7 @@ include("algorithms/optimization.jl")
 include("algorithms/seba.jl")
 include("algorithms/maps.jl")
 
-#const nbhd = neighborhood
+const nbhd = neighborhood
 
 include("precompile.jl")
 
