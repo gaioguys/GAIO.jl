@@ -14,15 +14,15 @@ An _index pair_ is a tuple of sets ``(P_1, P_0)`` such that where ``P_0 \subset 
 1. _(isolation)_ ``\overline{P_1 \setminus P_0}`` is isolating,
 2. _(forward invariance)_ ``f(P_0) \cap P_1 \subset P_0``,
 3. _(exit set)_ \overline{f(P_1) \setminus P_1} \cap P_1 \subset P_0. 
-This definition is quite abstract. One way to intuitively understand this definition is as follows: we find an invariant set and cover it with a set ``P_1``. Within the boundary of ``P_1``, we collect all points where the dynamical system points "outward", that is, points along ``P_0`` leave ``P_1`` immediately. Pictorally this can be thought of in the case of flows:
-
-![intuitive example of the Conley index](../assets/conley_demo.jpeg)
+This definition is quite abstract. One way to intuitively understand this definition is as follows: we find an invariant set and cover it with a set ``P_1``. Within the boundary of ``P_1``, we collect all points where the dynamical system points "outward", that is, points along ``P_0`` leave ``P_1`` immediately. 
 
 Letting ``Q_1 = f(P_1)``, ``Q_0 = P_0 \cup ( Q_1 \setminus P_1 )``, we consider the relative homology groups ``H_\bullet (P_1, P_0)`` and ``H_\bullet (Q_1, Q_0)``. We further consider the map induced by ``f`` on homology
 ```math
 f_\bullet :\, H_\bullet (P_1, P_0) \to H_\bullet (Q_1, Q_0) \, . 
 ```
-Then the _Conley index_ is the topological shift equivalence class of ``\iota_\bullet^{-1} \circ f_\bullet``, where ``\iota :\, (P_1, P_0) \to (Q_1, Q_0)`` is the inclusion map. A full introduction of (relative) homology and induced maps is outside of the scope of this page, but is explained in [computationalhomology](@cite). 
+Then the _Conley index_ is the topological shift equivalence class of ``\iota_\bullet^{-1} \circ f_\bullet``, where ``\iota :\, (P_1, P_0) \to (Q_1, Q_0)`` is the inclusion map. A full introduction of (relative) homology and induced maps is outside of the scope of this page, but is explained in [computationalhomology](@cite). Pictorally this can be thought of in the case of flows:
+
+![intuitive example of the Conley index](../assets/Conley-21.jpg)
 
 ```@docs; canonical=false
 index_pair
@@ -33,52 +33,25 @@ index_quad
 ### Example
 
 ```@example 1
-using GAIO 
+using GAIO
+using StaticArrays
 
-# Henon map
-const a, b = 1.4, 0.2
-f((x,y)) = (1 - a*x^2 + y/5, 5*b*x)
+# hyperbolic saddle
+const A = SA_F64[0.5 0;
+                 0   2]
 
-center, radius = (0, 0), (3, 3)
-P = BoxPartition(Box(center, radius))
-F = BoxMap(:interval, f, P)
-S = cover(P, :)
-```
+f(x) = A*x
 
-```@example 1
-using SparseArrays, LinearAlgebra
+c, r = (0,0), (4,4)
+domain = Box(c, r)
 
-function period_n_orbit(F, B; n=2)
-    F♯ = TransferOperator(F, B, B)
+P = BoxPartition(domain, (64,64))
+S = cover(P, c)
 
-    M = sparse(F♯)         # transfer matrix
-    N = F♯.domain
-
-    for _ in 2:n
-        M .= F♯.mat * M    # Mⁿ :  n-fold transfer matrix
-    end
-                           # nonzero diagonal elements are
-    v = diag(M)            # (candidates for) fixed points under n-fold iteration
-    BoxSet(N, v .> 0)
-end
-```
+F = BoxMap(:interval, f, domain)
 
 ```@example 1
-A = maximal_invariant_set(F, S, steps = 16)
-```
-
-```@example 1
-fix = period_n_orbit(F, A; n=1)
-per2 = period_n_orbit(F, A; n=2)
-B = setdiff(per2, fix)
-```
-
-```@example 1
-N = isolating_neighborhood(F, B)
-```
-
-```@example 1
-P1, P0 = index_pair(F, N)
+N = isolating_neighborhood(F, S)
 ```
 
 Compute pairs to construct the index map ``F:\ (P_1,\ P_0) \to (Q_1,\ Q_0)``
@@ -102,149 +75,71 @@ transfers = TransferOperator(F, P1, Q1)
 @save transfers
 ```
 
-```@example 1
-using Plots
-
-p = plot(P1)
-p = plot!(p, P0, color=:blue)
-
-savefig(p, "P.svg"); nothing # hide
-```
-
-![domain pair](P.svg)
-
-```@example 1
-p = plot(Q1)
-p = plot!(p, Q0, color=:blue)
-
-savefig(p, "Q.svg"); nothing # hide
-```
-
-![image pair](Q.svg)
-
 Get `homcubes` at [Pawel Pilarczyk's website](http://www.pawelpilarczyk.com/chomp/software/)
-
 
 ```
 $ homcubes -g P1_generators.dat -g Q1_generators.dat -g graph_generators.dat transfers.map P1.cub P0.cub Q1.cub Q0.cub
 
 HOMCUBES, ver. 3.07, 09/25/15. Copyright (C) 1997-2020 by Pawel Pilarczyk.
 This is free software. No warranty. Consult 'license.txt' for details.
-Note: The empty file 'P0.cub' is assumed to contain cubes.
-Reading cubes to X from 'P1.cub'... 334 cubes read.
-Reading cubes to A from 'P0.cub'... 0 cubes read.
-Reading cubes to Y from 'Q1.cub'... 574 cubes read.
-Reading cubes to B from 'Q0.cub'... 240 cubes read.
-Computing Y\B... 240 cubes removed from Y, 334 left.
+Reading cubes to X from 'P1.cub'... 14 cubes read.
+Reading cubes to A from 'P0.cub'... 10 cubes read.
+Computing X\A... 10 cubes removed from X, 4 left.
+Restricting A to the neighbors of X\A... 6 cubes removed, 4 left.
+Reading cubes to Y from 'Q1.cub'... 28 cubes read.
+Reading cubes to B from 'Q0.cub'... 24 cubes read.
+Computing Y\B... 24 cubes removed from Y, 4 left.
 300 bit fields allocated (0 MB) to speed up 2-dimensional reduction.
-Reducing full-dim cubes from X... 314 removed, 20 left.
+Reducing full-dim cubes from (X,A)... 4 removed, 4 left.
+Reading the map on X\A from 'transfers.map' for extended reduction... Done.
+Verifying if the image of X\A is contained in Y... Passed.
+Expanding A in X... 1 moved to A, 1 left in X\A, 1 added to B.
+Restricting A to the neighbors of X\A... 1 cubes removed, 2 left.
+Reducing full-dim cubes from (X,A)... 0 removed, 3 left.
 Note: The program assumes that the input map is acyclic.
-Reading the map on X from 'transfers.map'... Done.
-Verifying if the image of X is contained in Y... Passed.
-Computing the image of the map... 63 cubes.
-Expanding B in Y... 273 cubes moved to B, 61 left in Y\B.
-Restricting B to the neighbors of Y\B... 401 cubes removed, 112 left.
-Reducing full-dim cubes from (Y,B)... 67 removed, 106 left.
-Transforming X into cells... 20 cells added.
-Transforming Y\B into cells... 22 cells added.
-Transforming B into cells... 84 cells added.
-Collapsing faces in X... .. 160 removed, 20 left.
-Note: The dimension of X decreased from 2 to 0.
-Creating the map F on cells in X... 63 cubes added.
-Creating a cell map for F... . Done.
+Reading the map on X\A from 'transfers.map'... Done.
+Reading the map on A from 'transfers.map'... Done.
+Verifying if the image of A is contained in B... Passed.
+Verifying if the image of A is disjoint from Y\B... Passed.
+Computing the image of the map... 6 cubes.
+Expanding B in Y... 1 cubes moved to B, 2 left in Y\B.
+Restricting B to the neighbors of Y\B... 19 cubes removed, 7 left.
+Reducing full-dim cubes from (Y,B)... 3 removed, 6 left.
+Transforming X\A into cells... 1 cells added.
+Transforming A into cells... 2 cells added.
+Transforming Y\B into cells... 1 cells added.
+Transforming B into cells... 5 cells added.
+Collapsing faces in X and A... .. 4 removed, 4 left.
+There are 10 faces of dimension up to 1 left in A.
+Note: The dimension of X decreased from 2 to 1.
+Creating the map F on cells in X... 14 cubes added.
+Creating the map F on cells in A... 20 cubes added.
+Creating a cell map for F... .. Done.
 Note: It has been verified successfully that the map is acyclic.
-Creating the graph of F...  20 cells added.
-Adding boundaries of cubical cells in Y and B... 91 cubical cells added.
-Forgetting 256 cells from B.
-Computing the image of F... 2 cells added.
-Collapsing Y towards F(X)... .. 86 cells removed, 27 left.
+Creating the graph of F... . 5 cells added.
+Adding boundaries of cubical cells in Y and B... 4 cubical cells added.
+Forgetting 14 cells from B.
+Computing the image of F... 1 cells added.
+Collapsing Y towards F(X)... .. 4 cells removed, 1 left.
 Note: The dimension of Y decreased from 2 to 1.
-Creating the chain complex of the graph of F... Done.
+Creating the chain complex of the graph of F... . Done.
 Creating the chain complex of Y... . Done.
 Creating the chain map of the projection... Done.
 Time used so far: 0.00 sec (0.000 min).
 Computing the homology of the graph of F over the ring of integers...
-H_0 = Z^20
+Reducing D_1: 0 + 2 reductions made. 
+H_0 = 0
+H_1 = Z
 Saving generators of X to 'P1_generators.dat'... Done.
 Saving generators of the graph of F to 'graph_generators.dat'... Done.
 Computing the homology of Y over the ring of integers...
-Reducing D_1: 0 + 4 reductions made. 
-H_0 = Z^2
-H_1 = Z^17
+Reducing D_1: 
+H_0 = 0
+H_1 = Z
 Saving generators of Y to 'Q1_generators.dat'... Done.
 The map induced in homology is as follows:
-Dim 0:  f (x1) = 0
-        f (x2) = 0
-        f (x3) = 0
-        f (x4) = y1
-        f (x5) = 0
-        f (x6) = 0
-        f (x7) = y2
-        f (x8) = 0
-        f (x9) = 0
-        f (x10) = 0
-        f (x11) = 0
-        f (x12) = 0
-        f (x13) = 0
-        f (x14) = 0
-        f (x15) = 0
-        f (x16) = 0
-        f (x17) = 0
-        f (x18) = 0
-        f (x19) = 0
-        f (x20) = 0
+Dim 0:  0
+Dim 1:  f (x1) = y1
 Total time used: 0.00 sec (0.000 min).
 Thank you for using this software. We appreciate your business.
-```
-
-We can take a look at the generators in homology within the *_generators.dat files:
-
-```
-$ cat Q1_generators.dat
-
-The 2 generators of H_0 follow:
-generator 1
-1 * [(703,542)(703,542)]
-generator 2
-1 * [(700,543)(700,543)]
-
-The 17 generators of H_1 follow:
-generator 1
-1 * [(455,683)(456,683)]
-generator 2
-1 * [(621,403)(622,403)]
-generator 3
-1 * [(394,702)(395,702)]
-generator 4
-1 * [(629,408)(630,408)]
-generator 5
-1 * [(546,632)(547,632)]
-generator 6
--1 * [(614,618)(615,618)]
-1 * [(615,617)(615,618)]
-generator 7
-1 * [(314,313)(315,313)]
-generator 8
-1 * [(401,695)(402,695)]
-generator 9
-1 * [(568,619)(569,619)]
-generator 10
--1 * [(653,590)(654,590)]
-1 * [(653,590)(653,591)]
-generator 11
-1 * [(546,649)(547,649)]
-generator 12
-1 * [(447,677)(448,677)]
-generator 13
-1 * [(590,605)(591,605)]
-generator 14
-1 * [(604,393)(605,393)]
-generator 15
-1 * [(411,697)(412,697)]
-generator 16
-1 * [(692,458)(692,459)]
-1 * [(692,459)(693,459)]
-generator 17
-1 * [(676,442)(676,443)]
-1 * [(675,442)(676,442)]
 ```
