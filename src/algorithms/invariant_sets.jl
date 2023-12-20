@@ -26,10 +26,11 @@ e.g. `B = cover(P, :)` for a partition `P`.
 function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     B = copy(B₀)
     for k in 1:steps
-        B = subdivide(B, (k % N) + 1)
-        P = TransferOperator(F, B, B)
-        G = Graph(P)
-        B = union_strongly_connected_components(G)
+        B   = subdivide(B, (k % N) + 1)
+        F♯  = TransferOperator(F, B, B)
+        G   = MatrixNetwork(F♯)
+        SCC = scomponents(G)
+        B   = BoxSet(morse_tiles(F♯, SCC))
     end
     return B
 end
@@ -65,7 +66,7 @@ Significantly faster than calling `preimage(F, B, B)`.
 """
 function preimage(F::BoxMap, B::BoxSet)
     P  = TransferOperator(F, B, B)
-    C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
+    C⁻ = vec( sum(P.mat, dims=1) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
     return BoxSet(P.domain, C⁻)
 end
 
@@ -93,8 +94,8 @@ C = C⁺ ∩ C⁻
 """
 function symmetric_image(F::BoxMap, B::BoxSet)
     P  = TransferOperator(F, B, B)
-    C⁺ = vec( sum(P.mat, dims=1) .> 0 ) # C⁺ = B ∩ F(B)
-    C⁻ = vec( sum(P.mat, dims=2) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
+    C⁺ = vec( sum(P.mat, dims=2) .> 0 ) # C⁺ = B ∩ F(B)
+    C⁻ = vec( sum(P.mat, dims=1) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
     C  = C⁺ .& C⁻   # C  =  C⁺ ∩ C⁻  =  F(B) ∩ B ∩ F⁻¹(B)
     return BoxSet(P.domain, C)
 end
