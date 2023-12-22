@@ -8,23 +8,10 @@ If the point map only uses "basic" instructions, then it is possible to simultan
 
 For more details, see the [maximizing performance section](https://gaioguys.github.io/GAIO.jl/simd/). 
 
-!!! note "`GridBoxMap(c::Val{:simd}, map, domain::Box{N,T}; no_of_points) where {N,T}`"
-    ```julia
-    BoxMap(:grid, :simd, map, domain::Box{N}; n_points::NTuple{N} = ntuple(_->16, N)) -> CPUSampledBoxMap
-    ```
-    Construct a `CPUSampledBoxMap` that uses a grid of test points. 
-    The size of the grid is defined by `n_points`, which is 
-    a tuple of length equal to the dimension of the domain. 
-    The number of points is rounded up to the nearest mutiple 
-    of the cpu's SIMD capacity. 
-
-!!! note "`MonteCarloBoxMap(c::Val{:simd}, map, domain::Box{N,T}; no_of_points) where {N,T}`"
-    ```julia
-    BoxMap(:montecarlo, :simd, map, domain::Box{N}; n_points=16*N) -> SampledBoxMap
-    ```
-    Construct a `CPUSampledBoxMap` that uses `n_points` 
-    Monte-Carlo test points. The number of points is rounded 
-    up to the nearest multiple of the cpu's SIMD capacity. 
+```@docs; canonical=false
+GridBoxMap(c::Val{:simd}, map, domain::Box{N,T}; n_points) where {N,T}
+MonteCarloBoxMap(c::Val{:simd}, map, domain::Box{N,T}; n_points) where {N,T}
+```
 
 ### Example
 
@@ -61,6 +48,8 @@ p = plot!(p, boundary[:, 1], boundary[:, 2], linewidth=4, fill=(0, RGBA(0.,0.,1.
 ```
 
 ```@repl 1
+using SIMD
+
 n_points = 256
 F = BoxMap(:montecarlo, :simd, f, domain, n_points = n_points)
 p = plot!(

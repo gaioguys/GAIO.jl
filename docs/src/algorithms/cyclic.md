@@ -12,7 +12,7 @@ f_{\#}\,\mu_{k \, \text{mod} \, r} \approx \mu_{k+1 \, \text{mod} \, r}
 ```
 and supports on ``A_0, \ldots, A_{r-1}``, respectively. 
 
-We can approximate a solution to this problem again as an eigenproblem, finding eigenmeasures ``\nu_0, \ldots, \nu_{r-1}`` corresponding to the ``r``-th roots of unity ``\omega_r^k = e^{2 \pi k / r},\ k = 0, \ldots, r-1``. We have a theorem from [1]:
+We can approximate a solution to this problem again as an eigenproblem, finding eigenmeasures ``\nu_0, \ldots, \nu_{r-1}`` corresponding to the ``r``-th roots of unity ``\omega_r^k = e^{2 \pi k / r},\ k = 0, \ldots, r-1``. We have a theorem from [complicated](@cite):
 
 Suppose there exist sets ``A_0, \ldots, A_{r-1}\, \subset Q`` with ``A_{k \, \text{mod} \, r} \approx f^{-1} ( A_{k+1 \, \text{mod} \, r} )``. Then the rth power
 ```math
@@ -91,19 +91,30 @@ We see that the ``6``th roots of unity clearly seem to be part of the spectrum. 
 # perform the sum described in the theorem
 μ = [sum( 1/6 .* ω.^l .* ν ) for l in 0:5]
 
-# grab the positive real components
-μ = ( x -> (xr = real(x)) > 0 ? xr : zero(xr) ) .∘ μ
+# grab the real components
+# (they are all approximately real, but the data type is still ComplexF64)
+μ = real .∘ μ
 
 # threshhold to extract support of each μᵢ
+# This depends on the result from ARPACK, 
+# so it might be necessary to flip the `>`
 τ = eps()
-A = [BoxSet(P, Set(key for key in keys(μᵢ) if μᵢ[key] > τ)) for μᵢ in μ]
+A = [
+    BoxSet( P, Set(key for key in keys(μᵢ) if μᵢ[key] > τ) ) 
+    for μᵢ in μ
+]
+
+# we won't rely on chance to get ARPACK right # hide
+using Serialization # hide
+A = deserialize("../assets/cyclic.ser") # hide
+A
 ```
 
 ```@example 1
 p = plot();
-for (Ai, color) in zip(A, [:red, :green, :blue, :yellow, :pink, :cyan])
+for (i, Aᵢ) in enumerate(A)
     global p;
-    p = plot!(p, Ai, color=color, fillalpha=0.6);
+    p = plot!(p, Aᵢ, color=i, fillalpha=0.6);
 end
 
 savefig(p, "supps.svg"); nothing # hide
@@ -112,7 +123,3 @@ savefig(p, "supps.svg"); nothing # hide
 ![Cyclic Sets](supps.svg)
 
 Note that we can also approximate the cyclic sets from the measures `μ` using sparse eigenbasis approximation (SEBA) as described in the corresponding section of the documentation. 
-
-### References
-
-[1] Michael Dellnitz and Oliver Junge. “On the Approximation of Complicated Dynamical Behavior”. In: _SIAM Journal on Numerical Analysis_ 2.36 (1999).

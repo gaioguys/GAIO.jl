@@ -10,7 +10,7 @@ One can follow a technique very similar to the root finding technique using Newt
 
 While this is very similar to the root finding algorithm, it differs in that we use a binary search instead of Newton's method to guarantee that the entire manifold is covered. In order to practically realise the selection step, GAIO.jl uses interval arithmetic to obtain a rigorous outer covering of the setwise images of ``h``. 
 
-```@docs
+```@docs; canonical=false
 cover_manifold
 ```
 

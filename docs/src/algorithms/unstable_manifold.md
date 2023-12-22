@@ -11,7 +11,7 @@ W^U(x_0) = \{x: \lim_{k \to - \infty} f^k(x) = x_0 \}
 ```
 where ``x_0`` is a fixed point of ``f``.
 
-The idea behind the algorithm [1] to compute the unstable manifold can be explained in two steps. Before starting we need to identify a hyperbolic fixed point and the region ``Q``, which we are going to compute the manifold in. The region ``Q`` needs to be already partitioned into small boxes.
+The idea behind the algorithm [subalg](@cite) to compute the unstable manifold can be explained in two steps. Before starting we need to identify a hyperbolic fixed point and the region ``Q``, which we are going to compute the manifold in. The region ``Q`` needs to be already partitioned into small boxes.
 1. **initialization step** Since a fixed point is always part of the unstable manifold, we need to identify a small region/box containing this fixed point. This box may be known a-priori, or one can use the `relative_attractor` around a small region where one suspects a fixed point to exist. 
 2. **continuation step** The small box containing the fixed point is then mapped forward by `F` and the boxes that are hit under the image are added to the box collection. Then those newly included boxes are mapped forward and the procedure is repeated until no new boxes are added. 
 
@@ -19,7 +19,7 @@ The idea behind the algorithm [1] to compute the unstable manifold can be explai
     One might not be able to compute the parts of the unstable manifold whose preimage lies outside the domain ``Q``.
     Thus, it is important to choose ``Q`` large enough.
 
-```@docs
+```@docs; canonical=false
 unstable_set
 ```
 
@@ -65,8 +65,10 @@ fig = Figure();
 ax = Axis3(fig[1,1], viewmode=:fit)
 ms = plot!(ax, W, color=(:red, 0.6))
 
-record(fig, "unstable.gif", 1:240) do frame
-    v = sin(2pi * frame / 240)
+n_frames = 120
+n_frames = Meta.parse(get(ENV, "n_frames", 120)) # hide
+record(fig, "unstable.gif", 1:n_frames, framerate=20) do frame
+    v = sin(2pi * frame / n_frames)
     ax.elevation[] = pi/8 - pi * v / 10
     ax.azimuth[] = pi * v / 2
 end;
@@ -114,8 +116,8 @@ fig = Figure(); # hide
 ax = Axis3(fig[1,1], azimuth=0.62*pi, viewmode=:fit) # hide
 ms = plot!(ax, W2, color=(:red, 0.6)) # hide
 
-record(fig, "stable.gif", 1:240) do frame
-    v = sin(2pi * frame / 240)
+record(fig, "stable.gif", 1:n_frames, framerate=20) do frame
+    v = sin(2pi * frame / n_frames)
     ax.elevation[] = pi/10 - pi * v / 20
     ax.azimuth[] = -pi / 5 + 2pi * v / 5
 end;
@@ -137,7 +139,3 @@ function unstable_set(F::BoxMap, B::BoxSet)
     return B₀
 end
 ```
-
-### References
-
-[1] Michael Dellnitz and Adreas Hohmann. “The Computation of Unstable Manifolds Using Subdivision”. In: _Nonlinear Systems and Chaos_. Ed. by Haim Brezis. Vol. 19. Progress in Nonlinear Differential Equations and their Applications. 1996, pp. 449–459. doi: https://doi.org/10.1007/978-3-0348-7518-9.

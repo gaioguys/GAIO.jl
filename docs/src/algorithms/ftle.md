@@ -30,7 +30,7 @@ From this we see why ``\sigma (x)`` is called the _maximal finite-time lyapunov 
 
 The definition of ``\sigma (x)`` leads to a natural _ansatz_ for approximating the FTLE: compute ``\frac{1}{T} \ln \left( \sup_{\delta x_0} \frac{ \| \delta x (t_0 + T) \|_2 }{ \| \delta x_0 \|_2 } \right)`` for each of a set of test points ``\| \delta x_0 \|`` of fixed order ``\epsilon > 0`` and set ``\sigma (x)`` to be the maximum over this set of test points. 
 
-An extension of this technique can be made for _ergodic_ systems, as shown in [1]: 
+An extension of this technique can be made for _ergodic_ systems, as shown in [beyn](@cite): 
 
 when calculating the maximal Lyapunov exponent for a discrete dynamical system ``x_{n+1} = f(x_k)`` defined as 
 ```math
@@ -52,7 +52,7 @@ Using an extension of the Birkhoff ergodic theorem it can be proven that this me
 ```
 where ``\mu`` is a measure which is ergodic and invariant under ``f``. 
 
-```@docs
+```@docs; canonical=false
 finite_time_lyapunov_exponents
 ```
 
@@ -110,8 +110,11 @@ savefig("ftle1.svg"); nothing # hide
 
 Since this map is time-dependent, the FTLE field will change over time as well. 
 
-```@example 1
-anim = @animate for t in t₀:τ/4:t₁
+```julia
+n_frames = 120
+times = range(t₀, t₁, length=n_frames)
+
+anim = @animate for t in times
     Φₜ(z) = Φ(z, t, τ, steps)
 
     F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
@@ -119,10 +122,10 @@ anim = @animate for t in t₀:τ/4:t₁
 
     plot(γ, clims=(0,2), colormap=:jet)
 end;
-gif(anim, "ftle1.gif", fps=Tspan÷τ); nothing # hide
+gif(anim, "ftle1.gif", fps=20)
 ```
 
-![FTLE field](ftle1.gif)
+![FTLE field](../assets/ftle1.gif)
 
 ### Example 2: An Ergodic System
 
@@ -152,7 +155,3 @@ T = TransferOperator(F, A, A)
 
 σ = 2*σ16 - σ8
 ```
-
-### References
-
-[1] Beyn, WJ., Lust, A. A hybrid method for computing Lyapunov exponents. _Numer. Math._ 113, 357–375 (2009). https://doi.org/10.1007/s00211-009-0236-4

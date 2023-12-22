@@ -10,11 +10,11 @@ If the above limit exists, then we can equivalently write the asymptotic equatio
 ```math
 d(\epsilon) - D \sim \frac{\log K}{\log (1/\epsilon)}.
 ```
-The method used to compute ``D`` follows that of [1]: it is difficult to make ``d(\epsilon) - D`` small by shrinking ``\epsilon``. However, for small ``\epsilon`` the relationship between ``d(\epsilon)`` and ``1 / \log (1/\epsilon)`` will be approximately linear. Hence we extrapolate the value of ``d(\epsilon)`` for ``\epsilon \to 0`` by linear least-squares regression on ``d(\epsilon)`` vs ``1 / \log (1/\epsilon)``. 
+The method used to compute ``D`` follows that of [PhysRevLett.45.1175](@cite): it is difficult to make ``d(\epsilon) - D`` small by shrinking ``\epsilon``. However, for small ``\epsilon`` the relationship between ``d(\epsilon)`` and ``1 / \log (1/\epsilon)`` will be approximately linear. Hence we extrapolate the value of ``d(\epsilon)`` for ``\epsilon \to 0`` by linear least-squares regression on ``d(\epsilon)`` vs ``1 / \log (1/\epsilon)``. 
 
 Using this method we have everything we need to compute the box dimension for general objects. All that is required is a sequence of successively finer box sets which cover the object. 
 
-```@docs
+```@docs; canonical=false
 box_dimension
 ```
 
@@ -62,7 +62,3 @@ end
 s = SubdivisionIterator(boxset = S)
 box_dimension(s)
 ```
-
-### References
-
-[1] David A. Russell, James D. Hanson, and Edward Ott. “Dimension of Strange Attractors”. In: Phys. Rev. Lett. 45 (14 Oct. 1980), pp. 1175–1178. doi: 10.1103/PhysRevLett.45.1175. url: https://link.aps.org/doi/10.1103/PhysRevLett.45.1175

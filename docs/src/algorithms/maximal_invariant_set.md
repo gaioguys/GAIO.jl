@@ -25,13 +25,13 @@ Let ``\mathcal{O}(x) = \left\{ \ldots,\, f^{-1}(x),\, x,\, f(x),\, \ldots \right
 ```
 is the set of all orbits contained entirely in ``Q``. This is precisely the maximal invariant set. 
 
-The idea of the algorithm [1] is to cover the desired set with boxes and recursively tighten the covering by refining appropriately selected boxes. The algorithm requires a `BoxMap` `F` as well as a `BoxSet` `B`, and performs two steps:
+The idea of the algorithm [Dellnitz.Hohmann.1996](@cite) is to cover the desired set with boxes and recursively tighten the covering by refining appropriately selected boxes. The algorithm requires a `BoxMap` `F` as well as a `BoxSet` `B`, and performs two steps:
 1. **subdivision step:** The box set `B` is subdivided once, i.e. every box is bisected along one axis, which gives rise to a new partition of the domain, with double the amount of boxes. This is saved as `B`. 
 2. **selection step:** `B` is mapped forward under `F`. All boxes which do not satisfy the invariance condition ``F (B) = B = F^{-1} (B)`` are discarded, i.e. only the box set `C = F(B) ∩ B ∩ F⁻¹(B)` is kept. This set can be computed by considering the transfer graph `G` restricted to `B` (as described in [Chain Recurrent Set](@ref)). `C` is precisely the set of vertices of `G` which have both an incoming and outgoing edge. 
 
 This algorithm can be analogously performed to find the _maximal forward invariant set_ by replacing the selection step with selecting `C = B ∩ F⁻¹(B)`, or the _maximal backward invariant set_ by selecting `C = F(B) ∩ B`. The astute documentation reader might notice that the latter is precisely the algorithm for the _relative attractor_. 
 
-```@docs
+```@docs; canonical=false
 maximal_invariant_set
 maximal_forward_invariant_set
 preimage
@@ -79,7 +79,3 @@ function maximal_invariant_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) wher
     return B
 end
 ```
-
-### References
-
-[1] Michael Dellnitz and Adreas Hohmann. “The Computation of Unstable Manifolds Using Subdivision”. In: _Nonlinear Systems and Chaos_. Ed. by Haim Brezis. Vol. 19. Progress in Nonlinear Differential Equations and their Applications. 1996, pp. 449–459. doi: https://doi.org/10.1007/978-3-0348-7518-9.
