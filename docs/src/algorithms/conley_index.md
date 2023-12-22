@@ -49,6 +49,7 @@ P = BoxPartition(domain, (64,64))
 S = cover(P, c)
 
 F = BoxMap(:interval, f, domain)
+```
 
 ```@example 1
 N = isolating_neighborhood(F, S)
