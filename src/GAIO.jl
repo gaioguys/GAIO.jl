@@ -14,7 +14,9 @@ using SplitOrderedCollections
 using IntervalArithmetic
 
 # graph / linear algebra algorithms
-using Graphs
+#using Graphs
+using MatrixNetworks
+using MatrixNetworks: Strong_components_output, Strong_components_rich_output
 using SparseArrays
 using Arpack
 
@@ -39,8 +41,8 @@ export TransferOperator
 export construct_transfers, eigs, svds
 export key_to_index, index_to_key
 
-export BoxGraph, Graph
-export union_strongly_connected_components
+#export BoxGraph, Graph
+#export union_strongly_connected_components
 
 export BoxMap, map_boxes
 export SampledBoxMap, PointDiscretizedBoxMap, GridBoxMap, MonteCarloBoxMap
@@ -50,15 +52,15 @@ export IntervalBoxMap
 
 export rk4, rk4_flow_map
 export preimage, symmetric_image
+export morse_map, morse_component_map, morse_graph, morse_tiles, morse_graph_and_tiles
+export isolating_neighborhood, isloating_nbhd, index_pair, index_quad, @save
 
-export relative_attractor, maximal_forward_invariant_set, maximal_invariant_set
+export relative_attractor, maximal_forward_invariant_set, maximal_backward_invariant_set, maximal_invariant_set
 export unstable_set, chain_recurrent_set
 export box_dimension, finite_time_lyapunov_exponents
 export armijo_rule, adaptive_newton_step, cover_roots, cover_manifold
 export nth_iterate_jacobian
 export seba, partition_unity, partition_disjoint, partition_likelihood
-
-export plotboxes, plotboxes!
 
 # ENV["JULIA_DEBUG"] = all
 
@@ -98,12 +100,14 @@ include("boxmap.jl")
 
 include("boxfun.jl")  
 include("transfer_operator.jl")
-include("boxgraph.jl")
+#include("boxgraph.jl")
 
 include("algorithms/invariant_sets.jl")
 include("algorithms/scalar_diagnostics.jl")
 include("algorithms/optimization.jl")
 include("algorithms/seba.jl")
+include("algorithms/morse_graph.jl")
+include("algorithms/conley_index.jl")
 include("algorithms/maps.jl")
 
 const nbhd = neighborhood

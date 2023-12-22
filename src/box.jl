@@ -132,6 +132,7 @@ IntervalArithmetic.mince(b::Box{N,T}, ncuts::NTuple{N,Int}) where {N,T} = mince(
 Compute the volume of a box. 
 """
 volume(box::Box) = prod(2 .* box.radius)
+volume(::Nothing) = 0
 
 """
     vertices(box)

@@ -12,7 +12,7 @@ GAIO.jl is a Julia package for set oriented computations.  Sets are represented 
   * entropy and box dimension
 * root finding problems
 * multi-objective optimization problems
-* computing implicitely defined manifolds
+* computing implicitly defined manifolds
 
 ## Documentation
 
