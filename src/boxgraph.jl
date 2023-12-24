@@ -70,10 +70,10 @@ function BoxGraph(gstar::TransferOperator)
     gstar.codomain === gstar.domain && return BoxGraph(gstar, length(gstar.domain))
     # permute the row indices so that we can skip already identified boxes
     cut = intersect!(copy(gstar.domain), gstar.codomain)
-    n = length(cut)
-    inds = [key_to_index(gstar.codomain, key) for key in cut.set]
     gstar.codomain = union!(cut, gstar.codomain)
-    gstar.mat[[1:n; inds], :] .= gstar.mat[[inds; 1:n], :]
+    
+    inds = [key_to_index(gstar.codomain, key) for key in cut.set]
+    reorder_rows!(gstar.mat, inds)
     return BoxGraph(gstar, n)
 end
 
@@ -237,3 +237,16 @@ function Graphs.SimpleDiGraph(gstar::TransferOperator)
 end
 
 Graphs.SimpleDiGraph(g::BoxGraph) = SimpleDiGraph(g.gstar)
+
+# helper function to reorder rows in sparse matrix such that `inds` come first
+function reorder_rows!(mat, inds)
+    order = [ axes(mat, 1); ]
+    order = [ order[inds]; order[Not(inds)] ]
+    
+    rows = rowvals(mat)
+    for i in eachindex(rows)
+        rows[i] = rows[order[i]]
+    end
+
+    return mat
+end

@@ -312,6 +312,7 @@ function SparseArrays.sparse(
     sizehint!(ws, length(dict))
 
     for ((u, v), w) in dict
+        iszero(w) && continue
         x = key_to_index(codomain, u)
         y = key_to_index(domain, v)
         push!(xs, x)
