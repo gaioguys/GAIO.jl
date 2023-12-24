@@ -42,7 +42,7 @@ S = cover(P, x)
 @time W = unstable_set(F, S)
 ```
 
-Using SIMD vectorization, one can roughly double the effective floating point operations per second. For more detail, see [1]. 
+Using SIMD vectorization, one can roughly double the effective floating point operations per second. For more detail, see [GAIO.jl](@cite). 
 
 ![performance metrics](assets/flops_cpu_loglog.png)
 
@@ -88,7 +88,3 @@ end
 f(x) = rk4_flow_map(v, x)
 ```
 Generally, most "simple" functions can be rewritten (if needed) to support SIMD.jl. However, more complicated functions can make rewriting unnecessarily difficult. 
-
-## References
-
-[1] April Herwig. “GAIO.jl: Set-oriented Methods for Approximating Invariant Objects, and their Implementation in Julia”.Thesis. 2022. url: https://github.com/April-Hannah-Lena/schoolwork/blob/2eada059678d91bad8a813c3e6b657a1ac72e86f/Thesis/main.pdf. 

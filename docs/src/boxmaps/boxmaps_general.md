@@ -2,7 +2,7 @@
 
 There are multiple techniques one could use to discretize point maps into maps over boxes. In [General Usage](https://gaioguys.github.io/GAIO.jl/general/) the discretization `BoxMap` was already briefly introduced. 
 
-```@docs
+```@docs; canonical=false
 BoxMap
 ```
 

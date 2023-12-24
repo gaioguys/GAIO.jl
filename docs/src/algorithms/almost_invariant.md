@@ -2,7 +2,7 @@
 
 ### Mathematical Background
 
-In applied dynamical systems research we often wish to determine regions of phase space which "resist mixing". These regions can provide valuable information on the system, e.g. oceanic eddies are good transporters of water that is warmer/cooler/saltier than surrounding water [1]. 
+In applied dynamical systems research we often wish to determine regions of phase space which "resist mixing". These regions can provide valuable information on the system, e.g. oceanic eddies are good transporters of water that is warmer/cooler/saltier than surrounding water [coherent](@cite). 
 
 In the context of autonomous dynamics these sets which mitigate transport between their interior and the surrounding phase space are referred to as _almost invariant_ or _metastable_. Mathematically, we wish to find sets ``A \subset Q`` of the domain ``Q`` which satisfy ``A \approx f^{-1} (A)`` or in the context of ``\mu``-measure satisfy 
 ```math
@@ -91,8 +91,10 @@ ax1 = Axis3(fig[1,1], aspect=(1,1.2,1), azimuth=-3pi/10, viewmode=:fit) # hide
 ms1 = plot!(ax1, B1, color=(:blue, 0.4)) # hide
 ax2 = Axis3(fig[1,2], aspect=(1,1.2,1), azimuth=-3pi/10, viewmode=:fit) # hide
 ms2 = plot!(ax2, B2, color=(:red, 0.4)) # hide
-record(fig, "almost_inv_rotating.gif", 1:240) do frame
-    v = sin(2pi * frame / 240)
+n_frames = 120
+n_frames = Meta.parse(get(ENV, "n_frames", 120)) # hide
+record(fig, "almost_inv_rotating.gif", 1:n_frames, framerate=20) do frame
+    v = sin(2pi * frame / n_frames)
     ax1.elevation[] = pi/20 - pi * v / 20
     ax2.elevation[] = pi/20 - pi * v / 20
     ax1.azimuth[] = 3pi * v / 4
@@ -170,8 +172,11 @@ savefig(p, "gyre_almost_inv.svg"); nothing # hide
 
 Since the map is nonautonomous, this image should change if we vary the start time `t₀`. 
 
-```@example 2
-anim = @animate for t in t₀:τ/4:t₁
+```julia
+n_frames = 120
+times = range(t₀, t₁, length=n_frames)
+
+anim = @animate for t in times
     Φₜ(z) = Φ(z, t, τ, steps)
 
     F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
@@ -187,11 +192,7 @@ anim = @animate for t in t₀:τ/4:t₁
 
     plot(μ, clims=(-1,1), colormap=:jet)
 end;
-gif(anim, "gyre_almost_inv.gif", fps=Tspan÷τ); nothing # hide
+gif(anim, "gyre_almost_inv.gif", fps=20)
 ```
 
-![almost invariant sets changing over time](gyre_almost_inv.gif)
-
-### References
-
-[1] Froyland, G., Padberg-Gehle, K. (2014). Almost-Invariant and Finite-Time Coherent Sets: Directionality, Duration, and Diffusion. In: Bahsoun, W., Bose, C., Froyland, G. (eds) Ergodic Theory, Open Dynamics, and Coherent Structures. Springer Proceedings in Mathematics & Statistics, vol 70. Springer, New York, NY. https://doi.org/10.1007/978-1-4939-0419-8_9
+![almost invariant sets changing over time](../assets/gyre_almost_inv.gif)

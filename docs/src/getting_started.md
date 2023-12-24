@@ -1,14 +1,32 @@
 # Getting started
 
-Consider the [Hénon map](https://en.wikipedia.org/wiki/H%C3%A9non_map) [1]
-```math
-f(x,y) = (1-ax^2+y, bx), \quad a,b \in \mathbb{R}
+Consider the [Hénon map](https://en.wikipedia.org/wiki/H%C3%A9non_map) [henon](@cite)
+
+```@repl 1
+const a, b = 1.35, 0.3
+f((x,y)) = ( 1 - a*x^2 + y,  b*x ) 
 ```
-Iterating some random intial point exhibits a strange attractor (a=1.4 and b=0.3)
 
-![Hénon attractor](assets/henon-simulation.svg)
+Iterating some random intial point exhibits a strange attractor 
 
-This map is _chaotic_ [2,3], it has sensitive dependence on initial conditions. That is, small perturbations (as unavoidable on a computer) during the computation grow exponentially during the iteration.  Thus, apart from a few iterates at the beginning, the computed trajectory does not (necessarily) follow a true trajectory. One might therefore question how reliable this figure is.
+```@repl 1
+orbit = NTuple{2, Float64}[]
+x = (1, 1)
+for k in 1:10000
+    x = f(x)
+    push!(orbit, x)
+end
+```
+
+```@repl 1
+using Plots
+p = scatter(orbit)
+savefig(p, "henon-simulation.svg"); nothing # hide
+```
+
+![Hénon attractor](henon-simulation.svg)
+
+This map is _chaotic_ [henonchaos1](@cite), [henonchaos2](@cite), it has sensitive dependence on initial conditions. That is, small perturbations (as unavoidable on a computer) during the computation grow exponentially during the iteration.  Thus, apart from a few iterates at the beginning, the computed trajectory does not (necessarily) follow a true trajectory. One might therefore question how reliable this figure is.
 
 Instead of trying to approximate the attractor by a long forward trajectory, we will capture it by computing a collection of boxes (i.e. cubes) covering the attractor. 
 
@@ -39,33 +57,20 @@ B = cover(P, :)
 ```
 yields a `BoxSet` containing all boxes from the partition `P` (i.e. a set containing 16 boxes).
 
-In order to deal with the Hénon map as a map over box sets, we have to turn it into a `BoxMap` on the domain `Q`
+In order to deal with the Hénon map `f` as a map over box sets, we have to turn it into a `BoxMap` on the domain `Q`
 ```@repl 1
-a, b = 1.4, 0.3
-f((x,y)) = (1 - a*x^2 + y, b*x) 
 F = BoxMap(f, Q) 
 ```
-We can now compute a covering of the attractor in `Q`, starting with the full box set `B`, by applying 15 steps of the subdivison algorithm described in [4]:
+We can now compute a covering of the attractor in `Q`, starting with the full box set `B`, by applying 15 steps of the subdivison algorithm described in [subalg](@cite):
 ```@repl 1
 A = relative_attractor(F, B, steps = 19)  
 ```
 
 ```@repl 1
-using Plots
 p = plot(A)
-savefig("henon.svg"); nothing # hide
+savefig(p, "henon.svg"); nothing # hide
 ```
 
 ![box covering of the Hénon attractor](henon.svg)
 
-In addition to covering the attractor, this box collection also covers an unstable fixed point near (-1,-0.3) and its unstabe manifold (cf. [4]).
-
-## References
-
-[1] Hénon, Michel. "A two-dimensional mapping with a strange attractor". Communications in Mathematical Physics 50.1 (1976): 69–77.
-
-[2] Benedicks, Michael, and Lennart Carleson. "The dynamics of the Hénon map." Annals of Mathematics 133.1 (1991): 73-169.
-
-[3] Zgliczynski, Piotr. "Computer assisted proof of chaos in the Rössler equations and in the Hénon map." Nonlinearity 10.1 (1997): 243. 
-
-[4] Dellnitz, Michael, and Andreas Hohmann. "A subdivision algorithm for the computation of unstable manifolds and global attractors." Numerische Mathematik 75.3 (1997): 293-317.
+In addition to covering the attractor, this box collection also covers an unstable fixed point near (-1,-0.3) and its unstabe manifold (cf. [subalg](@cite)). 

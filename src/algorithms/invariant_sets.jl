@@ -101,8 +101,8 @@ function symmetric_image(F::BoxMap, B::BoxSet)
 end
 
 """
-    relative_attractor(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
-    maximal_backward_invariant_set(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
+    relative_attractor(F::BoxMap, B::BoxSet; steps=12, subdivision=true) -> BoxSet
+    maximal_backward_invariant_set(F::BoxMap, B::BoxSet; steps=12, subdivision=true) -> BoxSet
 
 Compute the attractor relative to `B`. `B` should be 
 a (coarse) covering of the relative attractor, e.g. 
@@ -113,7 +113,7 @@ function maximal_backward_invariant_set end
 const relative_attractor = maximal_backward_invariant_set
 
 """
-    maximal_forward_invariant_set(F::BoxMap, B::BoxSet; steps=12)
+    maximal_forward_invariant_set(F::BoxMap, B::BoxSet; steps=12, subdivision=true)
 
 Compute the maximal forward invariant set contained in `B`. 
 `B` should be a (coarse) covering of a forward invariant set, 
@@ -124,7 +124,7 @@ function maximal_forward_invariant_set end
 restricted_image(F, B) = F(B) ∩ B
 
 """
-    maximal_invariant_set(F::BoxMap, B::BoxSet; steps=12)
+    maximal_invariant_set(F::BoxMap, B::BoxSet; steps=12, subdivision=true)
 
 Compute the maximal invariant set contained in `B`. 
 `B` should be a (coarse) covering of an invariant set, 

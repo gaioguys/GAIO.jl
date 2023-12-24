@@ -95,8 +95,11 @@ savefig(p, "sv1.svg"); nothing # hide
 
 ![Second left singular measure](sv1.svg)
 
-```@example 1
-anim = @animate for t in t₀:τ/4:t₁
+```julia
+n_frames = 120
+times = range(t₀, t₁, length=n_frames)
+
+anim = @animate for t in times
     Φₜ(z) = Φ(z, t, τ, steps)
 
     F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
@@ -114,12 +117,12 @@ anim = @animate for t in t₀:τ/4:t₁
     M = maximum(abs ∘ μ)
     μ = s/M * μ
 
-    plot(μ, clims=(-1,1), colormap=:jet)
+    plot(μ, clims=(-1,1), colormap=:redsblues)
 end;
-gif(anim, "coherent.gif", fps=Tspan÷τ); nothing # hide
+gif(anim, "coherent.gif", fps=20)
 ```
 
-![Coherent Sets](coherent.gif)
+![Coherent Sets](../assets/coherent.gif)
 
 
 ### References

@@ -25,7 +25,7 @@ Using this iterative solver, one can follow a technique very similar to the algo
 
 If we repeadetly refine the box set `B` through ``k`` subdivision steps, then as ``k \to \infty`` the collection of boxes converges to the set of roots of `h` in the Hausdorff metric. 
 
-```@docs
+```@docs; canonical=false
 cover_roots
 adaptive_newton_step
 armijo_rule

@@ -4,9 +4,9 @@ The above approaches may not necessarily be effective for covering the setwise i
 ```math
 | f(y) - f(z) | \leq L \, | y - z | \quad \text{for all } y, z \in \text{Box}(c, r),
 ```
-where the operations ``| \cdot |`` and `` \leq `` are to be understood elementwise. The function `AdaptiveBoxMap` attempts to approximate ``L`` before choosing an adaptive grid of test points in each box, as described in [1]. 
+where the operations ``| \cdot |`` and `` \leq `` are to be understood elementwise. The function `AdaptiveBoxMap` attempts to approximate ``L`` before choosing an adaptive grid of test points in each box, as described in [Junge.2000](@cite). 
 
-```@docs
+```@docs; canonical=false
 AdaptiveBoxMap
 ```
 
@@ -56,7 +56,3 @@ savefig("adaptive.svg"); nothing # hide
 ```
 
 ![Adaptive BoxMap](adaptive.svg)
-
-### References
-
-[1] Oliver Junge. “Rigorous discretization of subdivision techniques”. In: _International Conference on Differential Equations_. Ed. by B. Fiedler, K. Gröger, and J. Sprekels. 1999.
