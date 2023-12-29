@@ -24,12 +24,15 @@ for str in (
         "Interval"
     )
 
-    @eval BoxMap(::Val{Symbol($str)}, args...; kwargs...) = $(Symbol(str*"BoxMap"))(args...; kwargs...)
-    @eval BoxMap(::Val{Symbol(lowercase($str))}, args...; kwargs...) = $(Symbol(str*"BoxMap"))(args...; kwargs...)
+    @eval BoxMap(::Val{Symbol($str)}, args...; kwargs...) = $(Symbol(str*"BoxMap"))(preprocess(args...)...; kwargs...)
+    @eval BoxMap(::Val{Symbol(lowercase($str))}, args...; kwargs...) = $(Symbol(str*"BoxMap"))(preprocess(args...)...; kwargs...)
 
 end
 
 Base.show(io::IO, g::BoxMap) = print(io, "BoxMap over $(g.domain)")
+
+# this is a no-op outside of extensions
+preprocess(args...) = args
 
 function (g::BoxMap)(source::BoxSet; show_progress::Bool=false, kwargs...) 
     map_boxes(g, source, Val(show_progress); kwargs...)

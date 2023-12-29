@@ -22,6 +22,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [weakdeps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+DynamicalSystemsBase = "6e36e845-645a-534a-86f2-f5d4aa5a06b4"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 MetaGraphsNext = "fa8bd995-216d-47f1-8a91-f3b68fbeb377"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
@@ -30,6 +31,7 @@ SIMD = "fdea26ae-647d-5447-a871-4b548cad5224"
 
 [extensions]
 CUDAExt = "CUDA"
+DynamicalSystemsExt = "DynamicalSystemsBase"
 MakieExt = "Makie"
 MetaGraphsNextExt = "MetaGraphsNext"
 PlotsExt = "Plots"
@@ -39,6 +41,7 @@ SIMDExt = "SIMD"
 [compat]
 Arpack = "0.5"
 CUDA = "4"
+DynamicalSystemsBase = "3"
 FLoops = "0.2"
 GeometryBasics = "0.2, 0.3, 0.4"
 Graphs = "1.9"
