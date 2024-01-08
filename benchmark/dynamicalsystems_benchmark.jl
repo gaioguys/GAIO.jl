@@ -66,3 +66,39 @@ H = BoxMap(:grid, h, domain, n_points=(2,2,2))
 using GLMakie
 
 plot(W)
+
+
+# ---------------------------------------------------------
+
+
+# the Henon map
+a, b = 1.4, 0.3
+u0 = SA_F64[0, 0]
+p0 = SA_F64[a, b]
+
+function f(u::Vec, p=p0, t=0) where Vec
+    x,y = u
+    a,b = p
+    return Vec(( 1 - a*x^2 + y, b*x ))
+end
+
+system = DiscreteDynamicalSystem(f, u0, p0)
+
+center, radius = (0, 0), (3, 3)
+domain = Box(center, radius)
+P = BoxPartition(domain)
+
+F = BoxMap(:grid, f, domain)
+G = BoxMap(:grid, system, domain)
+
+S = cover(P, :)
+
+A = @benchmark relative_attractor(F, S, steps = 16)
+Ā = @benchmark relative_attractor(G, S, steps = 16)
+
+A == Ā
+
+using Plots: plot
+#using WGLMakie    # same result, just interactive
+
+plot(Ā)
