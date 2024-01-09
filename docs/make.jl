@@ -5,6 +5,7 @@ using GAIO
 using MetaGraphsNext
 import Plots, GLMakie#, WGLMakie
 import GraphRecipes, GraphMakie
+import DynamicalSystems, OrdinaryDiffEq
 import SIMD, CUDA
 using LinearAlgebra, SparseArrays, StaticArrays, Graphs, Arpack, Serialization
 

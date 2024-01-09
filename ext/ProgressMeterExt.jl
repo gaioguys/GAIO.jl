@@ -9,7 +9,7 @@ import GAIO: typesafe_map, map_boxes, construct_transfers, ⊔, SVNT
 function map_boxes(
         g::IntervalBoxMap, source::BS,
         show_progress::Val{true}
-    ) where {B,Q,S,BS<:BoxSet{B,Q,S}}
+    ) where {B<:Box,Q<:AbstractBoxPartition,S<:AbstractSet,BS<:BoxSet{B,Q,S}}
 
     prog = Progress(length(source)+1; desc="Computing image...", showspeed=true)
 
@@ -40,7 +40,7 @@ end
 function construct_transfers(
         g::IntervalBoxMap, domain::BS,
         show_progress::Val{true}
-    ) where {N,T,R<:Box{N,T},Q,S,BS<:BoxSet{R,Q,S}}
+    ) where {N,T,R<:Box{N,T},Q<:AbstractBoxPartition,S<:AbstractSet,BS<:BoxSet{R,Q,S}}
 
     prog = Progress(length(source)+1; desc="Computing image...", showspeed=true)
     P = domain.partition
@@ -81,7 +81,7 @@ end
 function construct_transfers(
         g::IntervalBoxMap, domain::BoxSet{R,Q}, codomain::BoxSet{U,H},
         show_progress::Val{true}
-    ) where {N,T,R<:Box{N,T},Q,U,H}
+    ) where {N,T,R<:Box{N,T},Q<:AbstractBoxPartition,U<:Box,H<:AbstractBoxPartition}
 
     prog = Progress(length(domain)+1; desc="Computing transfer weights...", showspeed=true)
     P1, P2 = domain.partition, codomain.partition
@@ -121,7 +121,7 @@ end
 function map_boxes(
         g::SampledBoxMap, source::BoxSet{B,Q,S}, 
         show_progress::Val{true}
-    ) where {B,Q,S}
+    ) where {B,Q<:AbstractBoxPartition,S<:AbstractSet}
 
     prog = Progress(length(source)+1; desc="Computing image...", showspeed=true)
 
@@ -155,7 +155,7 @@ end
 function construct_transfers(
         g::SampledBoxMap, domain::BoxSet{R,Q,S},
         show_progress::Val{true}
-    ) where {N,T,R<:Box{N,T},Q,S}
+    ) where {N,T,R<:Box{N,T},Q<:AbstractBoxPartition,S<:AbstractSet}
 
     prog = Progress(length(domain)+1; desc="Computing transfer weights...", showspeed=true)
     P = domain.partition
@@ -194,7 +194,7 @@ end
 function construct_transfers(
         g::SampledBoxMap, domain::BoxSet{R,Q}, codomain::BoxSet{U,H},
         show_progress::Val{true}
-    ) where {N,T,R<:Box{N,T},Q,U,H}
+    ) where {N,T,R<:Box{N,T},Q<:AbstractBoxPartition,U<:Box,H<:AbstractBoxPartition}
 
     prog = Progress(length(domain)+1; desc="Computing transfer weights...", showspeed=true)
     P1, P2 = domain.partition, codomain.partition
