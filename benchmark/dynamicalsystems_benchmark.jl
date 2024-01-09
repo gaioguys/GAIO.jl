@@ -6,7 +6,7 @@ ENV["JULIA_DEBUG"] = "all"
 
 # the Lorenz system
 σ, ρ, β = 10.0, 28.0, 0.4
-p0 = SA_F64[σ,ρ,β]
+const p0 = SA_F64[σ,ρ,β]
 
 τ, n_steps = 0.01, 20
 const Δt = τ*n_steps
@@ -31,7 +31,7 @@ alg = RK4(thread = OrdinaryDiffEq.False())
 diffeq = (alg = alg, dt = 1/20, adaptive = false)
 dyn_syst = ContinuousDynamicalSystem(lorenz, u0, p0; diffeq)
 
-# DifferentialEquations integrator: least efficient
+# DifferentialEquations integrator: least efficient but maximally customizable
 prob = ODEProblem(lorenz, u0, (0.,1.), p0)
 
 function h(x)
@@ -51,16 +51,16 @@ P = BoxPartition(domain, (128,128,128))
 x = ( sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1 )   # equilibrium
 S = cover(P, x)
 
-F = BoxMap(:adaptive, f, domain)
-W = unstable_set(F, S)
-
 F = BoxMap(:grid, f, domain, n_points=(2,2,2))
 G = BoxMap(:grid, dyn_syst, domain, n_points=(2,2,2))
 H = BoxMap(:grid, h, domain, n_points=(2,2,2))
 
-@benchmark F(W)
-@benchmark G(W)
-@benchmark H(W)
+@benchmark F(S)
+@benchmark G(S)
+@benchmark H(S)
+
+F = BoxMap(f, domain)
+W = unstable_set(F, S)
 
 #using Plots: plot
 using GLMakie
@@ -74,7 +74,7 @@ plot(W)
 # the Henon map
 a, b = 1.4, 0.3
 u0 = SA_F64[0, 0]
-p0 = SA_F64[a, b]
+const p0 = SA_F64[a, b]
 
 function f(u::Vec, p=p0, t=0) where Vec
     x,y = u
@@ -93,10 +93,10 @@ G = BoxMap(:grid, system, domain)
 
 S = cover(P, :)
 
-A = @benchmark relative_attractor(F, S, steps = 16)
-Ā = @benchmark relative_attractor(G, S, steps = 16)
+@benchmark relative_attractor(F, S, steps = 16)
+@benchmark relative_attractor(G, S, steps = 16)
 
-A == Ā
+A = relative_attractor(F, S, steps = 16)
 
 using Plots: plot
 #using WGLMakie    # same result, just interactive
