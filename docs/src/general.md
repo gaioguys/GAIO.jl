@@ -124,7 +124,10 @@ F̃ = BoxMap(system, Q)
 ```
 The same works for a continuous dynamical system. 
 
-!!! warning "Warning!"
+!!! warning "Maps based on `DynamicalSystem`s cannot run on the GPU!"
+    Currently, you must hard-code your systems, and cannot rely on `DifferentialEquations` or `DynamicalSystems` for GPU-acceleration. 
+
+!!! warning "Check your time-steps!"
     GAIO.jl ALWAYS performs integration over **one** time unit! To perform smaller steps, rescale your dynamical system accordingly!
 
 ```@repl 1
