@@ -165,7 +165,8 @@ function density(μ::BoxFun)
     P = μ.partition
     function eval_density(x)
         xi = point_to_key(P, x)
-        μ[xi]
+        b = key_to_box(P, xi)
+        return μ[xi] / volume(b)
     end
 end
 
