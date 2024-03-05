@@ -55,12 +55,14 @@ BoxSet(boxfun::BoxFun; settype=OrderedSet) = BoxSet(boxfun.partition, settype(ke
 Base.Dict(boxfun::BoxFun) = Dict( zip( keys(boxfun), values(boxfun) ) )
 OrderedCollections.OrderedDict(boxfun::BoxFun) = OrderedDict( zip( keys(boxfun), values(boxfun) ) )
 
+box_pairs(fun::BoxFun) = (key_to_box(fun.partition, key) => weight for (key,weight) in fun.vals)
+
 Core.@doc raw"""
     sum(f, μ::BoxFun)
     sum(f, μ::BoxFun, B::BoxSet)
     μ(B) = sum(x->1, μ, B)
 
-Integrate a function `f` using `μ` as a density, that is,
+Integrate a function `f` with respect to the measure `μ`, that is,
 if `boxfun` is the discretization of a measure ``\mu`` over the domain 
 ``Q``, then approximate the value of 
 ```math
@@ -75,7 +77,7 @@ The notation `μ(B)` is offered to compute
 ``\mu (\bigcup_{b \in B} b)``. 
 """
 function Base.sum(f, boxfun::BoxFun{B,K,V,P,D}; init...) where {B,K,V,P,D}
-    sum(pairs(boxfun); init...) do pair
+    sum(box_pairs(boxfun); init...) do pair
         box, val = pair
         f(box.center) * volume(box) * val
     end
@@ -102,7 +104,7 @@ Base.keytype(::BoxFun{B,K,V}) where {B,K,V} = K
 Base.eltype(::BoxFun{B,K,V}) where {B,K,V} = V
 Base.keys(fun::BoxFun) = keys(fun.vals)
 Base.values(fun::BoxFun) = values(fun.vals)
-Base.pairs(fun::BoxFun) = ( (key_to_box(fun.partition, key), val) for (key,val) in fun.vals )
+Base.pairs(fun::BoxFun) = pairs(fun.vals)
 Base.show(io::IO, ::MIME"text/plain", fun::BoxFun) = show(io, fun)
 Base.maximum(fun::BoxFun) = maximum(values(fun))
 Base.minimum(fun::BoxFun) = minimum(values(fun))
@@ -149,6 +151,22 @@ function marginal(μ⁺::BoxFun; dim)
     end
 
     return μ
+end
+
+Core.@doc raw"""
+    density(μ::BoxFun) -> Function
+
+Return the measure `μ` as a callable density `g`, i.e.
+```math
+\int f(x) \, d\mu (x) = \int f(x)g(x) \, dx . 
+```
+"""
+function density(μ::BoxFun)
+    P = μ.partition
+    function eval_density(x)
+        xi = point_to_key(P, x)
+        μ[xi]
+    end
 end
 
 function Base.isapprox(

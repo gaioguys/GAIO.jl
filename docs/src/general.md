@@ -213,11 +213,28 @@ Of course, the same holds for the the Koopman operator as well.
 ```@repl 1
 ν = T'μ
 ```
+To evaluate the measure over a given domain one can call the `BoxFun` on a `Box` or `BoxSet`
+```@repl 1
+B
+μ(B)
+```
+Similarly one can approximately integrate a function by a (weighted) summ of the function's values over the support of the `BoxFun`
+```@repl 1
+sum(sin, μ)
+```
+Marginal distributions can be accessed using the `marginal` function
+```@repl 1
+marginal(μ; dim=1)
+```
+The measures can also be associated with a (Lebesgue) density
+```@repl 1
+p = density(μ)
+```
 Since a measure ``\mu`` is a function defined over measurable sets, composite measures ``g \circ \mu`` are well-defined for functions ``g : \mathbb{R} \to \mathbb{R}`` (or ``g : \mathbb{C} \to \mathbb{C}``). This is supported in GAIO.jl for `BoxFuns`
 ```@repl 1
 η = exp ∘ μ
 ```
-For multiple BoxFuns, e.g. as the result of calling `eigs(T)`, the concatenation operator `∘` can be applied to each one using julia's broadcasting functionality
+For multiple BoxFuns, the concatenation operator `∘` can be applied to each one using julia's broadcasting functionality
 ```@repl 1
 real_ev = real .∘ ev
 ```
@@ -225,6 +242,15 @@ Similarly, finite signed measures can be given a vector space structure. This is
 ```@repl 1
 ν + μ
 2ν - μ/2
+```
+A `BoxFun` is effectively a dictionary of boxes and weights
+```
+Iterators.take(μ, 3)
+```
+To access this structure oneself one can call
+```
+P = μ.partition
+key_val_pairs = pairs(μ)
 ```
 
 ## Graphs of Boxes
