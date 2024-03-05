@@ -19,6 +19,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SplitOrderedCollections = "4b700b29-7da4-4670-af42-5a9783ffd6e0"
 SplittablesBase = "171d559e-b47b-412a-8079-5efa626c420e"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 
 [weakdeps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
@@ -60,4 +61,5 @@ SparseArrays = "1"
 SplitOrderedCollections = "0.1"
 SplittablesBase = "0.1"
 StaticArrays = "1"
+TupleTools = "1"
 julia = "1.9"

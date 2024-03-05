@@ -5,6 +5,7 @@ using LinearAlgebra
 using StaticArrays
 using MuladdMacro
 using PrecompileTools
+using TupleTools
 
 # for mapping boxes
 using FLoops
