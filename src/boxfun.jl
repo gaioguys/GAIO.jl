@@ -146,7 +146,7 @@ function marginal(μ⁺::BoxFun; dim)
     μ = BoxFun(support, eltype(μ⁺))
 
     for key⁺ in keys(μ⁺)
-        key = deleteat(key⁺, dim)
+        key = tuple_deleteat(key⁺, dim)
         μ[key] += μ⁺[key⁺]
     end
 
