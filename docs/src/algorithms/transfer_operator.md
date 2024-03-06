@@ -2,7 +2,7 @@
 
 ### Mathematical Background
 
-The following description is given in [1].
+The following description is given in [entropic](@cite).
 
 The _transfer operator_ ``f_{\#}`` _w.r.t._ ``f`` is defined for measures ``μ`` through the equation
 ```math
@@ -156,7 +156,3 @@ sum(g, μ_full) == 2*volume(domain)
 μ_full2 = (x -> 2x) ∘ μ_full
 μ_full2(domain) == 2*volume(domain)
 ```
-
-### References
-
-[1] Oliver Junge, Daniel Matthes, and Bernhard Schmitzer. _Entropic transfer operators_. 2022. arXiv: 2204.04901 [math.DS].
