@@ -95,9 +95,9 @@ function marginal(P⁺::BoxPartition; dim)
     cen⁺, rad⁺ = P⁺.domain
     dims⁺ = size(P⁺)
 
-    cen = deleteat(Tuple(cen⁺), dim)
-    rad = deleteat(Tuple(rad⁺), dim)
-    dims = deleteat(dims⁺, dim)
+    cen = tuple_deleteat(Tuple(cen⁺), dim)
+    rad = tuple_deleteat(Tuple(rad⁺), dim)
+    dims = tuple_deleteat(dims⁺, dim)
 
     return BoxPartition( Box(cen, rad), dims )
 end

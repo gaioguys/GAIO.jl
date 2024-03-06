@@ -320,5 +320,5 @@ function marginal(B⁺::BoxSet; dim)
     P⁺ = B⁺.partition
     P = marginal(P⁺; dim=dim)
     B = BoxSet(P)
-    return union!( B, deleteat.(keys(B⁺), dim) )
+    return union!( B, tuple_deleteat.(keys(B⁺), dim) )
 end

@@ -6,6 +6,7 @@ using StaticArrays
 using MuladdMacro
 using PrecompileTools
 using TupleTools
+const tuple_deleteat = TupleTools.deleteat
 
 # for mapping boxes
 using FLoops
