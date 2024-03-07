@@ -143,11 +143,13 @@ by its dimension `dim`.
 """
 function marginal(μ⁺::BoxFun; dim)
     support = marginal(BoxSet(μ⁺); dim=dim)
-    μ = BoxFun(support, eltype(μ⁺))
+    μ = 0.0*BoxFun(support, eltype(μ⁺))
 
     for key⁺ in keys(μ⁺)
         key = tuple_deleteat(key⁺, dim)
-        μ[key] += μ⁺[key⁺]
+        box = key_to_box(μ.partition, key)
+        box⁺ = key_to_box(μ⁺.partition, key⁺)
+        μ[key] += μ⁺[key⁺]*volume(box⁺)/volume(box)
     end
 
     return μ
