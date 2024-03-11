@@ -142,7 +142,7 @@ function morse_tiles(
         dicttype=OrderedDict{keytype(Q),Int}
     ) where {R,Q,S<:OrderedSet}
 
-    tiles = BoxFun(domain.partition, dicttype())
+    tiles = BoxMeasure(domain.partition, dicttype())
 
     for (key, comp) in zip(domain.set, morse_component_map)
         if !iszero(comp)

@@ -1,9 +1,9 @@
 Core.@doc raw"""
-    seba(V::Vector{<:BoxFun}, Rinit=nothing; which=partition_disjoint, maxiter=5000) -> S, A
+    seba(V::Vector{<:BoxMeasure}, Rinit=nothing; which=partition_disjoint, maxiter=5000) -> S, A
 
 Construct a sparse eigenbasis approximation of `V`, as described in 
-[1]. Returns an `Array` of `BoxFun`s corresponding to the eigenbasis, 
-as well as a maximum-likelihood `BoxFun` that maps a box to the 
+[1]. Returns an `Array` of `BoxMeasure`s corresponding to the eigenbasis, 
+as well as a maximum-likelihood `BoxMeasure` that maps a box to the 
 element of `S` which has the largest value over the support. 
 
 The keyword `which` is used to set the threshholding heuristic, 
@@ -14,23 +14,23 @@ partition_unity, partition_disjoint, partition_likelihood
 ```
 which are all exported functions. 
 """
-function seba(V::AbstractArray{U}, Rinit=nothing; which=partition_disjoint) where {B,K,W,Q,D<:OrderedDict,U<:BoxFun{B,K,W,Q,D}}
+function seba(V::AbstractArray{U}, Rinit=nothing; which=partition_disjoint) where {B,K,W,Q,D<:OrderedDict,U<:BoxMeasure{B,K,W,Q,D}}
     #supp = BoxSet(V[1])
-    #all(x -> BoxSet(x) == supp, V) || throw(DomainError(V, "Supports of BoxFuns do not match."))
+    #all(x -> BoxSet(x) == supp, V) || throw(DomainError(V, "Supports of BoxMeasures do not match."))
     supp = union((BoxSet(μ) for μ in V)...)
 
     V̄ = [μ[key] for key in supp.set, μ in V]
     S̄, R = seba(V̄, Rinit)
     S̄, Ā, τ = which(S̄)
 
-    S = [BoxFun(supp, S̄[:, i]) for i in 1:size(S̄, 2)]
-    A = BoxFun(supp, Ā)
+    S = [BoxMeasure(supp, S̄[:, i]) for i in 1:size(S̄, 2)]
+    A = BoxMeasure(supp, Ā)
     return S, A
 end
 
-function seba(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D,U<:BoxFun{B,K,W,Q,D}}
+function seba(V::AbstractArray{U}, Rinit=nothing; which=partition_unity) where {B,K,W,Q,D,U<:BoxMeasure{B,K,W,Q,D}}
     V = [
-        BoxFun( V[i].partition, OrderedDict(V[i]) )
+        BoxMeasure( V[i].partition, OrderedDict(V[i]) )
         for i in 1:length(V)
     ]   # convert to ordered collections to guarantee deterministic iteration order
     return seba(V, Rinit; which=which)

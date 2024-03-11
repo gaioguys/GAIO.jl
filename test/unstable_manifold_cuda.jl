@@ -29,7 +29,7 @@ using Test
         
             T = TransferOperator(F, W)
             λ, ev, nconv = eigs(T, nev=1)
-            @test ev[1] isa BoxFun  # passes if no error is thrown    
+            @test ev[1] isa BoxMeasure  # passes if no error is thrown    
         end
 
     end

@@ -1,5 +1,5 @@
 """
-    finite_time_lyapunov_exponents(F::SampledBoxMap, boxset::BoxSet) -> BoxFun
+    finite_time_lyapunov_exponents(F::SampledBoxMap, boxset::BoxSet) -> BoxMeasure
 
 Compute the Finite Time Lyapunov Exponent for 
 every box in `boxset`, where `F` represents a time-`T` 
@@ -22,7 +22,7 @@ function finite_time_lyapunov_exponents(F::SampledBoxMap, B::BoxSet{R,Q,S}; T) w
         end
         @reduce( vals = D() ⊔ (key => ftle) )
     end
-    return BoxFun(B.partition, vals)
+    return BoxMeasure(B.partition, vals)
 end
 
 """
@@ -76,7 +76,7 @@ function fixqr!(Q, R)
 end
 
 Core.@doc raw"""
-    finite_time_lyapunov_exponents(f, Df, μ::BoxFun; n=8) -> σ
+    finite_time_lyapunov_exponents(f, Df, μ::BoxMeasure; n=8) -> σ
 
 Compute the Lyapunov exponents using a spatial integration 
 method [1] based on Birkhoff's ergodic theorem. Computes 
@@ -89,7 +89,7 @@ with respect to an ergodic invariant measure ``\mu``.
 Lyapunov exponents. Numer. Math. 113, 357–375 (2009). 
 https://doi.org/10.1007/s00211-009-0236-4
 """
-function finite_time_lyapunov_exponents(f, Df, μ::BoxFun{E}; n=8) where {N,T,E<:Box{N,T}}
+function finite_time_lyapunov_exponents(f, Df, μ::BoxMeasure{E}; n=8) where {N,T,E<:Box{N,T}}
     Dfⁿ(x) = nth_iterate_jacobian(f, Df, x, n; return_QR=true)
     a = sum(μ; init=zeros(N)) do x
         _, _, R = Dfⁿ(x)

@@ -4,7 +4,7 @@ Currently under development -- breaking changes may occur at any time ...
 
 ## About 
 
-GAIO.jl is a Julia package for set oriented computations.  Sets are represented by collections of boxes (i.e. cubes).  GAIO.jl provides algorithms for  
+GAIO.jl is a Julia package for set oriented computations. Sets are represented by collections of boxes (i.e. cubes). GAIO.jl provides algorithms for 
 * dynamical systems
   * invariant sets (maximal invariant set, chain recurrent set, (relative) attractor, (un-)stable manifold)
   * almost invariant and coherent sets

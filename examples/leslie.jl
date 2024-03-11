@@ -31,7 +31,7 @@ p1 = graphplot(
     markersize=0.2
 );
 
-p2 = plot(BoxFun(G), colormap=colors, colorbar=false);
+p2 = plot(BoxMeasure(G), colormap=colors, colorbar=false);
 
 fig = plot(p1, p2)
 

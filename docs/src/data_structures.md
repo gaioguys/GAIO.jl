@@ -46,9 +46,9 @@ IntervalBoxMap
 ```
 
 ```@docs; canonical=false
-BoxFun
-sum(f, boxfun::BoxFun{B,K,V,P,D}; init...) where {B,K,V,P,D}
-∘(f, boxfun::BoxFun)
+BoxMeasure
+sum(f, boxmeas::BoxMeasure{B,K,V,P,D}; init...) where {B,K,V,P,D}
+∘(f, boxmeas::BoxMeasure)
 
 ```
 

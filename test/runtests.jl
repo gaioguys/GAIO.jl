@@ -58,9 +58,9 @@ ENV["JULIA_DEBUG"] = GAIO
         include("progressmeter.jl")
     end
 
-    @info "testing boxfun.jl"
-    @safetestset "BoxFun" begin
-        include("boxfun.jl")
+    @info "testing boxmeasure.jl"
+    @safetestset "BoxMeasure" begin
+        include("boxmeasure.jl")
     end
 
     @info "testing algorithms.jl"

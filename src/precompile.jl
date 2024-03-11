@@ -43,7 +43,7 @@ PrecompileTools.@setup_workload begin
             _𝔽 = TransferOperator(_F, _S)
             _𝔽 = TransferOperator(_F, _S, _S)
 
-            _μ = BoxFun(_S, T)
+            _μ = BoxMeasure(_S, T)
             _ν = _𝔽*_μ
             _ν = _𝔽'_μ
 

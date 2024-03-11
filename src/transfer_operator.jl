@@ -57,9 +57,9 @@ codomain  .   .   .   .   .
 ```
 
 It is important to note that `TranferOperator` is only supported over the 
-box set `domain`, but if one lets a `TranferOperator` act on a `BoxFun`, e.g. 
+box set `domain`, but if one lets a `TranferOperator` act on a `BoxMeasure`, e.g. 
 by multiplication, then the `domain` is extended "on the fly" to 
-include the support of the `BoxFun`.
+include the support of the `BoxMeasure`.
 
 Methods Implemented: 
 ```julia
@@ -184,7 +184,7 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         function _eigs(g::$type, B=I; nev=3, ritzvec=true, kwargs...)
             λ, ϕ, ext... = Arpack._eigs(g, B; nev=nev, ritzvec=true, kwargs...)
             S = $gmap.domain
-            b = [BoxFun(S, ϕ[:, i]) for i in 1:nev]
+            b = [BoxMeasure(S, ϕ[:, i]) for i in 1:nev]
             return ritzvec ? (λ, b, ext...) : (λ, ext...)
         end
 
@@ -203,9 +203,9 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
             Σ, ext... = Arpack._svds(g; nsv=nsv, ritzvec=true, kwargs...)
             S = $gmap.domain
 
-            U = [BoxFun(S, Σ.U[:, i]) for i in 1:nsv]
+            U = [BoxMeasure(S, Σ.U[:, i]) for i in 1:nsv]
             σ = Σ.S
-            V = [BoxFun(S, Σ.V[:, i]) for i in 1:nsv]
+            V = [BoxMeasure(S, Σ.V[:, i]) for i in 1:nsv]
 
             return ritzvec ? (U, σ, V, ext...) : (σ, ext...)
         end
@@ -217,7 +217,7 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
         * singular values `σ`
         * left singular vectors `U` 
         * right singular vectors `V`
-        of `gstar`, where `U` and `V` are `Vector`s of `BoxFun`s. 
+        of `gstar`, where `U` and `V` are `Vector`s of `BoxMeasure`s. 
         Works with the adjoint _Koopman operator_ as well. 
         All keyword arguments from `Arpack.svds` can be passed. See the 
         documentation for `Arpack.svds`. 
@@ -226,7 +226,7 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
 
         LinearAlgebra.mul!(y::AbstractVecOrMat, g::$type, x::AbstractVecOrMat) = mul!(y, $func($gmap.mat), x)
 
-        @propagate_inbounds function LinearAlgebra.mul!(y::BoxFun, g::$type, x::BoxFun)
+        @propagate_inbounds function LinearAlgebra.mul!(y::BoxMeasure, g::$type, x::BoxMeasure)
             @boundscheck(checkbounds(Bool, g, keys(x.vals)) || throw(BoundsError(g, x)))
             zer = zero(eltype(y))
             map!(x -> zer, values(y.vals))
@@ -245,10 +245,10 @@ for (type, (gmap, ind1, ind2, func)) in Dict(
             return y
         end
 
-        function Base.:(*)(g::$type, x::BoxFun{B,K,V}) where {B,K,V}
+        function Base.:(*)(g::$type, x::BoxMeasure{B,K,V}) where {B,K,V}
             dict = OrderedDict{K, promote_type(eltype(g), V)}()
             sizehint!(dict, length($gmap.codomain))
-            y = BoxFun($gmap.codomain.partition, dict)
+            y = BoxMeasure($gmap.codomain.partition, dict)
             return mul!(y, g, x)
         end
 
@@ -350,7 +350,7 @@ function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,S}, keys) where 
     if !isempty(diff)
         @info(
             """
-            Support of the BoxFun lies outside the already calculated
+            Support of the BoxMeasure lies outside the already calculated
             support of the TransferOperator. Computing new transfers.
             """,
             new_keys = diff
@@ -380,7 +380,7 @@ function Base.checkbounds(
     if !isempty(diff)
         @warn(
             """
-            support of the BoxFun lies outside of the calculated support of 
+            support of the BoxMeasure lies outside of the calculated support of 
             the TransferOperator. Because the multiplication involves the 
             adjoint or transpose of the TransferOperator, lazy evaluation 
             is not possible. Consider (if possible) using the TransferOperator
