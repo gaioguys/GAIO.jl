@@ -105,9 +105,10 @@ full  = cover(partition, :)
 ```@example 2
 # create measures with constant weight 1 per box
 n = length(left)
-μ_left  = BoxMeasure(left, ones(n))
-μ_right = BoxMeasure(right, ones(n))
-μ_full  = BoxMeasure(full, ones(2n))
+scale = volume(domain) / 2n
+μ_left  = BoxMeasure(left, ones(n) .* scale)
+μ_right = BoxMeasure(right, ones(n) .* scale)
+μ_full  = BoxMeasure(full, ones(2n) .* scale)
 ```
 
 ```@example 2

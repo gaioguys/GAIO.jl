@@ -218,9 +218,9 @@ To evaluate the measure over a given domain one can call the `BoxMeasure` on a `
 B
 μ(B)
 ```
-Similarly one can approximately integrate a function by a (weighted) summ of the function's values over the support of the `BoxMeasure`
+Similarly one can approximately integrate a function by a (weighted) sum of the function's values over the support of the `BoxMeasure`
 ```@repl 1
-sum(sin, μ)
+sum(x -> sin(x[1] + 2x[2]), μ)
 ```
 Marginal distributions can be accessed using the `marginal` function
 ```@repl 1
