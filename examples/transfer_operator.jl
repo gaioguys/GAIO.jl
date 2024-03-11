@@ -17,9 +17,9 @@ plot!(p, right, fillcolor=:red)
 
 # create measures with constant weight 1 per box
 n = length(left)
-μ_left  = BoxFun(left, ones(n))
-μ_right = BoxFun(right, ones(n))
-μ_full  = BoxFun(full, ones(2n))
+μ_left  = BoxMeasure(left, ones(n))
+μ_right = BoxMeasure(right, ones(n))
+μ_full  = BoxMeasure(full, ones(2n))
 
 # vector space operations are supported for measures
 μ_left + μ_right     ==  μ_full
