@@ -7,7 +7,7 @@ as a piecewise constant function over the boxes of `partition`.
 Implemented as a sparse vector over the indices of `partition`. 
 
 Constructors:
-* BoxMeasure with constant weight 1 of Type `T` (default Float64) 
+* BoxMeasure with constant weight 0 of Type `T` (default Float64) 
 supported over a `BoxSet` `B`:
 ```julia
 μ = BoxMeasure(B, T)
