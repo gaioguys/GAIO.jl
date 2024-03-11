@@ -104,6 +104,8 @@ include("boxmeasure.jl")
 include("transfer_operator.jl")
 #include("boxgraph.jl")
 
+Base.@deprecate_binding BoxFun BoxMeasure
+
 include("algorithms/invariant_sets.jl")
 include("algorithms/scalar_diagnostics.jl")
 include("algorithms/optimization.jl")
