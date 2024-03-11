@@ -38,6 +38,10 @@ Methods implemented:
 
     length, sum, iterate, values, isapprox, ∘, LinearAlgebra.norm, LinearAlgebra.normalize!
 
+!!! note "Norms of BoxMeasures"
+    The p-norm of a BoxMeasure is the L^p function norm 
+    of its density (w.r.t. the Lebesgue measure). 
+
 
 """
 struct BoxMeasure{B,K,V,P<:AbstractBoxPartition{B},D<:AbstractDict{K,V}} <: AbstractVector{V}
@@ -114,15 +118,17 @@ function Base.iterate(boxmeas::BoxMeasure, i...)
     isnothing(itr) && return itr
     ((key, val), j) = itr
     box = key_to_box(boxmeas.partition, key)
-    ((box => val), j)
+    return ((box => val), j)
 end
 
-LinearAlgebra.norm(boxmeas::BoxMeasure) = (sqrt ∘ sum)((volume(box)*abs2(val) for (box,val) in boxmeas))
+function LinearAlgebra.norm(boxmeas::BoxMeasure, p::Real=2) 
+    norm((val / volume(box)^(1/p) for (box,val) in boxmeas), p)
+end
 
 function LinearAlgebra.normalize!(boxmeas::BoxMeasure)
     λ = inv(norm(boxmeas))
     map!(x -> λ*x, values(boxmeas.vals))
-    boxmeas
+    return boxmeas
 end
 
 Base.getindex(boxmeas::BoxMeasure{B,K,V}, key::Vararg{<:Integer,N}) where {N,B<:Box{N},K,V} = get(boxmeas.vals, key, zero(V))
@@ -214,7 +220,7 @@ end
 
 function ∘(boxmeas::BoxMeasure, F::BoxMap)
     T = TransferOperator(F, BoxSet(boxmeas))
-    T'boxmeas
+    return T'boxmeas
 end
 
 Base.:(*)(a::Number, boxmeas::BoxMeasure) = (x -> x*a) ∘ boxmeas
