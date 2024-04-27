@@ -297,7 +297,7 @@ function out_of_bounds(::P) where {N,T,I,P<:TreePartition{N,T,I}}
 end
 
 
-function Adapt.adapt_structure(a::A, b::BoxPartition{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayAdaptor,<:CUDA.Adaptor}}
+function Adapt.adapt_structure(a::A, b::BoxPartition{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayKernelAdaptor,<:CUDA.KernelAdaptor}}
     TT, II = cu_reduce(T), cu_reduce(I)
     Adapt.adapt_storage(a, 
         BoxPartition{N,TT,II}(
@@ -309,7 +309,7 @@ function Adapt.adapt_structure(a::A, b::BoxPartition{N,T,I}) where {N,T,I,A<:Uni
     )
 end
 
-function Adapt.adapt_structure(a::A, b::TreePartition{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayAdaptor,<:CUDA.Adaptor}}
+function Adapt.adapt_structure(a::A, b::TreePartition{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayKernelAdaptor,<:CUDA.KernelAdaptor}}
     TT = cu_reduce(T)
     Adapt.adapt_storage(a,
         TreePartition(
@@ -320,7 +320,7 @@ function Adapt.adapt_structure(a::A, b::TreePartition{N,T,I}) where {N,T,I,A<:Un
 end
 
 function Adapt.adapt_structure(
-        ::CUDA.CuArrayAdaptor, x::V
+        ::CUDA.CuArrayKernelAdaptor, x::V
     ) where {N,M,F<:AbstractFloat,V<:AbstractArray{<:SVNT{N,F},M}}
 
     CuArray{SVector{N,cu_reduce(F)},M}(x)

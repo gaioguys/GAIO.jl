@@ -30,14 +30,14 @@ All other attributes are taken from MeshScatter.
 
 """
 @recipe(PlotBoxes) do scene
-    MakieCore.merge!(
-        MakieCore.Attributes(
-            marker     = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1)),
-            projection = nothing,
-            color      = default_box_color
-        ),
-        MakieCore.default_theme(scene, MakieCore.MeshScatter)
+    attr = MakieCore.Attributes(
+        marker     = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1)),
+        projection = nothing,
+        color      = default_box_color
     )
+    MakieCore.shading_attributes!(attr)
+    MakieCore.generic_plot_attributes!(attr)
+    MakieCore.colormap_attributes!(attr, MakieCore.theme(scene, :colormap))
 end
 
 function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{GAIO.Box{N,T}}}}) where {N,T}
