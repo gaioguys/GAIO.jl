@@ -13,7 +13,17 @@ using FLoops
 using OrderedCollections
 using SplittablesBase
 using SplitOrderedCollections
+
+# interval arithmetic
 using IntervalArithmetic
+
+# newer version of IntervalArithmetic have changed many function names
+if isdefined(IntervalArithmetic, :±)
+    has_zero(x) = IntervalArithmetic.contains_zero(x)
+else
+    using IntervalArithmetic.Symbols
+    has_zero(x) = IntervalArithmetic.in_interval(0, x)
+end
 
 # graph / linear algebra algorithms
 #using Graphs
