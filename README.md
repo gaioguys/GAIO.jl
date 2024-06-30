@@ -20,7 +20,7 @@ GAIO.jl is a Julia package for set oriented computations. Sets are represented b
 
 ## Installation
 
-The package requires Julia 1.9 or later. In Julia's package manager, type
+The package requires Julia 1.10 or later. In Julia's package manager, type
 ```julia
 pkg> add https://github.com/gaioguys/GAIO.jl.git
 ```
