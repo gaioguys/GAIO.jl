@@ -242,6 +242,8 @@ function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}
     return BoxSet(subdivide(boxset.partition, dim), set)
 end
 
+subdivide(boxset::BoxSet{B,P,S}) where {B,P<:BoxPartition,S} = subdivide(boxset, argmin(boxset.partition.dims))
+
 function subdivide!(boxset::BoxSet{B,P,S}, key::Tuple{J,NTuple{N,K}}) where {B,N,P<:TreePartition{N},S,J,K}
     key in boxset.set || throw(KeyError(key))
 
