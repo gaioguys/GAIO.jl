@@ -118,6 +118,7 @@ Base.intersect(b1::Box{N}, b2::NTuple{N,<:Interval}) where {N} = b1 ∩ Box(b2)
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
 Base.length(::Box{N}) where {N} = N
 Base.ndims(::Box{N}) where {N} = N
+Base.eltype(::Type{Box{N,T}}) where {N,T} = T
 
 Base.iterate(b::Box, i...) = (b.center, Val(:radius))
 Base.iterate(b::Box, ::Val{:radius}) = (b.radius, Val(:done))
