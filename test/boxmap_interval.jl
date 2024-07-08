@@ -1,6 +1,9 @@
 using GAIO
 using StaticArrays
 using IntervalArithmetic
+if !isdefined(IntervalArithmetic, :±)
+    using IntervalArithmetic.Symbols
+end
 using Test
 
 @testset "exported functionality" begin

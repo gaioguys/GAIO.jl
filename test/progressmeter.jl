@@ -1,6 +1,9 @@
 using GAIO
 using ProgressMeter
 using IntervalArithmetic
+if !isdefined(IntervalArithmetic, :±)
+    using IntervalArithmetic.Symbols
+end
 using StaticArrays
 using HostCPUFeatures
 using Test
@@ -44,12 +47,12 @@ using Test
         @test length(union(image, mapped1)) == length(intersect(image, mapped1))
     end
     @testset "interval" begin
-        g = BoxMap(:interval, f, domain, n_subintervals=(1,1))
+        g = BoxMap(:interval, f, domain)
 
         mapped1 = g(boxset; show_progress=true)
 
-        boxarr = collect(IntervalBox(c .± r ...) for (c,r) in boxset)
-        image_arr = collect(Box(f(int)) for int in boxarr)
+        boxarr = collect(c .± r for (c,r) in boxset)
+        image_arr = collect(f(int) for int in boxarr)
         image_set = cover(partition, image_arr)
 
         @test image_set == mapped1

@@ -4,6 +4,10 @@ using GAIO, ProgressMeter, IntervalArithmetic, StaticArrays, FLoops#, SIMD
 
 import GAIO: typesafe_map, map_boxes, construct_transfers, ⊔, SVNT
 
+if !isdefined(IntervalArithmetic, :±)
+    using IntervalArithmetic.Symbols
+end
+
 # IntervalBoxMap
 
 function map_boxes(
@@ -11,29 +15,18 @@ function map_boxes(
         show_progress::Val{true}
     ) where {B<:Box,Q<:AbstractBoxPartition,S<:AbstractSet,BS<:BoxSet{B,Q,S}}
 
-    prog = Progress(length(source)+1; desc="Computing image...", showspeed=true)
+    prog = Progress(length(source); desc="Computing image...", showspeed=true)
 
     P = source.partition
     @floop for box in source
         c, r = box
-        minced = mince(box, g.n_subintervals(c, r))
-
-        n = length(minced)
-        @reduce( n_ints_mapped += n )
-
-        for subint in minced
-            fint = g.map(subint)
-            fSet = cover(P, fint)
-
-            @reduce() do (image = BoxSet(P, S()); fSet)     # Initialize `image = BoxSet(P, S())` empty boxset
-                image = image ⊔ fSet                        # Add `fSet` to `image`
-            end
-        
+        fint = typesafe_map(g, c .± r)
+        fset = cover(P, fint)
+        @reduce() do (image = BoxSet(P, S()); fset)     # Initialize `image = BoxSet(P, S())` empty boxset
+            image = image ⊔ fset                        # Add `fSet` to `image`
         end
         next!(prog)
     end
-
-    next!(prog, showvalues=[("Total number of mapped intervals", n_ints_mapped)])
     return image::BS
 end
 
@@ -42,39 +35,29 @@ function construct_transfers(
         show_progress::Val{true}
     ) where {N,T,R<:Box{N,T},Q<:AbstractBoxPartition,S<:AbstractSet,BS<:BoxSet{R,Q,S}}
 
-    prog = Progress(length(source)+1; desc="Computing image...", showspeed=true)
+    prog = Progress(length(source); desc="Computing image...", showspeed=true)
+
     P = domain.partition
     D = Dict{Tuple{keytype(Q),keytype(Q)},T}
 
     @floop for key in keys(domain)
         box = key_to_box(P, key)
         c, r = box
-        minced = mince(box, g.n_subintervals(c, r))
+        fint = typesafe_map(g, c .± r)
+        fset = cover(P, fint)
+        @reduce() do (image = BoxSet(P, S()); fset)     # Initialize `image = BoxSet(P, S())` empty boxset
+            image = image ⊔ fset                        # Add `fSet` to `image`
+        end
 
-        n = length(minces)
-        @reduce( n_ints_mapped += n )
-
-        for subint in minced
-            fint = g.map(subint)
-            fSet = cover(P, fint)
-
-            @reduce() do (image = BoxSet(P, S()); fSet)     # Initialize `image = BoxSet(P, S())` empty boxset
-                image = image ⊔ fSet                        # Add `fSet` to `image`
+        for hit in keys(fset)
+            hitbox = key_to_box(P, hit)
+            weight = (hit,key) => volume(fint ∩ hitbox)
+            @reduce() do (mat = D(); weight)            # Initialize dict-of-keys sparse matrix
+                mat = mat ⊔ weight                      # Add weight to mat[hit, key]
             end
-
-            for hit in keys(fSet)
-                hitbox = key_to_box(P, hit)
-                weight = (hit,key) => volume(fint ∩ hitbox)
-                @reduce() do (mat = D(); weight)            # Initialize dict-of-keys sparse matrix
-                    mat = mat ⊔ weight                      # Add weight to mat[hit, key]
-                end
-            end
-
         end
         next!(prog)
     end
-
-    next!(prog, showvalues=[("Total number of mapped intervals", n_ints_mapped)])
     return mat::D, image::BS
 end
 
@@ -83,36 +66,27 @@ function construct_transfers(
         show_progress::Val{true}
     ) where {N,T,R<:Box{N,T},Q<:AbstractBoxPartition,U<:Box,H<:AbstractBoxPartition}
 
-    prog = Progress(length(domain)+1; desc="Computing transfer weights...", showspeed=true)
+    prog = Progress(length(source)+1; desc="Computing image...", showspeed=true)
+
     P1, P2 = domain.partition, codomain.partition
     D = Dict{Tuple{keytype(H),keytype(Q)},T}
 
     @floop for key in keys(domain)
         box = key_to_box(P1, key)
         c, r = box
-        minced = mince(box, g.n_subintervals(c, r))
+        fint = typesafe_map(g, c .± r)
+        fset = cover(P2, fint)
 
-        n = length(minced)
-        @reduce( n_ints_mapped += n )
-
-        for subint in minced
-            fint = g.map(subint)
-            fSet = cover(P2, fint)
-
-            for hit in keys(fSet)
-                hit in codomain.set || continue
-                hitbox = key_to_box(P2, hit)
-                weight = (hit,key) => volume(fint ∩ hitbox)
-                @reduce() do (mat = D(); weight)            # Initialize dict-of-keys sparse matrix
-                    mat = mat ⊔ weight                      # Add weight to mat[hit, key]
-                end
+        for hit in keys(fset)
+            hit in codomain.set || continue
+            hitbox = key_to_box(P2, hit)
+            weight = (hit,key) => volume(fint ∩ hitbox)
+            @reduce() do (mat = D(); weight)            # Initialize dict-of-keys sparse matrix
+                mat = mat ⊔ weight                      # Add weight to mat[hit, key]
             end
-
         end
         next!(prog)
     end
-
-    next!(prog, showvalues=[("Total number of mapped intervals", n_ints_mapped)])
     return mat::D
 end
 
