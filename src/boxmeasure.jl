@@ -1,10 +1,11 @@
 """
     BoxMeasure(partition, vals)
 
-Discretization of a measure over the domain `partition.domain`,
-as a piecewise constant function over the boxes of `partition`. 
+Discrete measure with support on `partition.domain`, and a 
+density with respect to the volume measure which is piecewise 
+constant on the boxes of its support.
     
-Implemented as a sparse vector over the indices of `partition`. 
+Implemented as a dictionary mapping partition keys to weights. 
 
 Constructors:
 * BoxMeasure with constant weight 0 of Type `T` (default Float64) 
@@ -32,7 +33,7 @@ Fields:
 * `partition`: An `AbstractBoxPartition` whose indices are used 
 for `vals`
 * `vals`: A dictionary whose keys are the box indices from 
-`partition`, and whose values represent the values of the function. 
+`partition`, and whose values are the measure fo the corresponding box. 
 
 Methods implemented:
 
@@ -66,9 +67,7 @@ Core.@doc raw"""
     sum(f, μ::BoxMeasure, B::BoxSet)
     μ(B) = sum(x->1, μ, B)
 
-Integrate a function `f` with respect to the measure `μ`, that is,
-if `boxmeas` is the discretization of a measure ``\mu`` over the domain 
-``Q``, then approximate the value of 
+Approximate the value of 
 ```math
 \int_Q f \, d\mu .
 ```
@@ -99,7 +98,7 @@ end
 (boxmeas::BoxMeasure)(boxset::Union{Box,BoxSet}) = sum(_->1, boxmeas, boxset)
 
 function Base.show(io::IO, g::BoxMeasure)
-    print(io, "BoxMeasure in $(g.partition) with $(length(g.vals)) stored weights")
+    print(io, "BoxMeasure in $(g.partition) with $(length(g.vals)) boxes in its suport")
 end
 
 Base.length(fun::BoxMeasure) = length(fun.vals)
