@@ -45,7 +45,7 @@ F^{-1} (B) \cap Q .
 Note that the larger ``Q`` is, the more calculation time required. 
 """
 function preimage(F::BoxMap, B::BoxSet, Q::BoxSet)
-    μ = BoxFun(B)
+    μ = BoxMeasure(B)
     T = TransferOperator(F, Q, B)
     return BoxSet(T'μ)
 end
@@ -81,7 +81,7 @@ Internally performs the following computation
 (though more efficiently) 
 ```julia
 # create a measure with support over B
-μ = BoxFun(B)
+μ = BoxMeasure(B)
 
 # compute transfer weights (restricted to B)
 T = TransferOperator(F, B, B)

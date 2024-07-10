@@ -85,6 +85,8 @@ function subdivide(P::BoxPartition{N,T,I}, dim) where {N,T,I}
     return BoxPartition{N,T,I}(P.domain, P.left, new_scale, new_dims)
 end
 
+subdivide(P::BoxPartition{N,T,I}) where {N,T,I} = subdivide(P, argmin(P.dims))
+
 """
     marginal(P::BoxPartition{N}; dim) -> BoxPartition{N-1}
 

@@ -25,7 +25,7 @@ import GAIO: default_box_color
     xs, ys
 end
 
-@recipe function plot!(boxset::BoxFun{Box{N,T}}; projection=x->x[1:2]) where {N,T}
+@recipe function plot!(boxset::BoxMeasure{Box{N,T}}; projection=x->x[1:2]) where {N,T}
     xs = Vector{Float32}(undef, 5*length(boxset))
     ys = Vector{Float32}(undef, 5*length(boxset))
     cs = Vector{Float32}(undef, 5*length(boxset))
@@ -67,7 +67,7 @@ end
     xs, ys
 end
 
-@recipe function plot!(boxset::BoxFun{Box{1,T}}) where {T}
+@recipe function plot!(boxset::BoxMeasure{Box{1,T}}) where {T}
     xs = Vector{Float32}(undef, 5*length(boxset))
     ys = Vector{Float32}(undef, 5*length(boxset))
     

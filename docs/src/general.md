@@ -203,9 +203,9 @@ ev
 ```
 This can also be done with the adjoint _Koopman operator_ `T'`. 
 
-## BoxFun
+## BoxMeasure
 
-The return type of the second output of `eigs(T)` is a discretization of a measure over the domain. Specifically, it is a piecewise constant function defined on boxes in `B`, which is called a `BoxFun`. One can let `T` act on a `BoxFun` simply through multiplication
+The second output of `eigs(T)` is a discrete measure, a `BoxMeasure`. This measure is absolutely continuous w.r.t. the volume (i.e. Lebesgue) measure and its density is piecewise constant on the boxes of the domain. One can let `T` act on a `BoxMeasure` simply through multiplication
 ```@repl 1
 ν = T*μ
 ```
@@ -213,14 +213,14 @@ Of course, the same holds for the the Koopman operator as well.
 ```@repl 1
 ν = T'μ
 ```
-To evaluate the measure over a given domain one can call the `BoxFun` on a `Box` or `BoxSet`
+One can evaulate a `BoxMeasure` on a `BoxSet`
 ```@repl 1
 B
 μ(B)
 ```
-Similarly one can approximately integrate a function by a (weighted) summ of the function's values over the support of the `BoxFun`
+Similarly, one can integrate a function with respect to a BoxMeasure by calling
 ```@repl 1
-sum(sin, μ)
+sum(x -> sin(x[1] + 2x[2]), μ)
 ```
 Marginal distributions can be accessed using the `marginal` function
 ```@repl 1
@@ -230,11 +230,11 @@ The measures can also be associated with a (Lebesgue) density
 ```@repl 1
 p = density(μ)
 ```
-Since a measure ``\mu`` is a function defined over measurable sets, composite measures ``g \circ \mu`` are well-defined for functions ``g : \mathbb{R} \to \mathbb{R}`` (or ``g : \mathbb{C} \to \mathbb{C}``). This is supported in GAIO.jl for `BoxFuns`
+Since a measure ``\mu`` is a function defined over measurable sets, composite measures ``g \circ \mu`` are well-defined for functions ``g : \mathbb{R} \to \mathbb{R}`` (or ``g : \mathbb{C} \to \mathbb{C}``). This is supported in GAIO.jl for `BoxMeasures`
 ```@repl 1
 η = exp ∘ μ
 ```
-For multiple BoxFuns, the concatenation operator `∘` can be applied to each one using julia's broadcasting functionality
+For multiple BoxMeasures, the concatenation operator `∘` can be applied to each one using julia's broadcasting functionality
 ```@repl 1
 real_ev = real .∘ ev
 ```
@@ -243,7 +243,7 @@ Similarly, finite signed measures can be given a vector space structure. This is
 ν + μ
 2ν - μ/2
 ```
-A `BoxFun` is effectively a dictionary of boxes and weights
+A `BoxMeasure` is implemented by a dictionary, mapping boxes to weights
 ```
 Iterators.take(μ, 3)
 ```
@@ -264,7 +264,7 @@ See the [MetaGraphsNext documentation](https://juliagraphs.org/MetaGraphsNext.jl
 
 ## Plotting
 
-GAIO.jl offers both `Plots` or `Makie` for plotting. To plot a `BoxSet` or a `BoxFun`, simply choose either Plots or a Makie backend, eg. `GLMakie`, and call `plot` on a `BoxSet` or `BoxFun`
+GAIO.jl offers both `Plots` or `Makie` for plotting. To plot a `BoxSet` or a `BoxMeasure`, simply choose either Plots or a Makie backend, eg. `GLMakie`, and call `plot` on a `BoxSet` or `BoxMeasure`
 ```julia
 using GLMakie: plot
 

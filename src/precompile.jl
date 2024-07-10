@@ -10,7 +10,7 @@ PrecompileTools.@setup_workload begin
 
     PrecompileTools.@compile_workload begin
 
-        for dim in 1:3, T in (Float32, Float64)
+        for dim in 2:3, T in (Float32, Float64)
 
             _c = _r = ntuple(_->T(0.5), dim)
             _Q = Box{T}(_c, _r)
@@ -43,7 +43,7 @@ PrecompileTools.@setup_workload begin
             _𝔽 = TransferOperator(_F, _S)
             _𝔽 = TransferOperator(_F, _S, _S)
 
-            _μ = BoxFun(_S, T)
+            _μ = BoxMeasure(_S, T)
             _ν = _𝔽*_μ
             _ν = _𝔽'_μ
 

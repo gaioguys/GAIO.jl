@@ -37,7 +37,7 @@ export depth, tree_search, find_at_depth, leaves, hidden_keys
 export BoxSet
 export cover, subdivide, subdivide!, neighborhood, nbhd, marginal, density
 
-export BoxFun
+export BoxMeasure
 
 export TransferOperator
 export construct_transfers, eigs, svds
@@ -100,9 +100,11 @@ include("boxmap_intervals.jl")
 include("boxmap_sampled.jl")
 include("boxmap.jl")
 
-include("boxfun.jl")  
+include("boxmeasure.jl")  
 include("transfer_operator.jl")
 #include("boxgraph.jl")
+
+Base.@deprecate_binding BoxFun BoxMeasure
 
 include("algorithms/invariant_sets.jl")
 include("algorithms/scalar_diagnostics.jl")

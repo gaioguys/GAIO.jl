@@ -9,7 +9,7 @@ In the context of autonomous dynamics these sets which mitigate transport betwee
 p(A) := \frac{\mu (A \cap f^{-1} (A))}{\mu (A)} \approx 1 . 
 ```
 Recalling the section on [Transfer Operator and Box Measures](@ref), this can be solved by considering the eigenproblem ``f_{\#}\,\mu \approx \mu``. Specifically, we wish to 
-1. find a `BoxFun` `μ` corresponding to an eigenvalue `λ ≈ 1`,
+1. find a `BoxMeasure` `μ` corresponding to an eigenvalue `λ ≈ 1`,
 2. split the partition ``P`` into `Boxset`s where ``A^+ = \left\{ C \in P : \mu (C) \geq \tau \right\}`` and ``A^- = \left\{ C \in P : \mu (C) < \tau \right\}`` for some threshhold ``\tau`` (typically ``\tau = 0``). 
 Then we have that the transition probability ``p(A^\pm) \approx 1``. 
 

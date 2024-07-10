@@ -37,13 +37,13 @@ where `R` is also a `BoxSet`.
 ```julia
 M = Matrix(F♯)
 ```
-It is important to note that `TransferOperator` is only supported over the box set `B`, but if one lets a `TransferOperator` act on a `BoxFun` via multiplication (see the example below), then the support `B` is extended "on the fly" to include the support of the `BoxFun`.
+It is important to note that `TransferOperator` is only supported over the box set `B`, but if one lets a `TransferOperator` act on a `BoxMeasure` via multiplication (see the example below), then the support `B` is extended "on the fly" to include the support of the `BoxMeasure`.
 
 ```@docs; canonical=false
 TransferOperator
-BoxFun
-sum(::Any, ::BoxFun)
-∘(f, boxfun::BoxFun)
+BoxMeasure
+sum(::Any, ::BoxMeasure)
+∘(f, boxmeas::BoxMeasure)
 ```
 
 ### Example : Invariant Measure of the Lorenz Attractor
@@ -87,7 +87,7 @@ save("transfer_operator.png", fig); nothing # hide
 
 ![Invariant Measure of the Lorenz Attractor](transfer_operator.png)
 
-### Example 2: Showcase of `BoxFun` Functionalities
+### Example 2: Showcase of `BoxMeasure` Functionalities
 
 ```@example 2
 using GAIO
@@ -105,9 +105,10 @@ full  = cover(partition, :)
 ```@example 2
 # create measures with constant weight 1 per box
 n = length(left)
-μ_left  = BoxFun(left, ones(n))
-μ_right = BoxFun(right, ones(n))
-μ_full  = BoxFun(full, ones(2n))
+scale = volume(domain) / 2n
+μ_left  = BoxMeasure(left, ones(n) .* scale)
+μ_right = BoxMeasure(right, ones(n) .* scale)
+μ_full  = BoxMeasure(full, ones(2n) .* scale)
 ```
 
 ```@example 2

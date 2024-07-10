@@ -6,11 +6,11 @@ import GAIO: default_box_color
     
 """
     plot(boxset::BoxSet)
-    plot(boxfun::BoxFun)
+    plot(boxmeas::BoxMeasure)
     plot!(boxset::BoxSet)
-    plot!(boxfun::BoxFun)
+    plot!(boxmeas::BoxMeasure)
 
-Plot a `BoxSet` or `BoxFun`. 
+Plot a `BoxSet` or `BoxMeasure`. 
 
 ## Special Attributes:
 
@@ -21,7 +21,7 @@ If the dimension of the system is larger than 3, use this function to project to
 Color used for the boxes.
 
 `colormap = :default`
-Colormap used for plotting `BoxFun`s values.
+Colormap used for plotting `BoxMeasure`s values.
 
 `marker = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1))`
 The marker for an individual box. Only works if using Makie for plotting. 
@@ -30,15 +30,17 @@ All other attributes are taken from MeshScatter.
 
 """
 @recipe(PlotBoxes) do scene
-    MakieCore.merge!(
-        MakieCore.Attributes(
-            marker     = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1)),
-            projection = nothing,
-            color      = default_box_color
-        ),
-        MakieCore.default_theme(scene, MakieCore.MeshScatter)
+    attr = MakieCore.Attributes(
+        marker     = HyperRectangle(GeometryBasics.Vec3f0(0), GeometryBasics.Vec3f0(1)),
+        projection = nothing,
+        color      = default_box_color
     )
+    MakieCore.shading_attributes!(attr)
+    MakieCore.generic_plot_attributes!(attr)
+    MakieCore.colormap_attributes!(attr, MakieCore.theme(scene, :colormap))
 end
+
+Makie.preferred_axis_type(::PlotBoxes) = Axis3
 
 function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{GAIO.Box{N,T}}}}) where {N,T}
 
@@ -66,20 +68,20 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{GAIO.Box{N,T}}}}) whe
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{GAIO.Box{N,T}}}}) where {N,T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxMeasure{GAIO.Box{N,T}}}}) where {N,T}
 
-    boxfun = boxes[1][]
+    boxmeas = boxes[1][]
     d = min(N, 3)
     if isnothing(boxes.projection[])
         boxes.projection[] = x -> x[1:d]
     end
     q = boxes.projection[]
 
-    center = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxfun))
-    radius = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxfun))
-    colors = Vector{Float32}(undef, length(boxfun))
+    center = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxmeas))
+    radius = Vector{GeometryBasics.Vec{d, Float32}}(undef, length(boxmeas))
+    colors = Vector{Float32}(undef, length(boxmeas))
 
-    for (i, (box, value)) in enumerate(boxfun)
+    for (i, (box, value)) in enumerate(boxmeas)
         center[i] = q(box.center)
         radius[i] = q(box.radius) .* 1.9
         colors[i] = value
@@ -98,14 +100,14 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{GAIO.Box{N,T}}}}) whe
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{GAIO.Box{2,T}}}}) where {T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxMeasure{GAIO.Box{2,T}}}}) where {T}
 
-    boxfun = boxes[1][]
+    boxmeas = boxes[1][]
 
-    center = Vector{GeometryBasics.Vec{3, Float32}}(undef, 2*length(boxfun))
-    radius = Vector{GeometryBasics.Vec{3, Float32}}(undef, 2*length(boxfun))
+    center = Vector{GeometryBasics.Vec{3, Float32}}(undef, 2*length(boxmeas))
+    radius = Vector{GeometryBasics.Vec{3, Float32}}(undef, 2*length(boxmeas))
 
-    for (i, (box, value)) in enumerate(boxfun)
+    for (i, (box, value)) in enumerate(boxmeas)
         center[2*i-1] = SVector{3,Float32}(box.center..., 0.)
         center[2*i]   = SVector{3,Float32}(box.center..., value)
         radius[2*i-1] = SVector{3,Float32}(box.radius..., minimum(box.radius))
@@ -123,15 +125,15 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{GAIO.Box{2,T}}}}) whe
     )
 end
 
-function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{GAIO.Box{1,T}}}}) where {T}
+function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxMeasure{GAIO.Box{1,T}}}}) where {T}
 
-    boxfun = boxes[1][]
+    boxmeas = boxes[1][]
 
-    height = Vector{Float32}(undef, 2*length(boxfun))
-    center = Vector{Float32}(undef, 2*length(boxfun))
-    radius = Vector{Float32}(undef, 2*length(boxfun))
+    height = Vector{Float32}(undef, 2*length(boxmeas))
+    center = Vector{Float32}(undef, 2*length(boxmeas))
+    radius = Vector{Float32}(undef, 2*length(boxmeas))
 
-    for (i, (box, value)) in enumerate(boxfun)
+    for (i, (box, value)) in enumerate(boxmeas)
         height[2*i-1] = 0.
         height[2*i]   = value
         center[2*i-1] = box.center[1]
@@ -151,7 +153,7 @@ function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxFun{GAIO.Box{1,T}}}}) whe
     )
 end
 
-MakieCore.plottype(::Union{BoxSet,BoxFun}) = PlotBoxes
+MakieCore.plottype(::Union{BoxSet,BoxMeasure}) = PlotBoxes
 
 function MakieCore.convert_arguments(::MakieCore.PointBased, coords::AbstractVector{<:Complex})
     #Float32.(real.(coords)), Float32.(imag.(coords))
