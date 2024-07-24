@@ -92,6 +92,56 @@ function map_boxes(G::GPUSampledBoxMap{F}, source::BoxSet{B,_Q,S}) where {B,_Q,S
     return image
 end
 
+function construct_transfers(
+        G::GPUSampledBoxMap{F}, domain::BoxSet{R,_Q,S}, codomain::BoxSet{U,_H,W}
+    ) where {N,T,R<:Box{N,T},_Q,S,U,_H,W,F}
+
+    g = G.map;  domain_points = G.domain_points
+    n_samples = length(G.domain_points)
+
+    P = mtl(domain.partition)
+    P2 = mtl(codomain.partition)
+    P == P2 || throw(DomainError((P, P2), "Partitions of domain and codomain do not match. For GPU acceleration, they must be equal."))
+
+    in_cpu = collect(domain.set)
+    in_keys = mtl(in_cpu)
+    n_keys = length(in_keys)
+    
+    Q = typeof(P)
+    out_keys = mtl(Array{keytype(Q)}( undef, (n_keys,n_samples) ))
+
+    n_keys_per_group = 1024 ÷ n_samples
+    n_groups = n_keys ÷ n_keys_per_group
+
+    leftover = n_keys % (n_groups * n_keys_per_group)
+
+    #@info "kernel initialization" n_keys n_samples n_keys_per_group n_groups leftover
+
+    @metal threads=(n_keys_per_group,n_samples) groups=n_groups map_boxes_kernel!(g, P, in_keys, out_keys, domain_points, 0i32)
+
+    if leftover > 0
+        @metal threads=(leftover,n_samples) groups=1 map_boxes_kernel!(g, P, in_keys, out_keys, domain_points, leftover*i32)
+    end
+
+    Metal.synchronize()
+
+    out_cpu = Array(out_keys)
+    
+    oob = out_of_bounds(P)
+    K = keytype(Q)
+    mat = Dict{Tuple{K,K},cu_reduce(T)}()
+    for cartesian_ind in CartesianIndices(out_cpu)
+        i, j = cartesian_ind.I
+        key = in_cpu[i]
+        hit = out_cpu[i,j]
+        hit == oob && continue
+        hit in codomain.set || continue
+        mat = mat ⊔ ((hit,key) => 1)
+    end
+
+    return mat
+end
+
 function typesafe_map(::Q, g, p) where {N,T,B<:Box{N,T},Q<:AbstractBoxPartition{B}}
     convert(SVector{N,T}, g(p))
 end
