@@ -45,29 +45,18 @@ Box{T}(args...) where {T} = Box{T}(Box(args...))
 Box(c, r) = Box{length(c), F}(c, r)
 Box(c::Number, r::Number) = Box((c,), (r,))
 
-Box(int::IntervalBox{N}) where {N} = Box{N,F}(int)
-Box(ints::Interval...) = Box(IntervalBox(ints...))
-Box(ints::NTuple{N,<:Interval{T}}) where {N,T} = Box(ints...)
+Box{N,T}(ints::Interval...) where {N,T} = Box{N,T}(ints)
+Box{T}(ints::Interval...) where {T} = Box{T}(ints)
+Box(ints::SVNT{N,<:Interval{T}}) where {N,T} = Box{N,T}(ints)
+Box(ints::Interval...) = Box(ints)
 
-function Box{N,T}(intbox::IntervalBox{N}) where {N,T}
+function Box{N,T}(ints::Container) where {N,T,Container<:SVNT{N,Interval{T}}}
+    lo = convert.(T, inf.(ints))
+    hi = convert.(T, sup.(ints))
     ϵ = eps(T)
-    c = ntuple(Val(N)) do i
-        int = intbox.v[i]
-        (int.hi .+ int.lo) ./ 2 .- ϵ
-    end
-    r = ntuple(Val(N)) do i
-        int = intbox.v[i]
-        (int.hi .- int.lo) ./ 2 .- ϵ
-    end
-    all(>(0), r) || return nothing
-    @inbounds Box{N,T}(c, r)
-end
-
-function IntervalArithmetic.IntervalBox(box::Box{N,T}) where {N,T}
-    c, r = box
-    ϵ = eps(T)
-    c, r = c .+ ϵ, r .+ ϵ
-    IntervalBox{N,T}(c .± r)
+    c = @. (hi + lo) / 2 - ϵ
+    r = @. (hi - lo) / 2 - ϵ
+    return Box{N,T}(c, r)
 end
 
 function Base.show(io::IO, box::B) where {N,T,B<:Box{N,T}}
@@ -109,11 +98,6 @@ function Base.intersect(b1::Box{N}, b2::Box{N}) where {N}
     all(lo .< hi) || return nothing
     return Box((hi .+ lo) ./ 2, (hi .- lo) ./ 2)
 end
-
-Base.intersect(b1::IntervalBox, b2::Box) = Box(b1) ∩ b2
-Base.intersect(b1::NTuple{N,<:Interval}, b2::Box{N}) where {N} = Box(b1) ∩ b2
-Base.intersect(b1::Box, b2::IntervalBox) = b1 ∩ Box(b2)
-Base.intersect(b1::Box{N}, b2::NTuple{N,<:Interval}) where {N} = b1 ∩ Box(b2)
 
 Base.:(==)(b1::Box, b2::Box) = b1.center == b2.center && b1.radius == b2.radius
 Base.length(::Box{N}) where {N} = N
