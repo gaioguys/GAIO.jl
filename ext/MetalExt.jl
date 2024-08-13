@@ -26,17 +26,6 @@ struct GPUSampledBoxMap{N,T,F<:Function} <: BoxMap
     domain_points::MtlArray{SVector{N,T}}
 end
 
-function GPUSampledBoxMap(map::F, domain::Box, n_samples::Integer) where {F}
-    @assert n_samples ≤ 1024
-    domain = mtl(domain)
-    N = ndims(domain);  T = eltype(domain)
-
-    rn = 2 .* Metal.rand(T, N * n_samples) .- 1
-    domain_points = reinterpret( SVector{N,T}, rn )
-
-    GPUSampledBoxMap{N,T,F}(map, domain, domain_points)
-end
-
 @muladd function map_boxes_kernel!(g, P::Q, in_keys, out_keys, domain_points, offset) where {N,T,B<:Box{N,T},Q<:AbstractBoxPartition{B}}
     x, y = thread_position_in_grid_2d()
     x += offset
@@ -50,45 +39,12 @@ end
     return nothing
 end
 
-function map_boxes(G::GPUSampledBoxMap{F}, source::BoxSet{B,_Q,S}) where {B,_Q,S,F}
-    g = G.map;  domain_points = G.domain_points
+function map_boxes(G::GPUSampledBoxMap{F}, source::BoxSet{B,Q,S}) where {B,Q,S,F}
     P = mtl(source.partition)
-    Q = typeof(P)
-
-    in_keys = mtl(collect(source.set))
-    n_keys = length(in_keys)
-    n_samples = length(domain_points)
-
-    out_keys = mtl(Array{keytype(Q)}( undef, (n_keys,n_samples) ))
-
-    n_keys_per_group = 1024 ÷ n_samples
-    n_groups = n_keys ÷ n_keys_per_group
-
-    leftover = n_keys % (n_groups * n_keys_per_group)
-
-    #@info "kernel initialization" n_keys n_samples n_keys_per_group n_groups leftover
-
-    @metal threads=(n_keys_per_group,n_samples) groups=n_groups map_boxes_kernel!(g, P, in_keys, out_keys, domain_points, 0i32)
-
-    if leftover > 0
-        @metal threads=(leftover,n_samples) groups=1 map_boxes_kernel!(g, P, in_keys, out_keys, domain_points, leftover*i32)
-    end
-
-    Metal.synchronize()
-
-    cpu_keys = Array(out_keys)
-
-    #@info "this step needs to be optimized clearly" cpu_keys[1:5]
-
-    #keyset = Set{keytype(Q)}()
-    #union!(keyset, cpu_keys)
+    cpu_keys = execute_boxmap(G, source)
     keyset = ThreadsX.Set(cpu_keys)
-    
-    #@info "Set conversion complete"
-    
     image = BoxSet(P, keyset)
     delete!(image.set, out_of_bounds(P))
-
     return image
 end
 
@@ -96,39 +52,16 @@ function construct_transfers(
         G::GPUSampledBoxMap{F}, domain::BoxSet{R,_Q,S}, codomain::BoxSet{U,_H,W}
     ) where {N,T,R<:Box{N,T},_Q,S,U,_H,W,F}
 
-    g = G.map;  domain_points = G.domain_points
-    n_samples = length(G.domain_points)
-
     P = mtl(domain.partition)
     P2 = mtl(codomain.partition)
     P == P2 || throw(DomainError((P, P2), "Partitions of domain and codomain do not match. For GPU acceleration, they must be equal."))
 
-    in_cpu = collect(domain.set)
-    in_keys = mtl(in_cpu)
-    n_keys = length(in_keys)
-    
-    Q = typeof(P)
-    out_keys = mtl(Array{keytype(Q)}( undef, (n_keys,n_samples) ))
+    out_cpu = execute_boxmap(G, domain)
 
-    n_keys_per_group = 1024 ÷ n_samples
-    n_groups = n_keys ÷ n_keys_per_group
-
-    leftover = n_keys % (n_groups * n_keys_per_group)
-
-    #@info "kernel initialization" n_keys n_samples n_keys_per_group n_groups leftover
-
-    @metal threads=(n_keys_per_group,n_samples) groups=n_groups map_boxes_kernel!(g, P, in_keys, out_keys, domain_points, 0i32)
-
-    if leftover > 0
-        @metal threads=(leftover,n_samples) groups=1 map_boxes_kernel!(g, P, in_keys, out_keys, domain_points, leftover*i32)
-    end
-
-    Metal.synchronize()
-
-    out_cpu = Array(out_keys)
-    
     oob = out_of_bounds(P)
+    Q = typeof(P)
     K = keytype(Q)
+
     mat = Dict{Tuple{K,K},cu_reduce(T)}()
     for cartesian_ind in CartesianIndices(out_cpu)
         i, j = cartesian_ind.I
@@ -141,6 +74,119 @@ function construct_transfers(
 
     return mat
 end
+
+function construct_transfers(
+        G::GPUSampledBoxMap{F}, domain::BoxSet{R,_Q,S}#, codomain::BoxSet{U,_H,W}
+    ) where {N,T,R<:Box{N,T},_Q,S,F}
+
+    P = mtl(domain.partition)
+
+    out_cpu = execute_boxmap(G, domain)
+
+    oob = out_of_bounds(P)
+    Q = typeof(P)
+    K = keytype(Q)
+
+    codomain = BoxSet(P, S())
+    union!(codomain.set, out_cpu)
+    delete!(codomain.set, oob)
+
+    mat = Dict{Tuple{K,K},cu_reduce(T)}()
+    for cartesian_ind in CartesianIndices(out_cpu)
+        i, j = cartesian_ind.I
+        key = in_cpu[i]
+        hit = out_cpu[i,j]
+        hit == oob && continue
+        mat = mat ⊔ ((hit,key) => 1)
+    end
+
+    return mat, codomain
+end
+
+function execute_boxmap(G::GPUSampledBoxMap, source::BoxSet)
+    g = G.map;  domain_points = G.domain_points
+    n_samples = length(G.domain_points)
+
+    in_cpu = collect(source.set)
+    in_keys = mtl(in_cpu)
+    n_keys = length(in_keys)
+    
+    P = source.partition
+    Q = typeof(P)
+    out_keys = mtl(Array{keytype(Q)}( undef, (n_keys,n_samples) ))
+
+    n_keys_per_group = 1024 ÷ n_samples
+    n_groups = n_keys ÷ n_keys_per_group
+
+    leftover = n_keys % (n_groups * n_keys_per_group)
+
+    #@info "kernel initialization" n_keys n_samples n_keys_per_group n_groups leftover
+
+    @metal threads=(n_keys_per_group,n_samples) groups=n_groups map_boxes_kernel!(g, P, in_keys, out_keys, domain_points, 0i32)
+
+    if leftover > 0
+        @metal threads=(leftover,n_samples) groups=1 map_boxes_kernel!(g, P, in_keys, out_keys, domain_points, leftover*i32)
+    end
+
+    Metal.synchronize()
+
+    return Array(out_keys)
+end
+
+# constructors
+"""
+    BoxMap(:pointdiscretized, :gpu, map, domain::Box{N}, points) -> GPUSampledBoxMap
+
+Construct a `GPUSampledBoxMap` that uses the Vector `points` as test points. 
+`points` must be a VECTOR of test points within the unit cube 
+`[-1,1]^N`. 
+
+Requires a Metal-capable gpu. 
+"""
+function PointDiscretizedBoxMap(::Val{:gpu}, map, domain::Box{N,T}, points) where {N,T}
+    domain_points = MtlArray{SVector{N,T}}(points)
+    GPUSampledBoxMap(map, domain, domain_points)
+end
+
+"""
+    BoxMap(:grid, :gpu, map, domain::Box{N}; n_points::NTuple{N} = ntuple(_->16, N)) -> GPUSampledBoxMap
+
+Construct a `GPUSampledBoxMap` that uses a grid of test points. 
+The size of the grid is defined by `n_points`, which is 
+a tuple of length equal to the dimension of the domain. 
+
+Requires a Metal-capable gpu. 
+"""
+function GridBoxMap(::Val{:gpu}, map, domain::Box{N,T}; n_points=ntuple(_->4,N)) where {N,T}
+    Δp = 2 ./ n_points
+    points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(n_points) ]
+    GPUSampledBoxMap(map, domain, mtl(points))
+end
+
+function GridBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; n_points=ntuple(_->4,N)) where {N,T}
+    GridBoxMap(c, map, P.domain, n_points=n_points)
+end
+
+"""
+    BoxMap(:montecarlo, :gpu, map, domain::Box{N}; n_points=16*N) -> GPUSampledBoxMap
+
+Construct a `GPUSampledBoxMap` that uses `n_points` 
+Monte-Carlo test points. 
+
+Requires a Metal-capable gpu. 
+"""
+function MonteCarloBoxMap(::Val{:gpu}, map, domain::Box{N,T}; n_points=16*N) where {N,T}
+    points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:n_points ] 
+    GPUSampledBoxMap(map, domain, mtl(points))
+end 
+
+function MonteCarloBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; n_points=16*N) where {N,T}
+    MonteCarloBoxMap(c, map, P.domain; n_points=n_points)
+end
+
+# helper + compatibility functions are almost entirely copied from CUDAExt.
+# This amount of code-copying is unfortunate, though I don't know of a good 
+# way to get around it
 
 function typesafe_map(::Q, g, p) where {N,T,B<:Box{N,T},Q<:AbstractBoxPartition{B}}
     convert(SVector{N,T}, g(p))
