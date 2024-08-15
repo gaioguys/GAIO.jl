@@ -41,11 +41,40 @@ end
 
 function map_boxes(G::GPUSampledBoxMap{F}, source::BoxSet{B,Q,S}) where {B,Q,S,F}
     P = mtl(source.partition)
-    cpu_keys = execute_boxmap(G, source)
-    keyset = ThreadsX.Set(cpu_keys)
-    image = BoxSet(P, keyset)
+    _, cpu_keys = execute_boxmap(G, source)
+    image = BoxSet(P, S())
+    union!(image.set, ThreadsX.Set(cpu_keys))
     delete!(image.set, out_of_bounds(P))
     return image
+end
+
+function construct_transfers(
+        G::GPUSampledBoxMap{F}, domain::BoxSet{R,_Q,S}#, codomain::BoxSet{U,_H,W}
+    ) where {N,T,R<:Box{N,T},_Q,S,F}
+
+    P = domain.partition
+    codomain = BoxSet(P, S())
+    P = mtl(P)
+
+    in_cpu, out_cpu = execute_boxmap(G, domain)
+
+    oob = out_of_bounds(P)
+    Q = typeof(P)
+    K = keytype(Q)
+
+    union!(codomain.set, out_cpu)
+    delete!(codomain.set, oob)
+
+    mat = Dict{Tuple{K,K},cu_reduce(T)}()
+    for cartesian_ind in CartesianIndices(out_cpu)
+        i, j = cartesian_ind.I
+        key = in_cpu[i]
+        hit = out_cpu[i,j]
+        checkbounds(Bool, P, hit) || continue # check for oob
+        mat = mat ⊔ ((hit,key) => 1)
+    end
+
+    return mat, codomain
 end
 
 function construct_transfers(
@@ -56,9 +85,8 @@ function construct_transfers(
     P2 = mtl(codomain.partition)
     P == P2 || throw(DomainError((P, P2), "Partitions of domain and codomain do not match. For GPU acceleration, they must be equal."))
 
-    out_cpu = execute_boxmap(G, domain)
+    in_cpu, out_cpu = execute_boxmap(G, domain)
 
-    oob = out_of_bounds(P)
     Q = typeof(P)
     K = keytype(Q)
 
@@ -67,40 +95,12 @@ function construct_transfers(
         i, j = cartesian_ind.I
         key = in_cpu[i]
         hit = out_cpu[i,j]
-        hit == oob && continue
+        checkbounds(Bool, P, hit) || continue # check for oob
         hit in codomain.set || continue
         mat = mat ⊔ ((hit,key) => 1)
     end
 
     return mat
-end
-
-function construct_transfers(
-        G::GPUSampledBoxMap{F}, domain::BoxSet{R,_Q,S}#, codomain::BoxSet{U,_H,W}
-    ) where {N,T,R<:Box{N,T},_Q,S,F}
-
-    P = mtl(domain.partition)
-
-    out_cpu = execute_boxmap(G, domain)
-
-    oob = out_of_bounds(P)
-    Q = typeof(P)
-    K = keytype(Q)
-
-    codomain = BoxSet(P, S())
-    union!(codomain.set, out_cpu)
-    delete!(codomain.set, oob)
-
-    mat = Dict{Tuple{K,K},cu_reduce(T)}()
-    for cartesian_ind in CartesianIndices(out_cpu)
-        i, j = cartesian_ind.I
-        key = in_cpu[i]
-        hit = out_cpu[i,j]
-        hit == oob && continue
-        mat = mat ⊔ ((hit,key) => 1)
-    end
-
-    return mat, codomain
 end
 
 function execute_boxmap(G::GPUSampledBoxMap, source::BoxSet)
@@ -111,11 +111,11 @@ function execute_boxmap(G::GPUSampledBoxMap, source::BoxSet)
     in_keys = mtl(in_cpu)
     n_keys = length(in_keys)
     
-    P = source.partition
+    P = mtl(source.partition)
     Q = typeof(P)
     out_keys = mtl(Array{keytype(Q)}( undef, (n_keys,n_samples) ))
 
-    n_keys_per_group = 1024 ÷ n_samples
+    n_keys_per_group = min(1024 ÷ n_samples, n_keys)
     n_groups = n_keys ÷ n_keys_per_group
 
     leftover = n_keys % (n_groups * n_keys_per_group)
@@ -130,7 +130,7 @@ function execute_boxmap(G::GPUSampledBoxMap, source::BoxSet)
 
     Metal.synchronize()
 
-    return Array(out_keys)
+    return Array(in_keys), Array(out_keys)
 end
 
 # constructors
@@ -189,7 +189,7 @@ end
 # way to get around it
 
 function typesafe_map(::Q, g, p) where {N,T,B<:Box{N,T},Q<:AbstractBoxPartition{B}}
-    convert(SVector{N,T}, g(p))
+    SVector{N,T}( g(p) )
 end
 
 # hotfix to avoid errors due to cuda device-side printing

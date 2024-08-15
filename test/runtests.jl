@@ -1,16 +1,21 @@
-using Preferences
+using Preferences, Base.Sys
 using Test
 using SafeTestsets
 
 using SIMD
-using CUDA
 using ProgressMeter
 using GAIO
+
+if isapple() && ARCH === :aarch64
+    using Metal
+else
+    using CUDA
+end
 
 ENV["JULIA_DEBUG"] = GAIO
 
 @testset "GAIO.jl" begin
-
+    
     @info "testing box.jl"
     @safetestset "Box" begin
         include("box.jl")
@@ -40,14 +45,14 @@ ENV["JULIA_DEBUG"] = GAIO
     @safetestset "SampledBoxMap :simd" begin
         include("boxmap_simd.jl")
     end
-
-    if CUDA.functional()
-        @info "testing boxmap_cuda.jl"
+    
+    if ( isapple() && ARCH === :aarch64 ) || CUDA.functional()
+        @info "testing boxmap_gpu.jl"
         @safetestset "SampledBoxMap :gpu" begin
-            include("boxmap_cuda.jl")
+            include("boxmap_gpu.jl")
         end
     end
-
+    
     @info "testing boxmap_interval.jl"
     @safetestset "IntervalBoxMap" begin
         include("boxmap_interval.jl")
@@ -67,16 +72,28 @@ ENV["JULIA_DEBUG"] = GAIO
     @safetestset "Algorithms" begin
         include("algorithms.jl")
     end
+    
+    @info "testing transfer_operator.jl"
+    @safetestset "TransferOperator" begin
+        include("transfer_operator.jl")
+    end
 
+    if ( isapple() && ARCH === :aarch64 ) || CUDA.functional()
+        @info "testing transfer_operator_gpu.jl"
+        @safetestset "TransferOperator :gpu" begin
+            include("transfer_operator.jl")
+        end
+    end
+    
     @info "testing unstable_manifold.jl"
     @safetestset "Lorenz system" begin
         include("unstable_manifold.jl")
     end
     
-    if CUDA.functional()
-        @info "testing unstable_manifold_cuda.jl"
-        @safetestset "Lorenz system" begin
-            include("unstable_manifold_cuda.jl")
+    if ( isapple() && ARCH === :aarch64 ) || CUDA.functional()
+        @info "testing unstable_manifold_gpu.jl"
+        @safetestset "Lorenz system :gpu" begin
+            include("unstable_manifold_gpu.jl")
         end
     end
 end
