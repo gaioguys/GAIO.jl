@@ -40,6 +40,8 @@ All other attributes are taken from MeshScatter.
     MakieCore.colormap_attributes!(attr, MakieCore.theme(scene, :colormap))
 end
 
+Makie.preferred_axis_type(::PlotBoxes) = Axis3
+
 function MakieCore.plot!(boxes::PlotBoxes{<:Tuple{<:BoxSet{GAIO.Box{N,T}}}}) where {N,T}
 
     boxset = boxes[1][]

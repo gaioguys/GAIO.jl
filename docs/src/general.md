@@ -205,7 +205,7 @@ This can also be done with the adjoint _Koopman operator_ `T'`.
 
 ## BoxMeasure
 
-The return type of the second output of `eigs(T)` is a discretization of a measure over the domain. Specifically, it is a piecewise constant function defined on boxes in `B`, which is called a `BoxMeasure`. One can let `T` act on a `BoxMeasure` simply through multiplication
+The second output of `eigs(T)` is a discrete measure, a `BoxMeasure`. This measure is absolutely continuous w.r.t. the volume (i.e. Lebesgue) measure and its density is piecewise constant on the boxes of the domain. One can let `T` act on a `BoxMeasure` simply through multiplication
 ```@repl 1
 ν = T*μ
 ```
@@ -213,12 +213,12 @@ Of course, the same holds for the the Koopman operator as well.
 ```@repl 1
 ν = T'μ
 ```
-To evaluate the measure over a given domain one can call the `BoxMeasure` on a `Box` or `BoxSet`
+One can evaulate a `BoxMeasure` on a `BoxSet`
 ```@repl 1
 B
 μ(B)
 ```
-Similarly one can approximately integrate a function by a (weighted) sum of the function's values over the support of the `BoxMeasure`
+Similarly, one can integrate a function with respect to a BoxMeasure by calling
 ```@repl 1
 sum(x -> sin(x[1] + 2x[2]), μ)
 ```
@@ -243,7 +243,7 @@ Similarly, finite signed measures can be given a vector space structure. This is
 ν + μ
 2ν - μ/2
 ```
-A `BoxMeasure` is effectively a dictionary of boxes and weights
+A `BoxMeasure` is implemented by a dictionary, mapping boxes to weights
 ```
 Iterators.take(μ, 3)
 ```
