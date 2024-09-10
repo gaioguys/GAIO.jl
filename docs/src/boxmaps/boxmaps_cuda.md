@@ -1,6 +1,6 @@
 # `GPUSampledBoxmap`
 
-If an Nvidia gpu is available, the parallelization technique can be improved dramatically. The gpu uses a "massively parallel programming" paradigm, which fits perfectly to the problem of mapping many sample points independently. Using the gpu, a speed increase of up to 200x can be achieved. For more information, see the [maximizing performance section](https://gaioguys.github.io/GAIO.jl/cuda/).
+If an Nvidia or Apple M-series gpu is available, the parallelization technique can be improved dramatically. The gpu uses a "massively parallel programming" paradigm, which fits perfectly to the problem of mapping many sample points independently. Using the gpu, a speed increase of up to 200x can be achieved. For more information, see the [maximizing performance section](https://gaioguys.github.io/GAIO.jl/cuda/).
 
 ![performance metrics](../assets/flops_gpu_loglog.png)
 
