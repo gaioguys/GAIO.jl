@@ -24,6 +24,14 @@ struct GPUSampledBoxMap{N,T,F<:Function} <: BoxMap
     map::F
     domain::Box{N,T}
     domain_points::MtlArray{SVector{N,T}}
+
+    function GPUSampledBoxMap{N,T,F}(map::F, domain::Box, domain_points::MtlArray{SVector{N,T}}) where {N,T,F<:Function}
+        new{N,T,F}(map, Box{N,T}(domain...), domain_points)
+    end
+end
+
+function GPUSampledBoxMap(map::F, domain::Box, domain_points::MtlArray{SVector{N,T}}) where {N,T,F<:Function}
+    GPUSampledBoxMap{N,T,F}(map, domain, domain_points)
 end
 
 @muladd function map_boxes_kernel!(g, P::Q, in_keys, out_keys, domain_points, offset) where {N,T,B<:Box{N,T},Q<:AbstractBoxPartition{B}}

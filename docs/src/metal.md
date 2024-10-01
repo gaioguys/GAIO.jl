@@ -33,7 +33,7 @@ f(x) = rk4_flow_map(v, x, 0.002f0, 100)
 
 All we need to do is load the Metal.jl package and pass `:gpu` as the second argument to one of the two supported box map constructors: `BoxMap(:montecarlo, ...)`, `BoxMap(:grid, ...)`. Other box mapping algorithms are currently not supported. 
 ```julia
-using CUDA
+using Metal
 
 center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
 Q = Box(center, radius)
