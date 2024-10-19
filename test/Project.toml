@@ -2,6 +2,7 @@
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 HostCPUFeatures = "3e5b6fbb-0976-4d2c-9146-d79de83f2fb0"
 IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
+Metal = "dde4c033-4e86-420c-a63e-0dd931031962"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 SIMD = "fdea26ae-647d-5447-a871-4b548cad5224"

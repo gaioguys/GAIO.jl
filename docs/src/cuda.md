@@ -2,12 +2,11 @@
 
 ## Tutorial
 
-using GAIO
-
 This example demonstrates how to get a vast speedup in your code using nvidia CUDA. The speedup factor increases exponentially with the complexity of the map.
 
 Consider the point map `f`:
 ```julia
+using GAIO
 const σ, ρ, β = 10.0f0, 28.0f0, 0.4f0
 function v(x)
     # Some map, here we use the Lorenz equation
@@ -39,7 +38,7 @@ using CUDA
 center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
 Q = Box(center, radius)
 P = BoxPartition(Q, (128,128,128))
-F = BoxMap(:montecarlo, :simd, f, Q)
+F = BoxMap(:montecarlo, :gpu, f, Q)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)
 S = cover(P, x)

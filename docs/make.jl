@@ -70,7 +70,8 @@ pages = [
     "Plotting" => "plotting.md",
     "Maximizing Performance" => [
         "simd.md",
-        "cuda.md"
+        "cuda.md",
+        "metal.md"
     ],
     "Other Examples" => "examples.md",
     "Data Structures" => "data_structures.md", 

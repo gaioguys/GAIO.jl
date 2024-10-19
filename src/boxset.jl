@@ -81,7 +81,7 @@ Return a subset of the partition or box set `P` based on the second argument.
 """
 function cover end
 
-iscoverable(::T) where {T<:Union{<:Box,<:IntervalBox,<:Nothing,<:Colon}} = true
+iscoverable(::T) where {T<:Union{<:Box,<:Nothing,<:Colon}} = true
 iscoverable(::T) where {N,T<:Union{<:AbstractArray{<:Number},<:NTuple{N,<:Number}}} = true
 iscoverable(::T) where {T} = false
 
@@ -117,8 +117,7 @@ function cover(partition::P, ::Colon) where {P<:AbstractBoxPartition}
     return BoxSet(partition, Set{keytype(P)}(keys(partition)))
 end
 
-cover(partition::AbstractBoxPartition, int::IntervalBox) = cover(partition, Box(int))
-cover(partition::AbstractBoxPartition, ints::SVNT{N,<:Interval}) where {N} = cover(partition, IntervalBox(ints))
+cover(partition::AbstractBoxPartition, ints::SVNT{N,<:Interval}) where {N} = cover(partition, Box(ints))
 cover(partition::P, ::Nothing) where {P<:AbstractBoxPartition} = BoxSet(partition, Set{keytype(P)}())
 cover(partition::AbstractBoxPartition{<:Box{1}}, x::Number) = cover(partition, (x,))
 

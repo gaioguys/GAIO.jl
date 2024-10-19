@@ -28,7 +28,7 @@ PrecompileTools.@setup_workload begin
             _𝔽 = TransferOperator(_F, _S)
             _𝔽 = TransferOperator(_F, _S, _S)
 
-            _F = BoxMap(:interval, _f, _Q, n_subintervals=ntuple(_->1, dim))
+            _F = BoxMap(:interval, _f, _Q)
             _C = _F(_S)
             _𝔽 = TransferOperator(_F, _S)
             _𝔽 = TransferOperator(_F, _S, _S)
@@ -56,7 +56,7 @@ PrecompileTools.@setup_workload begin
             _A = chain_recurrent_set(_F, _S, steps=1)
             _A = maximal_forward_invariant_set(_F, _S, steps=1)
             _A = maximal_invariant_set(_F, _S, steps=1)
-            _σ = finite_time_lyapunov_exponents(_F, _S; T=T(1))
+            _σ = finite_time_lyapunov_exponents(_F, _S; T=one(T))
 
         end
 
