@@ -16,7 +16,7 @@ using Test
     domain = Box(c, r)
 
     F = BoxMap(:grid, f, domain)
-    P = BoxPartition(domain, (16,16))
+    P = GridPartition(domain, (16,16))
 
     S = cover(P, (0,0))
     F♯ = TransferOperator(F, S)

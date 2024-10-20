@@ -29,7 +29,7 @@ f((x,y)) = (1 - a*x^2 + y, b*x)
 
 center, radius = (0, 0), (3, 3)
 Q = Box(center, radius)
-P = BoxPartition(Q)
+P = GridPartition(Q)
 F = BoxMap(f, P)
 S = cover(P, :)
 

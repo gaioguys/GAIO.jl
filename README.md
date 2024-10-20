@@ -35,7 +35,7 @@ using Plots: plot
 
 center, radius = (0,0), (3,3)
 Q = Box(center, radius)                       # domain for the computation
-P = BoxPartition(Q, (2, 2))                   # 2 x 2 partition of Q
+P = GridPartition(Q, (2, 2))                   # 2 x 2 partition of Q
 S = cover(P, :)                               # Set of all boxes in P
 
 f((x,y)) = (1 - 1.4*x^2 + y, 0.3*x)           # the Hénon map

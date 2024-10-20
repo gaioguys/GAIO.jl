@@ -4,7 +4,7 @@ using Test
 
 @testset "exported functionality" begin
     @testset "regular partition" begin
-        partition = BoxPartition(Box((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)), (16,8,8))
+        partition = GridPartition(Box((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)), (16,8,8))
         @testset "empty" begin
             empty_boxset = BoxSet(partition)
             @test isempty(empty_boxset)

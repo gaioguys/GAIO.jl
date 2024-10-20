@@ -30,7 +30,7 @@ constructor should therefore only be used with
 `BoxSet{<:Any, <:Any, <:OrderedSet}` types)
 
 Fields:
-* `partition`: An `AbstractBoxPartition` whose indices are used 
+* `partition`: An `BoxLayout` whose indices are used 
 for `vals`
 * `vals`: A dictionary whose keys are the box indices from 
 `partition`, and whose values are the measure fo the corresponding box. 
@@ -45,7 +45,7 @@ Methods implemented:
 
 
 """
-struct BoxMeasure{B,K,V,P<:AbstractBoxPartition{B},D<:AbstractDict{K,V}} <: AbstractVector{V}
+struct BoxMeasure{B,K,V,P<:BoxLayout{B},D<:AbstractDict{K,V}} <: AbstractVector{V}
     partition::P
     vals::D
 end

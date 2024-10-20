@@ -12,7 +12,7 @@ f(x) = rk4_flow_map(v, x)
 
 center, radius = (0,0,25), (30,30,30)
 Q = Box(center, radius)
-P = BoxPartition(Q, (256,256,256))
+P = GridPartition(Q, (256,256,256))
 F = BoxMap(:adaptive, f, Q)
 
 # equilibrium

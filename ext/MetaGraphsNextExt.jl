@@ -4,7 +4,7 @@ using GAIO, MetaGraphsNext, SparseArrays, OrderedCollections
 using MetaGraphsNext.Graphs: AbstractGraph, DiGraph, vertices, edges, src, dst
 
 import MetaGraphsNext: MetaGraph
-import GAIO: index_to_key, key_to_index, _rehash!, morse_adjacencies_and_tiles, morse_graph, BoxMeasure, AbstractBoxPartition
+import GAIO: index_to_key, key_to_index, _rehash!, morse_adjacencies_and_tiles, morse_graph, BoxMeasure, BoxLayout
 
 function MetaGraph(F♯::TransferOperator{B,T}) where {N,W,B<:Box{N,W},T}
     _rehash!(F♯)
@@ -71,7 +71,7 @@ function morse_graph(F::BoxMap, B::BoxSet)
     morse_graph(TransferOperator(F, B, B))
 end
 
-function BoxMeasure(G::MetaGraph{<:Any,<:Any,L,<:BoxSet,<:Any,P}) where {L,P<:AbstractBoxPartition}
+function BoxMeasure(G::MetaGraph{<:Any,<:Any,L,<:BoxSet,<:Any,P}) where {L,P<:BoxLayout}
     fun = BoxMeasure(G[], OrderedDict{keytype(P),L}())
     sizehint!(fun, sum(x -> length(G[x]), labels(G)))
 

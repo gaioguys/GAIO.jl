@@ -30,7 +30,7 @@ F(x) = rk4_flow_map(f, x)
 
 center, radius = (0,0,25), (30,30,30)
 domain = Box(center, radius)
-P = BoxPartition(domain, (128,128,128))
+P = GridPartition(domain, (128,128,128))
 
 # All we need to do is pass :simd to the BoxMap command.
 G = BoxMap(:montecarlo, :simd, F, domain)

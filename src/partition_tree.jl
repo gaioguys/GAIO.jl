@@ -31,7 +31,7 @@ Methods implemented:
 
 .
 """
-struct TreePartition{N,T,I,V<:AbstractArray{Node{I}}} <: AbstractBoxPartition{Box{N,T}}
+struct TreePartition{N,T,I,V<:AbstractArray{Node{I}}} <: BoxLayout{Box{N,T}}
     domain::Box{N,T}
     nodes::V
 end
@@ -45,15 +45,15 @@ function TreePartition(domain::Box, depth::Integer)
 end
 
 TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)])
-BoxPartition(tree::TreePartition) = BoxPartition(tree, depth(tree))
+GridPartition(tree::TreePartition) = GridPartition(tree, depth(tree))
 
-function BoxPartition(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
+function GridPartition(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
     center, radius = tree.domain
     dims = ntuple(Val(N)) do i
         2 ^ ( ((depth+N) - (i+1)) ÷ N )
     end
     #dims = 2 .^ ( ((depth + N) .- (2:N+1)) .÷ N )
-    BoxPartition{N,T,I}(
+    GridPartition{N,T,I}(
         tree.domain, 
         center .- radius, 
         dims ./ (2 .* radius), 
@@ -86,7 +86,7 @@ function tree_search(tree::TR, point, max_depth=Inf) where {N,T,I,TR<:TreePartit
     point in tree.domain || return nothing, 1
     
     # start at root
-    P = BoxPartition{I}(tree.domain)
+    P = GridPartition{I}(tree.domain)
     node_idx = 1
     node = tree.nodes[node_idx]
     current_depth = one(I)
@@ -113,7 +113,7 @@ end
 
 function Base.checkbounds(::Type{Bool}, tree::TreePartition, key)
     depth, cart = key
-    P = BoxPartition(tree, depth)
+    P = GridPartition(tree, depth)
     c, _ = key_to_box(P, cart)
     search_key, _ = tree_search(tree, c, depth+1)
     search_depth, search_cart = search_key
@@ -128,7 +128,7 @@ end
 @propagate_inbounds function key_to_box(tree::TreePartition{N}, key::Tuple{I,NTuple{N,J}}) where {N,I,J}
     @boundscheck checkbounds(Bool, tree, key) || throw(BoundsError(tree, key))
     depth, cart = key
-    P = BoxPartition(tree, depth)
+    P = GridPartition(tree, depth)
     box = key_to_box(P, cart)
     return box
 end
@@ -152,7 +152,7 @@ the node is subdivided depends on the depth of the node.
 """
 @propagate_inbounds function subdivide!(tree::TreePartition{N,T,I}, key::Tuple{J,NTuple{N,K}}) where {N,T,I,J,K}
     depth, cart = key
-    P = BoxPartition(tree, depth)
+    P = GridPartition(tree, depth)
     c, _ = key_to_box(P, cart)
     search_key, node_idx = tree_search(tree, c, depth + 1)
     

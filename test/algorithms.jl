@@ -11,10 +11,10 @@ using Test
     radius = (1.0, 1.0)
     domain = Box(center, radius)
     g = BoxMap(:pointdiscretized, f, domain, test_points)
-    partition = BoxPartition(domain)
+    partition = GridPartition(domain)
     n = 10
     dims = (32, 32)
-    partition_at_depth_n = BoxPartition(domain, dims)
+    partition_at_depth_n = GridPartition(domain, dims)
     rga = relative_attractor(g, cover(partition, :), steps = n)
     unstable = unstable_set(g, cover(partition_at_depth_n, :))
     # ground truths attractor and unstable set

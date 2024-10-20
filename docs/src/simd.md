@@ -34,7 +34,7 @@ using SIMD
 
 center, radius = (0,0,25), (30,30,30)
 Q = Box(center, radius)
-P = BoxPartition(Q, (128,128,128))
+P = GridPartition(Q, (128,128,128))
 F = BoxMap(:montecarlo, :simd, f, Q)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)

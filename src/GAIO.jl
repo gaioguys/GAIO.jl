@@ -36,11 +36,12 @@ using Arpack
 import Base: unsafe_trunc, IteratorEltype, HasEltype, OneTo
 import Base: ∘
 import Base: @propagate_inbounds
+import Base: @deprecate_binding
 
 export Box
 export volume, center, radius, vertices, rescale
 
-export AbstractBoxPartition, BoxPartition, TreePartition
+export BoxLayout, GridPartition, TreePartition
 export key_to_box, point_to_key, bounded_point_to_key, point_to_box
 export depth, tree_search, find_at_depth, leaves, hidden_keys
 
@@ -98,7 +99,7 @@ end
 
 include("box.jl")
 
-abstract type AbstractBoxPartition{B <: Box} end
+abstract type BoxLayout{B <: Box} end
 
 include("partition_regular.jl")
 include("partition_tree.jl")
@@ -114,7 +115,9 @@ include("boxmeasure.jl")
 include("transfer_operator.jl")
 #include("boxgraph.jl")
 
-Base.@deprecate_binding BoxFun BoxMeasure
+@deprecate_binding BoxFun BoxMeasure
+@deprecate_binding AbstractBoxPartition BoxLayout
+@deprecate_binding BoxPartition GridPartition
 
 include("algorithms/invariant_sets.jl")
 include("algorithms/scalar_diagnostics.jl")

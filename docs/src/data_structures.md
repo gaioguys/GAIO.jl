@@ -12,12 +12,12 @@ GAIO.radius
 ```
 
 ```@docs; canonical=false
-BoxPartition
+GridPartition
 point_to_key
 bounded_point_to_key
 key_to_box
 point_to_box
-subdivide(P::BoxPartition{N,T,I}, dim) where {N,T,I}
+subdivide(P::GridPartition{N,T,I}, dim) where {N,T,I}
 ```
 
 ```@docs; canonical=false

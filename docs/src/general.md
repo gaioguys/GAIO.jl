@@ -14,15 +14,15 @@ This creates a set ``Q = [c_1 - r_1, c_1 + r_1), \times \ldots \times [c_d - r_d
 c, r = Q
 ```
 
-## BoxPartition
+## GridPartition
 
-Most algorithms in GAIO.jl revolve around a partition of the domain ``Q`` into small boxes. To create an ``n_1 \times \ldots \times n_d`` - element equidistant grid of boxes, we can pass the tuple ``n = (n_1, \ldots, n_d)`` into the function `BoxPartition`
+Most algorithms in GAIO.jl revolve around a partition of the domain ``Q`` into small boxes. To create an ``n_1 \times \ldots \times n_d`` - element equidistant grid of boxes, we can pass the tuple ``n = (n_1, \ldots, n_d)`` into the function `GridPartition`
 ```@repl 1
 n = (4, 2)
-P = BoxPartition(Q, n)
+P = GridPartition(Q, n)
 ```
 
-`BoxPartition`s use a cartesian indexing structure to be memory-efficient. These indices are accessed and used through the API:
+`GridPartition`s use a cartesian indexing structure to be memory-efficient. These indices are accessed and used through the API:
 ```@repl 1
 x = (0.2, 0.1)
 key = point_to_key(P, x)    # x is some point in the domain Q
@@ -44,11 +44,11 @@ subdivide!(P2)
 ```
 The axis direction along which to subdivide cycles through with the depth, i.e. subdividing at depth 1 splits along dimension 1, subdividing at depth `d+1` splits along dimension 1 again. 
 
-The `TreePartition` created above is equivalent to a 4x2 `BoxPartition`. One can retrieve this using 
+The `TreePartition` created above is equivalent to a 4x2 `GridPartition`. One can retrieve this using 
 ```@repl 1
-P3 = BoxPartition(P2)
+P3 = GridPartition(P2)
 ```
-`TreePartition`s use indices of the type `(depth, cartesian_index)` where `cartesian_index` is the equivalent index of a `BoxPartition` with the same size as a `TreePartition` subdivided `depth` times. In other words,
+`TreePartition`s use indices of the type `(depth, cartesian_index)` where `cartesian_index` is the equivalent index of a `GridPartition` with the same size as a `TreePartition` subdivided `depth` times. In other words,
 ```@repl 1
 key_to_box( P, (1, 1) ) == key_to_box( P2, (4, (1, 1)) )
 key_to_box( P, (4, 2) ) == key_to_box( P2, (4, (4, 2)) )

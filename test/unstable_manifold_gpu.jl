@@ -19,7 +19,7 @@ end
     domain = Box{3,Float32}(cen, rad)
     σ=10f0; ρ=28f0; β=0.4f0
     x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
-    P = BoxPartition(domain, (128,128,128))
+    P = GridPartition(domain, (128,128,128))
     S = cover(P, x)
 
     @testset "gpu montecarlo" begin

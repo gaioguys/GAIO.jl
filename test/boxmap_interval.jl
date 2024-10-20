@@ -14,7 +14,7 @@ using Test
     g = BoxMap(:interval, f, domain)
     @testset "basics" begin
         @test typeof(g) <: IntervalBoxMap
-        partition = BoxPartition(domain, (32,32))
+        partition = GridPartition(domain, (32,32))
         p1 = SVector(0.0, 0.0)
         p2 = SVector(0.5, 0.0)
         p3 = SVector(0.0, -0.5)
