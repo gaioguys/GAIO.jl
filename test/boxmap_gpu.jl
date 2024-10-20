@@ -1,17 +1,23 @@
-using CUDA
 using GAIO
 using StaticArrays
 using Test
 
+using Base.Sys
+if isapple() && ARCH === :aarch64
+    using Metal
+else
+    using CUDA
+end
+
 @testset "exported functionality" begin
     f(x) = x .^ 2
-    test_points = [
+    test_points = SVector{2,Float32}[
         (-1.0, -1.0), (-1.0, 1.0), (1.0, -1.0), (1.0, 1.0),
         (-1.0,  0.0), (1.0, 0.0),  (0.0, -1.0), (0.0, 1.0)
     ]
-    center = SVector(0.0, 0.0)
-    radius = SVector(1.0, 1.0)
-    domain = Box(center, radius)
+    center = SA_F32[0,0]
+    radius = SA_F32[1,1]
+    domain = Box{2,Float32}(center, radius)
     g = BoxMap(:pointdiscretized, :gpu, f, domain, test_points)
     @testset "basics with :gpu" begin
         #@test typeof(g) <: GPUSampledBoxMap

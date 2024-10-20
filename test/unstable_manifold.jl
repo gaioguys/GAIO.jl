@@ -32,7 +32,7 @@ using Test
         
             T = TransferOperator(F, W)
             T = TransferOperator(F, W, W)
-            λ, ev, nconv = eigs(T, nev=1)
+            λ, ev, nconv = eigs(T, nev=1, tol=100*eps())
             @test ev[1] isa BoxMeasure  # passes if no error is thrown    
         end
 
@@ -51,7 +51,7 @@ using Test
         
             T = TransferOperator(F, W; show_progress=true)
             T = TransferOperator(F, W, W; show_progress=true)
-            λ, ev, nconv = eigs(T, nev=1)
+            λ, ev, nconv = eigs(T, nev=1, tol=100*eps())
             @test ev[1] isa BoxMeasure  # passes if no error is thrown    
         end
 
