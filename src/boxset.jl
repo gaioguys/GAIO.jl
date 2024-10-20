@@ -29,16 +29,16 @@ union, intersect, setdiff, symdiff, issubset, isdisjoint, issetequal, isempty, l
 are supported. 
 
 """
-struct BoxSet{B,P<:AbstractBoxPartition{B},S<:AbstractSet} <: AbstractSet{B}
+struct BoxSet{B,P<:BoxLayout{B},S<:AbstractSet} <: AbstractSet{B}
     partition::P
     set::S
 end
 
-function BoxSet{B,P,S}(partition::P) where {B,P<:AbstractBoxPartition{B},S<:AbstractSet}
+function BoxSet{B,P,S}(partition::P) where {B,P<:BoxLayout{B},S<:AbstractSet}
     return BoxSet{B,P,S}(partition, S())
 end
 
-function BoxSet(partition::P; settype=Set{keytype(P)}) where {B,P<:AbstractBoxPartition{B}}
+function BoxSet(partition::P; settype=Set{keytype(P)}) where {B,P<:BoxLayout{B}}
     return BoxSet{B,P,settype}(partition)
 end
 
@@ -53,13 +53,13 @@ function Base.show(io::IO, m::MIME"text/plain", boxset::BoxSet)
     show(io, m, boxset.partition)
 end
 
-function Base.getindex(partition::AbstractBoxPartition, key)
+function Base.getindex(partition::BoxLayout, key)
     #eltype(point) <: Number || return map(x->partition[x], key)
     return key_to_box(partition, key)
 end
 
-Base.getindex(partition::AbstractBoxPartition, ::Colon) = collect(keys(partition))
-Base.getindex(partition::AbstractBoxPartition, c::CartesianIndex) = partition[c.I]
+Base.getindex(partition::BoxLayout, ::Colon) = collect(keys(partition))
+Base.getindex(partition::BoxLayout, c::CartesianIndex) = partition[c.I]
 
 """
 * `BoxSet` constructors:
@@ -90,7 +90,7 @@ function cover(B::BoxSet, x)
     return B ∩ A
 end
 
-@generated function cover(partition::P, x) where {P<:AbstractBoxPartition}
+@generated function cover(partition::P, x) where {P<:BoxLayout}
 
     if IteratorEltype(x) isa HasEltype && eltype(x) <: Number
         expression = quote
@@ -113,15 +113,15 @@ end
     end
 end
 
-function cover(partition::P, ::Colon) where {P<:AbstractBoxPartition}
+function cover(partition::P, ::Colon) where {P<:BoxLayout}
     return BoxSet(partition, Set{keytype(P)}(keys(partition)))
 end
 
-cover(partition::AbstractBoxPartition, ints::SVNT{N,<:Interval}) where {N} = cover(partition, Box(ints))
-cover(partition::P, ::Nothing) where {P<:AbstractBoxPartition} = BoxSet(partition, Set{keytype(P)}())
-cover(partition::AbstractBoxPartition{<:Box{1}}, x::Number) = cover(partition, (x,))
+cover(partition::BoxLayout, ints::SVNT{N,<:Interval}) where {N} = cover(partition, Box(ints))
+cover(partition::P, ::Nothing) where {P<:BoxLayout} = BoxSet(partition, Set{keytype(P)}())
+cover(partition::BoxLayout{<:Box{1}}, x::Number) = cover(partition, (x,))
 
-function cover(partition::P, box::Box{N,T}) where {N,T,P<:BoxPartition}
+function cover(partition::P, box::Box{N,T}) where {N,T,P<:BoxGrid}
     c, r = box
     key_lo = bounded_point_to_key(partition, c .- r)
     key_hi = bounded_point_to_key(partition, c .+ r .- 10*eps(T))
@@ -129,7 +129,7 @@ function cover(partition::P, box::Box{N,T}) where {N,T,P<:BoxPartition}
     return BoxSet(partition, Set{keytype(P)}(Tuple(c) for c in carts))
 end
 
-function cover(partition::P, box::Box{N,R}) where {N,R,T,I,P<:TreePartition{N,T,I}}
+function cover(partition::P, box::Box{N,R}) where {N,R,T,I,P<:BoxTree{N,T,I}}
     K = keytype(P)
     keys = Set{K}()
     box = partition.domain ∩ box
@@ -150,7 +150,7 @@ function cover(partition::P, box::Box{N,R}) where {N,R,T,I,P<:TreePartition{N,T,
             key1 = (depth+1, Base.setindex(cart, 2 * cart[dim] - 1, dim))
             key2 = (depth+1, Base.setindex(cart, 2 * cart[dim], dim))
             
-            Q = BoxPartition(partition, depth+1)
+            Q = BoxGrid(partition, depth+1)
             box1 = key_to_box(Q, key1[2])
             box2 = key_to_box(Q, key2[2])
 
@@ -188,14 +188,14 @@ for op in (:issubset, :isdisjoint, :issetequal, :(==))
     @eval Base.$op(b1::BoxSet, b2::BoxSet) = b1.partition == b2.partition && $op(b1.set, b2.set)
 end
 
-function max_radius(boxset::BoxSet{B,P,S}) where {N,T,I,B,P<:TreePartition{N,T,I},S}
+function max_radius(boxset::BoxSet{B,P,S}) where {N,T,I,B,P<:BoxTree{N,T,I},S}
     min_depth = minimum(depth for (depth, cart) in boxset.set)
-    Q = BoxPartition(boxset.partition, min_depth)
+    Q = BoxGrid(boxset.partition, min_depth)
     _, r = key_to_box(Q, ntuple(_->one(I), Val(N)))
     return r
 end
 
-max_radius(boxset::BoxSet{B,P,S}) where {B,P<:BoxPartition,S} = first(boxset).radius
+max_radius(boxset::BoxSet{B,P,S}) where {B,P<:BoxGrid,S} = first(boxset).radius
 Base.isempty(boxset::BoxSet) = isempty(boxset.set)
 Base.empty!(boxset::BoxSet) = (empty!(boxset.set); boxset)
 Base.copy(boxset::BoxSet) = BoxSet(boxset.partition, copy(boxset.set))
@@ -228,7 +228,7 @@ function SplittablesBase.halve(boxset::BoxSet)
     return (liter, riter)
 end
 
-function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}
+function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxGrid,S}
     set = S()
     sizehint!(set, 2*length(boxset.set))
 
@@ -242,9 +242,9 @@ function subdivide(boxset::BoxSet{B,P,S}, dim) where {B,P<:BoxPartition,S}
     return BoxSet(subdivide(boxset.partition, dim), set)
 end
 
-subdivide(boxset::BoxSet{B,P,S}) where {B,P<:BoxPartition,S} = subdivide(boxset, argmin(boxset.partition.dims))
+subdivide(boxset::BoxSet{B,P,S}) where {B,P<:BoxGrid,S} = subdivide(boxset, argmin(boxset.partition.dims))
 
-function subdivide!(boxset::BoxSet{B,P,S}, key::Tuple{J,NTuple{N,K}}) where {B,N,P<:TreePartition{N},S,J,K}
+function subdivide!(boxset::BoxSet{B,P,S}, key::Tuple{J,NTuple{N,K}}) where {B,N,P<:BoxTree{N},S,J,K}
     key in boxset.set || throw(KeyError(key))
 
     depth, cart = key
@@ -264,13 +264,13 @@ function subdivide!(boxset::BoxSet{B,P,S}, key::Tuple{J,NTuple{N,K}}) where {B,N
 end
 
 """
-    subdivide(B::BoxSet{<:Any,<:Any,<:TreePartition}) -> BoxSet
+    subdivide(B::BoxSet{<:Any,<:Any,<:BoxTree}) -> BoxSet
 
 Bisect every box in `boxset` along an axis, giving rise to a new 
 partition of the domain, with double the amount of boxes. 
 Axis along which to bisect depends on the depth of the nodes. 
 """
-function subdivide(boxset::BoxSet{B,P,S}, dim=1) where {B,P<:TreePartition,S}
+function subdivide(boxset::BoxSet{B,P,S}, dim=1) where {B,P<:BoxTree,S}
     boxset_new = BoxSet(copy(boxset.partition), copy(boxset.set))
     #boxset_new = BoxSet(boxset.partition, copy(boxset.set))
     sizehint!(boxset_new, 2*length(boxset_new))
@@ -293,7 +293,7 @@ function neighborhood(B::BoxSet)
     return setdiff!(nbhd, B)
 end
 
-function neighborhood(B::BoxSet{R,Q}) where {N,R,Q<:BoxPartition{N}}
+function neighborhood(B::BoxSet{R,Q}) where {N,R,Q<:BoxGrid{N}}
     P = B.partition
     C = empty!(copy(B))
 

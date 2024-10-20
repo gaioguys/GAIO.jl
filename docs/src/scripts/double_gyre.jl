@@ -25,7 +25,7 @@ Tspan = t₁ - t₀
 Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)
 
 domain = Box((1.0, 0.5), (1.0, 0.5))
-P = BoxPartition(domain, (256, 128))
+P = BoxGrid(domain, (256, 128))
 S = cover(P, :)
 
 n_frames = 120

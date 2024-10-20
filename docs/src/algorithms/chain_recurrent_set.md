@@ -28,7 +28,7 @@ const a, b = 1.4, 0.3
 f((x,y)) = (1 - a*x^2 + y, b*x)
 
 center, radius = (0, 0), (3, 3)
-P = BoxPartition(Box(center, radius))
+P = BoxGrid(Box(center, radius))
 F = BoxMap(f, P)
 S = cover(P, :)
 A = chain_recurrent_set(F, S, steps = 22)
@@ -56,7 +56,7 @@ f(x) = rk4_flow_map(v, x)
 
 c, r = (0., 0.), (3.5, 3.5)
 Q = Box(c, r)
-P = BoxPartition(Q)
+P = BoxGrid(Q)
 S = cover(P, :)
 
 F = BoxMap(f, Q)

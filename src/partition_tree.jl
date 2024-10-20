@@ -1,9 +1,9 @@
 """
-Node structure used for `TreePartition`s
+Node structure used for `BoxTree`s
 
 Fields:
 * `left` and `right` refer to indices w.r.t. 
-`trp.nodes` for a `TreePartition` `trp`. 
+`trp.nodes` for a `BoxTree` `trp`. 
 
 """
 struct Node{I}
@@ -16,7 +16,7 @@ Base.iterate(node::Node, ::Val{:right}) = (node.right, Val(:done))
 Base.iterate(node::Node, ::Val{:done}) = nothing
 
 """
-    TreePartition(domain::Box)
+    BoxTree(domain::Box)
 
 Binary tree structure to partition `domain` into (variably sized) boxes. 
 
@@ -31,29 +31,29 @@ Methods implemented:
 
 .
 """
-struct TreePartition{N,T,I,V<:AbstractArray{Node{I}}} <: AbstractBoxPartition{Box{N,T}}
+struct BoxTree{N,T,I,V<:AbstractArray{Node{I}}} <: BoxLayout{Box{N,T}}
     domain::Box{N,T}
     nodes::V
 end
 
-function TreePartition(domain::Box, depth::Integer)
-    tree = TreePartition(domain)
+function BoxTree(domain::Box, depth::Integer)
+    tree = BoxTree(domain)
     for i in 1:depth
         subdivide!(tree, i)
     end
     return tree
 end
 
-TreePartition(domain::Box) = TreePartition(domain, [Node(0, 0)])
-BoxPartition(tree::TreePartition) = BoxPartition(tree, depth(tree))
+BoxTree(domain::Box) = BoxTree(domain, [Node(0, 0)])
+BoxGrid(tree::BoxTree) = BoxGrid(tree, depth(tree))
 
-function BoxPartition(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
+function BoxGrid(tree::BoxTree{N,T,I}, depth::Integer) where {N,T,I}
     center, radius = tree.domain
     dims = ntuple(Val(N)) do i
         2 ^ ( ((depth+N) - (i+1)) ÷ N )
     end
     #dims = 2 .^ ( ((depth + N) .- (2:N+1)) .÷ N )
-    BoxPartition{N,T,I}(
+    BoxGrid{N,T,I}(
         tree.domain, 
         center .- radius, 
         dims ./ (2 .* radius), 
@@ -61,20 +61,20 @@ function BoxPartition(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
     )
 end
 
-function Base.show(io::IO, partition::TreePartition) 
-    print(io, "TreePartition of depth $(depth(partition))")
+function Base.show(io::IO, partition::BoxTree) 
+    print(io, "BoxTree of depth $(depth(partition))")
 end
 
 isleaf(node::Node) = iszero(node.left) || iszero(node.right)
-children(tr::TreePartition, node::Node) = isleaf(node) ? () : (tr.nodes[node.left], tr.nodes[node.right])
-center(tr::TreePartition) = center(tr.domain)
-radius(tr::TreePartition) = radius(tr.domain)
+children(tr::BoxTree, node::Node) = isleaf(node) ? () : (tr.nodes[node.left], tr.nodes[node.right])
+center(tr::BoxTree) = center(tr.domain)
+radius(tr::BoxTree) = radius(tr.domain)
 
-Base.ndims(::TreePartition{N}) where {N} = N
-Base.keytype(::Type{<:TreePartition{N,T,I}}) where {N,T,I} = Tuple{I,NTuple{N,I}}
-Base.copy(tr::TreePartition) = TreePartition(tr.domain, copy(tr.nodes))
-Base.length(tr::TreePartition) = length(keys(tr))
-Base.sizehint!(tr::TreePartition, s) = sizehint!(tr.nodes, s)
+Base.ndims(::BoxTree{N}) where {N} = N
+Base.keytype(::Type{<:BoxTree{N,T,I}}) where {N,T,I} = Tuple{I,NTuple{N,I}}
+Base.copy(tr::BoxTree) = BoxTree(tr.domain, copy(tr.nodes))
+Base.length(tr::BoxTree) = length(keys(tr))
+Base.sizehint!(tr::BoxTree, s) = sizehint!(tr.nodes, s)
 
 """
     tree_search(tree, point, max_depth=Inf) -> key, node_idx
@@ -82,11 +82,11 @@ Base.sizehint!(tr::TreePartition, s) = sizehint!(tr.nodes, s)
 Find the key and correspoinding node index within the tree 
 data structure containing a point. 
 """
-function tree_search(tree::TR, point, max_depth=Inf) where {N,T,I,TR<:TreePartition{N,T,I}}
+function tree_search(tree::TR, point, max_depth=Inf) where {N,T,I,TR<:BoxTree{N,T,I}}
     point in tree.domain || return nothing, 1
     
     # start at root
-    P = BoxPartition{I}(tree.domain)
+    P = BoxGrid{I}(tree.domain)
     node_idx = 1
     node = tree.nodes[node_idx]
     current_depth = one(I)
@@ -111,48 +111,48 @@ function tree_search(tree::TR, point, max_depth=Inf) where {N,T,I,TR<:TreePartit
     return key, node_idx
 end
 
-function Base.checkbounds(::Type{Bool}, tree::TreePartition, key)
+function Base.checkbounds(::Type{Bool}, tree::BoxTree, key)
     depth, cart = key
-    P = BoxPartition(tree, depth)
+    P = BoxGrid(tree, depth)
     c, _ = key_to_box(P, cart)
     search_key, _ = tree_search(tree, c, depth+1)
     search_depth, search_cart = search_key
     return search_depth > depth || ( search_depth == depth && search_cart == cart )
 end
 
-function point_to_key(tree::TreePartition, point)
+function point_to_key(tree::BoxTree, point)
     key, _ = tree_search(tree, point)
     return key
 end
 
-@propagate_inbounds function key_to_box(tree::TreePartition{N}, key::Tuple{I,NTuple{N,J}}) where {N,I,J}
+@propagate_inbounds function key_to_box(tree::BoxTree{N}, key::Tuple{I,NTuple{N,J}}) where {N,I,J}
     @boundscheck checkbounds(Bool, tree, key) || throw(BoundsError(tree, key))
     depth, cart = key
-    P = BoxPartition(tree, depth)
+    P = BoxGrid(tree, depth)
     box = key_to_box(P, cart)
     return box
 end
 
-function key_to_box(tree::TreePartition{N}, key::Tuple{I,CartesianIndex}) where {N,I}
+function key_to_box(tree::BoxTree{N}, key::Tuple{I,CartesianIndex}) where {N,I}
     depth, cart = key
     key_to_box(tree, (depth, cart.I))
 end
 
-key_to_box(tree::TreePartition, ::Nothing) = nothing
+key_to_box(tree::BoxTree, ::Nothing) = nothing
 
 """
-    subdivide!(tree::TreePartition, key::keytype(tree)) -> TreePartition
-    subdivide!(tree::TreePartition, depth::Integer) -> TreePartition
+    subdivide!(tree::BoxTree, key::keytype(tree)) -> BoxTree
+    subdivide!(tree::BoxTree, depth::Integer) -> BoxTree
 
-    subdivide!(boxset::BoxSet{<:Any,<:Any,<:TreePartition}, key) -> BoxSet
-    subdivide!(boxset::BoxSet{<:Any,<:Any,<:TreePartition}, depth) -> BoxSet
+    subdivide!(boxset::BoxSet{<:Any,<:Any,<:BoxTree}, key) -> BoxSet
+    subdivide!(boxset::BoxSet{<:Any,<:Any,<:BoxTree}, depth) -> BoxSet
 
-Subdivide a `TreePartition` at `key`. Dimension along which 
+Subdivide a `BoxTree` at `key`. Dimension along which 
 the node is subdivided depends on the depth of the node. 
 """
-@propagate_inbounds function subdivide!(tree::TreePartition{N,T,I}, key::Tuple{J,NTuple{N,K}}) where {N,T,I,J,K}
+@propagate_inbounds function subdivide!(tree::BoxTree{N,T,I}, key::Tuple{J,NTuple{N,K}}) where {N,T,I,J,K}
     depth, cart = key
-    P = BoxPartition(tree, depth)
+    P = BoxGrid(tree, depth)
     c, _ = key_to_box(P, cart)
     search_key, node_idx = tree_search(tree, c, depth + 1)
     
@@ -168,7 +168,7 @@ the node is subdivided depends on the depth of the node.
     return tree
 end
 
-function subdivide!(tree::TreePartition{N,T,I}, depth::Integer=1) where {N,T,I}
+function subdivide!(tree::BoxTree{N,T,I}, depth::Integer=1) where {N,T,I}
     node_idxs = find_at_depth(tree, depth)
 
     if all(idx -> isleaf(tree.nodes[idx]), node_idxs)
@@ -189,16 +189,16 @@ function subdivide!(tree::TreePartition{N,T,I}, depth::Integer=1) where {N,T,I}
     return tree
 end
 
-function subdivide(tree::TreePartition, key_or_depth)
+function subdivide(tree::BoxTree, key_or_depth)
     subdivide!(copy(tree), key_or_depth)
 end
 
 """
-    depth(tree::TreePartition)
+    depth(tree::BoxTree)
 
 Return the depth of the tree structure. 
 """
-function depth(tree::TreePartition{N,T,I}) where {N,T,I}
+function depth(tree::BoxTree{N,T,I}) where {N,T,I}
     depth = 1
     queue = Tuple{Int,I}[(1, 1)]
     while !isempty(queue)
@@ -213,7 +213,7 @@ function depth(tree::TreePartition{N,T,I}) where {N,T,I}
     return depth
 end
 
-function Base.size(tree::TreePartition{N,T,I}) where {N,T,I}
+function Base.size(tree::BoxTree{N,T,I}) where {N,T,I}
     depth = 1
     sizes = Dict{Int,Int}()
     queue = Tuple{Int,I}[(1, 1)]
@@ -235,7 +235,7 @@ end
 
 Return all node indices at a specified depth. 
 """
-function find_at_depth(tree::TreePartition{N,T,I}, depth::Integer) where {N,T,I}
+function find_at_depth(tree::BoxTree{N,T,I}, depth::Integer) where {N,T,I}
     node_idxs = I[]
     queue = Tuple{Int,I}[(1, 1)]
     while !isempty(queue)
@@ -258,7 +258,7 @@ Begins search at `initial_node_idx`, i.e.
 only returns node indices of nodes below 
 `initial_node_idx` within the tree. 
 """
-function leaves(tree::TreePartition{N,T,I}, initial_node_idx=1) where {N,T,I}
+function leaves(tree::BoxTree{N,T,I}, initial_node_idx=1) where {N,T,I}
     leaf_idxs = I[]
     queue = I[initial_node_idx]
     while !isempty(queue)
@@ -274,7 +274,7 @@ function leaves(tree::TreePartition{N,T,I}, initial_node_idx=1) where {N,T,I}
     return leaf_idxs
 end
 
-function Base.keys(tree::Q) where {N,T,I,Q<:TreePartition{N,T,I}}
+function Base.keys(tree::Q) where {N,T,I,Q<:BoxTree{N,T,I}}
     K = keytype(Q)
     keys = K[]
     queue = Tuple{I,K}[(1, K((1, ntuple(_->1,N))))]
@@ -301,7 +301,7 @@ end
 Return all keys within the tree, including 
 keys not corresponding to leaf nodes. 
 """
-function hidden_keys(tree::Q) where {N,T,I,Q<:TreePartition{N,T,I}}
+function hidden_keys(tree::Q) where {N,T,I,Q<:BoxTree{N,T,I}}
     K = keytype(Q)
     keys = K[]
     queue = Tuple{I,K}[(1, K((1, ntuple(_->1,N))))]
@@ -321,7 +321,7 @@ function hidden_keys(tree::Q) where {N,T,I,Q<:TreePartition{N,T,I}}
     return keys
 end
 
-function Base.:(==)(tr1::TreePartition{N,T,I}, tr2::TreePartition{N,V,J}) where {N,T,I,V,J}
+function Base.:(==)(tr1::BoxTree{N,T,I}, tr2::BoxTree{N,V,J}) where {N,T,I,V,J}
     tr1.domain == tr2.domain || return false
     queue = Tuple{I,J}[(1, 1)]
     while !isempty(queue)

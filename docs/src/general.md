@@ -14,15 +14,15 @@ This creates a set ``Q = [c_1 - r_1, c_1 + r_1), \times \ldots \times [c_d - r_d
 c, r = Q
 ```
 
-## BoxPartition
+## BoxGrid
 
-Most algorithms in GAIO.jl revolve around a partition of the domain ``Q`` into small boxes. To create an ``n_1 \times \ldots \times n_d`` - element equidistant grid of boxes, we can pass the tuple ``n = (n_1, \ldots, n_d)`` into the function `BoxPartition`
+Most algorithms in GAIO.jl revolve around a partition of the domain ``Q`` into small boxes. To create an ``n_1 \times \ldots \times n_d`` - element equidistant grid of boxes, we can pass the tuple ``n = (n_1, \ldots, n_d)`` into the function `BoxGrid`
 ```@repl 1
 n = (4, 2)
-P = BoxPartition(Q, n)
+P = BoxGrid(Q, n)
 ```
 
-`BoxPartition`s use a cartesian indexing structure to be memory-efficient. These indices are accessed and used through the API:
+`BoxGrid`s use a cartesian indexing structure to be memory-efficient. These indices are accessed and used through the API:
 ```@repl 1
 x = (0.2, 0.1)
 key = point_to_key(P, x)    # x is some point in the domain Q
@@ -30,13 +30,13 @@ box = key_to_box(P, key)    # cover the point x with a box from P
 box = point_to_box(P, x)    # performs both above functions
 ```
 
-## TreePartition
+## BoxTree
 
-For partitions of ``Q`` into variably sized boxes, one can use `TreePartition`:
+For partitions of ``Q`` into variably sized boxes, one can use `BoxTree`:
 ```@repl 1
-P2 = TreePartition(Q)
+P2 = BoxTree(Q)
 ```
-A `TreePartition` uses a binary tree structure to store a partition of the domain. Every Box of a `TreePartition` can be split using the command 
+A `BoxTree` uses a binary tree structure to store a partition of the domain. Every Box of a `BoxTree` can be split using the command 
 ```@repl 1
 subdivide!(P2)
 subdivide!(P2)
@@ -44,11 +44,11 @@ subdivide!(P2)
 ```
 The axis direction along which to subdivide cycles through with the depth, i.e. subdividing at depth 1 splits along dimension 1, subdividing at depth `d+1` splits along dimension 1 again. 
 
-The `TreePartition` created above is equivalent to a 4x2 `BoxPartition`. One can retrieve this using 
+The `BoxTree` created above is equivalent to a 4x2 `BoxGrid`. One can retrieve this using 
 ```@repl 1
-P3 = BoxPartition(P2)
+P3 = BoxGrid(P2)
 ```
-`TreePartition`s use indices of the type `(depth, cartesian_index)` where `cartesian_index` is the equivalent index of a `BoxPartition` with the same size as a `TreePartition` subdivided `depth` times. In other words,
+`BoxTree`s use indices of the type `(depth, cartesian_index)` where `cartesian_index` is the equivalent index of a `BoxGrid` with the same size as a `BoxTree` subdivided `depth` times. In other words,
 ```@repl 1
 key_to_box( P, (1, 1) ) == key_to_box( P2, (4, (1, 1)) )
 key_to_box( P, (4, 2) ) == key_to_box( P2, (4, (4, 2)) )

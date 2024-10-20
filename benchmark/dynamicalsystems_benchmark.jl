@@ -46,7 +46,7 @@ end
 # analysis
 center, radius = (0,0,25), (30,30,30)
 domain = Box(center, radius)
-P = BoxPartition(domain, (128,128,128))
+P = BoxGrid(domain, (128,128,128))
 
 x = ( sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1 )   # equilibrium
 S = cover(P, x)
@@ -86,7 +86,7 @@ system = DiscreteDynamicalSystem(f, u0, p0)
 
 center, radius = (0, 0), (3, 3)
 domain = Box(center, radius)
-P = BoxPartition(domain)
+P = BoxGrid(domain)
 
 F = BoxMap(:grid, f, domain)
 G = BoxMap(:grid, system, domain)

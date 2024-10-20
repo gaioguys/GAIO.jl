@@ -6,7 +6,7 @@ using GAIO
 
 c = r = (0.5,)
 Q = Box(c,r)
-P = BoxPartition(Q, (10,))
+P = BoxGrid(Q, (10,))
 S = cover(P, (0,))
 
 f(x) = (x+0.5) % 1

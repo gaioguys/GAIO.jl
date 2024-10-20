@@ -27,7 +27,7 @@ f(x) = rk4_flow_map(v, x, 0.05, 5)
 
 center, radius = (0,0,0), (12,3,20)
 Q = Box(center, radius)
-P = BoxPartition(Q, (256,256,256))
+P = BoxGrid(Q, (256,256,256))
 F = BoxMap(:grid, f, Q)
 
 # computing the attractor by covering the 2d unstable manifold
@@ -146,7 +146,7 @@ t₁ = t₀ + τ * steps
 Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)
 
 domain = Box((1.0, 0.5), (1.0, 0.5))
-P = BoxPartition(domain, (256, 128))
+P = BoxGrid(domain, (256, 128))
 S = cover(P, :)
 
 F = BoxMap(:grid, Φₜ₀ᵗ¹, domain, n_points=(6,6))

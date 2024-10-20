@@ -81,7 +81,7 @@ function PointDiscretizedBoxMap(::Val{:simd}, map, domain::Box{N,T}, points) whe
     CPUSampledBoxMap(boxmap)
 end
 
-function PointDiscretizedBoxMap(c::Val{:simd}, map, P::Q, points) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+function PointDiscretizedBoxMap(c::Val{:simd}, map, P::Q, points) where {N,T,Q<:BoxLayout{Box{N,T}}}
     PointDiscretizedBoxMap(c, map, P.domain, points)
 end
 
@@ -105,7 +105,7 @@ function GridBoxMap(c::Val{:simd}, map, domain::Box{N,T}; n_points=ntuple(_->4,N
     PointDiscretizedBoxMap(c, map, domain, points)
 end
 
-function GridBoxMap(c::Val{:simd}, map, P::Q; n_points=ntuple(_->4,N)) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+function GridBoxMap(c::Val{:simd}, map, P::Q; n_points=ntuple(_->4,N)) where {N,T,Q<:BoxLayout{Box{N,T}}}
     GridBoxMap(c, map, P.domain; n_points=n_points)
 end
 
@@ -124,7 +124,7 @@ function MonteCarloBoxMap(c::Val{:simd}, map, domain::Box{N,T}; n_points=16*N) w
     PointDiscretizedBoxMap(c, map, domain, points)
 end 
 
-function MonteCarloBoxMap(c::Val{:simd}, map, P::Q; n_points=16*N) where {N,T,Q<:AbstractBoxPartition{Box{N,T}}}
+function MonteCarloBoxMap(c::Val{:simd}, map, P::Q; n_points=16*N) where {N,T,Q<:BoxLayout{Box{N,T}}}
     MonteCarloBoxMap(c, map, P.domain; n_points=n_points)
 end
 

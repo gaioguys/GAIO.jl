@@ -19,7 +19,7 @@ end
 
 # Constructors
 
-IntervalBoxMap(map, P::Q) where {Q<:AbstractBoxPartition} = IntervalBoxMap(map, P.domain)
+IntervalBoxMap(map, P::Q) where {Q<:BoxLayout} = IntervalBoxMap(map, P.domain)
 
 Base.show(io::IO, ::IntervalBoxMap) = print(io, "IntervalBoxMap")
 

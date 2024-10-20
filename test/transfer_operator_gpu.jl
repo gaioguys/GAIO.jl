@@ -16,7 +16,7 @@ using Test
     domain = Box{3,Float32}(c, r)
 
     F = BoxMap(:grid, :gpu, f, domain)
-    P = BoxPartition(domain, (32,32))
+    P = BoxGrid(domain, (32,32))
 
     S = cover(P, (0,0))
     F♯ = TransferOperator(F, S)

@@ -41,7 +41,7 @@ fr((x, y)) = reim( f(x + y*im) )
 
 c, r = (0, 0), (1.5, 1.5)
 Q = Box(c, r)
-P = BoxPartition(Q, (128,128))
+P = BoxGrid(Q, (128,128))
 F = BoxMap(fr, Q)
 
 S = cover(P, (0,0))

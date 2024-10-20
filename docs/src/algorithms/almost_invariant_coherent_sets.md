@@ -81,7 +81,7 @@ t₀, τ, t₁ = 0, 0.1, 2
 Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, t₁)
 
 domain = Box((1.0, 0.5), (1.0, 0.5))
-P = BoxPartition(domain, (256, 128))
+P = BoxGrid(domain, (256, 128))
 S = cover(P, :)
 
 F = BoxMap(:montecarlo, Φₜ₀ᵗ¹, domain)

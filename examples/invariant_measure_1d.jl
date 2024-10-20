@@ -5,7 +5,7 @@ const μ = 4.0
 f(x) = μ.*x.*(1.0.-x)
 
 center, radius = 0.5, 0.5
-P = BoxPartition(Box(center, radius), (256,))
+P = BoxGrid(Box(center, radius), (256,))
 F = BoxMap(:grid, f, P; n_points=(400,))
 
 S = cover(P, :)

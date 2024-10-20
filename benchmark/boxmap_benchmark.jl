@@ -6,7 +6,7 @@ const σ, ρ, β = 10f0, 28f0, 0.4f0
 const step_size, steps = 1f-2, 20i32
 
 center, radius = (0f0,0f0,25f0), (30i32,30i32,30i32)
-P = BoxPartition(Box(center, radius), (128i32,128i32,128i32))
+P = BoxGrid(Box(center, radius), (128i32,128i32,128i32))
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
 
 #v(u::V) where V = V((σ*(u[2]-u[1]), ρ*u[1]-u[2]-u[1]*u[3], u[1]*u[2]-β*u[3]))

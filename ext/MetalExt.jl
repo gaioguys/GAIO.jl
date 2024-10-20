@@ -34,7 +34,7 @@ function GPUSampledBoxMap(map::F, domain::Box, domain_points::MtlArray{SVector{N
     GPUSampledBoxMap{N,T,F}(map, domain, domain_points)
 end
 
-@muladd function map_boxes_kernel!(g, P::Q, in_keys, out_keys, domain_points, offset) where {N,T,B<:Box{N,T},Q<:AbstractBoxPartition{B}}
+@muladd function map_boxes_kernel!(g, P::Q, in_keys, out_keys, domain_points, offset) where {N,T,B<:Box{N,T},Q<:BoxLayout{B}}
     x, y = thread_position_in_grid_2d()
     x += offset
     k = in_keys[x]
@@ -171,7 +171,7 @@ function GridBoxMap(::Val{:gpu}, map, domain::Box{N,T}; n_points=ntuple(_->4,N))
     GPUSampledBoxMap(map, domain, mtl(points))
 end
 
-function GridBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; n_points=ntuple(_->4,N)) where {N,T}
+function GridBoxMap(c::Val{:gpu}, map, P::BoxGrid{N,T}; n_points=ntuple(_->4,N)) where {N,T}
     GridBoxMap(c, map, P.domain, n_points=n_points)
 end
 
@@ -188,7 +188,7 @@ function MonteCarloBoxMap(::Val{:gpu}, map, domain::Box{N,T}; n_points=16*N) whe
     GPUSampledBoxMap(map, domain, mtl(points))
 end 
 
-function MonteCarloBoxMap(c::Val{:gpu}, map, P::BoxPartition{N,T}; n_points=16*N) where {N,T}
+function MonteCarloBoxMap(c::Val{:gpu}, map, P::BoxGrid{N,T}; n_points=16*N) where {N,T}
     MonteCarloBoxMap(c, map, P.domain; n_points=n_points)
 end
 
@@ -196,12 +196,12 @@ end
 # This amount of code-copying is unfortunate, though I don't know of a good 
 # way to get around it
 
-function typesafe_map(::Q, g, p) where {N,T,B<:Box{N,T},Q<:AbstractBoxPartition{B}}
+function typesafe_map(::Q, g, p) where {N,T,B<:Box{N,T},Q<:BoxLayout{B}}
     SVector{N,T}( g(p) )
 end
 
 # hotfix to avoid errors due to cuda device-side printing
-@propagate_inbounds function point_to_key(partition::BoxPartition{N,T,I}, point, ::Val{:gpu}) where {N,T,I}
+@propagate_inbounds function point_to_key(partition::BoxGrid{N,T,I}, point, ::Val{:gpu}) where {N,T,I}
     point in partition.domain || return nothing
     xi = (point .- partition.left) .* partition.scale
     x_ints = ntuple( i -> unsafe_trunc(I, xi[i]) + one(I), Val(N) )
@@ -211,12 +211,12 @@ end
     return x_ints
 end
 
-function out_of_bounds(::P) where {N,T,I,P<:BoxPartition{N,T,I}}
+function out_of_bounds(::P) where {N,T,I,P<:BoxGrid{N,T,I}}
     K = cu_reduce(keytype(P))
     K(ntuple(_->0, Val(N)))
 end
 
-function out_of_bounds(::P) where {N,T,I,P<:TreePartition{N,T,I}}
+function out_of_bounds(::P) where {N,T,I,P<:BoxTree{N,T,I}}
     K = cu_reduce(keytype(P))
     K((0, ntuple(_->0, Val(N))))
 end
@@ -226,10 +226,10 @@ function Adapt.adapt_storage(::A, (c,r)::Box{N,T}) where {N,T,A<:Union{<:Metal.M
     Box{N,TT}(c,r)
 end
 
-function Adapt.adapt_structure(a::A, b::BoxPartition{N,T,I}) where {N,T,I,A<:Union{<:Metal.MtlArrayAdaptor,<:Metal.Adaptor}}
+function Adapt.adapt_structure(a::A, b::BoxGrid{N,T,I}) where {N,T,I,A<:Union{<:Metal.MtlArrayAdaptor,<:Metal.Adaptor}}
     TT, II = cu_reduce(T), cu_reduce(I)
     Adapt.adapt_storage(a, 
-        BoxPartition{N,TT,II}(
+        BoxGrid{N,TT,II}(
             Box{N,TT}(b.domain...),
             SVector{N,TT}(b.left),
             SVector{N,TT}(b.scale),
@@ -238,10 +238,10 @@ function Adapt.adapt_structure(a::A, b::BoxPartition{N,T,I}) where {N,T,I,A<:Uni
     )
 end
 
-function Adapt.adapt_structure(a::A, b::TreePartition{N,T,I}) where {N,T,I,A<:Union{<:Metal.MtlArrayAdaptor,<:Metal.Adaptor}}
+function Adapt.adapt_structure(a::A, b::BoxTree{N,T,I}) where {N,T,I,A<:Union{<:Metal.MtlArrayAdaptor,<:Metal.Adaptor}}
     TT = cu_reduce(T)
     Adapt.adapt_storage(a,
-        TreePartition(
+        BoxTree(
             Box{N,TT}(b.domain...),
             Adapt.adapt(a, b.nodes)
         )

@@ -4,7 +4,7 @@ using Test
 
 @testset "exported functionality" begin
     @testset "regular partition" begin
-        partition = BoxPartition(Box((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)), (16,8,8))
+        partition = BoxGrid(Box((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)), (16,8,8))
         @testset "empty" begin
             empty_boxset = BoxSet(partition)
             @test isempty(empty_boxset)
@@ -90,7 +90,7 @@ using Test
         end
     end
     @testset "tree partition" begin
-        partition = TreePartition(Box((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)), 10)
+        partition = BoxTree(Box((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)), 10)
         @testset "empty" begin
             empty_boxset = BoxSet(partition)
             @test isempty(empty_boxset)

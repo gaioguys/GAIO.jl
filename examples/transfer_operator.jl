@@ -3,7 +3,7 @@ using Plots: plot, plot!
 
 # the box [-1, 1]²
 domain = Box((0.0, 0.0), (1.0, 1.0))
-partition = BoxPartition(domain, (16,8))
+partition = BoxGrid(domain, (16,8))
 
 # left / right halves of the domain
 left  = cover(partition, Box((-0.5, 0.0), (0.5, 1.0)))
