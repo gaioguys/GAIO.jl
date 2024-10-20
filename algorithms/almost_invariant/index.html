@@ -10,7 +10,7 @@ f(x) = rk4_flow_map(v, x, 0.05, 5)
 
 center, radius = (0,0,0), (12,3,20)
 Q = Box(center, radius)
-P = BoxPartition(Q, (256,256,256))
+P = BoxGrid(Q, (256,256,256))
 F = BoxMap(:grid, f, Q)
 
 # computing the attractor by covering the 2d unstable manifold
@@ -32,14 +32,14 @@ tol, maxiter, v0 = eps()^(1/4), 1000, ones(size(T, 2))
  0.9334898586803636 + 0.08261276298775118im
  0.9334898586803636 - 0.08261276298775118im
  0.9300663505292164 + 0.14257243874771158im
- 0.9300663505292164 - 0.14257243874771158im</code></pre><p>We see that the first eigenvalue is approaching <span>$1$</span>. This is the invariant measure. There is also an eigenvalue <em>near, but not exactly</em> <span>$1$</span>. Let us examine this eigenmeasure a but more closely. </p><pre><code class="language-julia hljs">μ = (x -&gt; sign(x) * log(abs(x))) ∘ real ∘ ev[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BoxMeasure in 256 x 256 x 256 - element BoxPartition with 483819 boxes in its suport</code></pre><pre><code class="language-julia hljs">using GLMakie
+ 0.9300663505292164 - 0.14257243874771158im</code></pre><p>We see that the first eigenvalue is approaching <span>$1$</span>. This is the invariant measure. There is also an eigenvalue <em>near, but not exactly</em> <span>$1$</span>. Let us examine this eigenmeasure a but more closely. </p><pre><code class="language-julia hljs">μ = (x -&gt; sign(x) * log(abs(x))) ∘ real ∘ ev[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BoxMeasure in 256 x 256 x 256 - element BoxGrid with 483819 boxes in its suport</code></pre><pre><code class="language-julia hljs">using GLMakie
 
 fig = Figure();
 ax = Axis3(fig[1,1], aspect=(1,1.2,1), azimuth=-3pi/10)
 ms = plot!(ax, μ, colormap=(:jet, 0.2))
 Colorbar(fig[1,2], ms)</code></pre><p><img src="../2nd_eig.png" alt="Second Leading Eigenvector"/></p><p>There are clearly two &quot;sections&quot; corresponding to the two &quot;scrolls&quot; of the attractor. We can separate these sections as follows. </p><pre><code class="language-julia hljs">τ = 0
 B1 = BoxSet(P, Set(key for key in keys(μ) if μ[key] ≤ τ))
-B2 = BoxSet(P, Set(key for key in keys(μ) if μ[key] &gt; τ))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">243478 - element BoxSet in 256 x 256 x 256 - element BoxPartition</code></pre><pre><code class="language-julia hljs">fig = Figure(resolution=(1200,600));
+B2 = BoxSet(P, Set(key for key in keys(μ) if μ[key] &gt; τ))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">243478 - element BoxSet in 256 x 256 x 256 - element BoxGrid</code></pre><pre><code class="language-julia hljs">fig = Figure(resolution=(1200,600));
 ax1 = Axis3(fig[1,1], aspect=(1,1.2,1), azimuth=-3pi/10)
 ms1 = plot!(ax1, B1, color=(:blue, 0.4))
 ax2 = Axis3(fig[1,2], aspect=(1,1.2,1), azimuth=-3pi/10)
@@ -78,7 +78,7 @@ t₁ = t₀ + τ * steps
 Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)
 
 domain = Box((1.0, 0.5), (1.0, 0.5))
-P = BoxPartition(domain, (256, 128))
+P = BoxGrid(domain, (256, 128))
 S = cover(P, :)
 
 F = BoxMap(:grid, Φₜ₀ᵗ¹, domain, n_points=(6,6))
@@ -113,4 +113,4 @@ anim = @animate for t in times
 
     plot(μ, clims=(-1,1), colormap=:jet)
 end;
-gif(anim, &quot;gyre_almost_inv.gif&quot;, fps=20)</code></pre><p><img src="../../assets/gyre_almost_inv.gif" alt="almost invariant sets changing over time"/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../transfer_operator/">« Ulam&#39;s method and Invariant Measures</a><a class="docs-footer-nextpage" href="../cyclic/">Cyclic Sets »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Sunday 20 October 2024 11:44">Sunday 20 October 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+gif(anim, &quot;gyre_almost_inv.gif&quot;, fps=20)</code></pre><p><img src="../../assets/gyre_almost_inv.gif" alt="almost invariant sets changing over time"/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../transfer_operator/">« Ulam&#39;s method and Invariant Measures</a><a class="docs-footer-nextpage" href="../cyclic/">Cyclic Sets »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Sunday 20 October 2024 17:35">Sunday 20 October 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

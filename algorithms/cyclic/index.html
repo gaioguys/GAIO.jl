@@ -7,11 +7,11 @@ fr((x, y)) = reim( f(x + y*im) )
 
 c, r = (0, 0), (1.5, 1.5)
 Q = Box(c, r)
-P = BoxPartition(Q, (128,128))
+P = BoxGrid(Q, (128,128))
 F = BoxMap(fr, Q)
 
 S = cover(P, (0,0))
-W = unstable_set(F, S)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3744 - element BoxSet in 128 x 128 - element BoxPartition</code></pre><p>If we consider the chain recurrent set we notice that there seem to be some discrete &quot;blobs&quot;. We may wonder how they interact. </p><pre><code class="language-julia hljs">C = chain_recurrent_set(F, W, steps=2)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">5665 - element BoxSet in 256 x 256 - element BoxPartition</code></pre><pre><code class="language-julia hljs">using Plots
+W = unstable_set(F, S)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3744 - element BoxSet in 128 x 128 - element BoxGrid</code></pre><p>If we consider the chain recurrent set we notice that there seem to be some discrete &quot;blobs&quot;. We may wonder how they interact. </p><pre><code class="language-julia hljs">C = chain_recurrent_set(F, W, steps=2)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">5665 - element BoxSet in 256 x 256 - element BoxGrid</code></pre><pre><code class="language-julia hljs">using Plots
 
 p = plot(C)</code></pre><p><img src="../chain.svg" alt="Chain Recurrent Set"/></p><pre><code class="language-julia hljs">T = TransferOperator(F, W, W)
 
@@ -58,14 +58,14 @@ A = [
     for μᵢ in μ
 ]
 
-A</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6-element Vector{BoxSet{Box{2, Float64}, BoxPartition{2, Float64, Int64}, Set{Tuple{Int64, Int64}}}}:
- 687 - element BoxSet in 128 x 128 - element BoxPartition
- 710 - element BoxSet in 128 x 128 - element BoxPartition
- 680 - element BoxSet in 128 x 128 - element BoxPartition
- 690 - element BoxSet in 128 x 128 - element BoxPartition
- 652 - element BoxSet in 128 x 128 - element BoxPartition
- 670 - element BoxSet in 128 x 128 - element BoxPartition</code></pre><pre><code class="language-julia hljs">p = plot();
+A</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6-element Vector{BoxSet{Box{2, Float64}, BoxGrid{2, Float64, Int64}, Set{Tuple{Int64, Int64}}}}:
+ 687 - element BoxSet in 128 x 128 - element BoxGrid
+ 710 - element BoxSet in 128 x 128 - element BoxGrid
+ 680 - element BoxSet in 128 x 128 - element BoxGrid
+ 690 - element BoxSet in 128 x 128 - element BoxGrid
+ 652 - element BoxSet in 128 x 128 - element BoxGrid
+ 670 - element BoxSet in 128 x 128 - element BoxGrid</code></pre><pre><code class="language-julia hljs">p = plot();
 for (i, Aᵢ) in enumerate(A)
     global p;
     p = plot!(p, Aᵢ, color=i, fillalpha=0.6);
-end</code></pre><p><img src="../supps.svg" alt="Cyclic Sets"/></p><p>Note that we can also approximate the cyclic sets from the measures <code>μ</code> using sparse eigenbasis approximation (SEBA) as described in the corresponding section of the documentation. </p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../almost_invariant/">« Almost Invariant (metastable) Sets</a><a class="docs-footer-nextpage" href="../coherent/">Coherent Sets »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Sunday 20 October 2024 11:44">Sunday 20 October 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><p><img src="../supps.svg" alt="Cyclic Sets"/></p><p>Note that we can also approximate the cyclic sets from the measures <code>μ</code> using sparse eigenbasis approximation (SEBA) as described in the corresponding section of the documentation. </p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../almost_invariant/">« Almost Invariant (metastable) Sets</a><a class="docs-footer-nextpage" href="../coherent/">Coherent Sets »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Sunday 20 October 2024 17:35">Sunday 20 October 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
