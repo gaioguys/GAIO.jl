@@ -10,7 +10,7 @@ f(x) = rk4_flow_map(modified_lorenz, x, 1f-2, 800)
 c = (0,0,0)
 r = (25,25,25)
 domain = Box(c, r)
-P = GridPartition(domain, (4,4,4))
+P = BoxGrid(domain, (4,4,4))
 
 F = BoxMap(f, domain)
 A = cover(P, :)

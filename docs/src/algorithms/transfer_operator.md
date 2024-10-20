@@ -57,7 +57,7 @@ v((x,y,z)) = (σ*(y-x), ρ*x-y-x*z, x*y-β*z)
 f(x) = rk4_flow_map(v, x)
 
 center, radius = (0,0,25), (30,30,30)
-P = GridPartition(Box(center, radius), (256,256,256))
+P = BoxGrid(Box(center, radius), (256,256,256))
 F = BoxMap(f, P)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
@@ -94,7 +94,7 @@ using GAIO
 
 # the box [-1, 1]²
 domain = Box((0.0, 0.0), (1.0, 1.0))
-partition = GridPartition(domain, (16,8))
+partition = BoxGrid(domain, (16,8))
 
 # left / right halves of the domain
 left  = cover(partition, Box((-0.5, 0.0), (0.5, 1.0)))

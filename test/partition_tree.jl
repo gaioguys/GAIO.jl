@@ -3,7 +3,7 @@ using StaticArrays
 using Test
 
 @testset "exported functionality" begin
-    partition = TreePartition(Box(SVector(0.0, 0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0, 1.0)))
+    partition = BoxTree(Box(SVector(0.0, 0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0, 1.0)))
     @testset "basics" begin
         @test depth(partition) == 1
         @test ndims(partition) == 4
@@ -29,7 +29,7 @@ using Test
         #       |     |     |           |
         #    -1  ----------------------- 
         #       -1                      1 
-        partition = TreePartition(Box(SVector(0.0, 0.0), SVector(1.0, 1.0)))
+        partition = BoxTree(Box(SVector(0.0, 0.0), SVector(1.0, 1.0)))
         keys_to_subdivide = [(1, (1,1)), (2, (1,1)), (3, (1,1)), (4, (2,1))]
         for key in keys_to_subdivide
             subdivide!(partition, key)

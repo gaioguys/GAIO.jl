@@ -24,7 +24,7 @@ f(x) = rk4_flow_map(v, x, 0.01, 10)
 domain = Box((0,0,0,0), (250,150,200,25))
 F = BoxMap(:interval, f, domain, n_subintervals=(8,8,8))
 
-P = GridPartition(domain, (96,96,96,96))
+P = BoxGrid(domain, (96,96,96,96))
 S = cover(P, Box((0,0,0,0), (0.1,0.1,0.1,0.1)))
 W = unstable_set(F, S)
 

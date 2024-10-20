@@ -7,7 +7,7 @@ f(x) = rk4_flow_map(v, x, 0.05, 5)
 
 center, radius = (0,0,0), (12,3,20)
 Q = Box(center, radius)
-P = GridPartition(Q, (128,128,128))
+P = BoxGrid(Q, (128,128,128))
 F = BoxMap(:montecarlo, f, P, n_points=200)
 
 # computing the attractor by covering the 2d unstable manifold

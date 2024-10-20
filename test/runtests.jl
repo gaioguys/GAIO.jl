@@ -22,12 +22,12 @@ ENV["JULIA_DEBUG"] = GAIO
     end
 
     @info "testing partition_regular.jl"
-    @safetestset "GridPartition" begin
+    @safetestset "BoxGrid" begin
         include("partition_regular.jl")
     end
 
     @info "testing partition_tree.jl"
-    @safetestset "TreePartition" begin
+    @safetestset "BoxTree" begin
         include("partition_tree.jl")
     end
 

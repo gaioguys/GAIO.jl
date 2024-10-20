@@ -11,7 +11,7 @@ using Test
     center, radius = (0,0,25), (30,30,30)
     domain = Box(center, radius)
     x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)         # equilibrium
-    P = GridPartition(domain, (128,128,128))
+    P = BoxGrid(domain, (128,128,128))
     S = cover(P, x)
 
     for (name, args) in [

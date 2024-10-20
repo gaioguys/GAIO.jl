@@ -23,14 +23,14 @@ end
 
 F(x) = rk4_flow_map(f, x)
 
-# GAIO can convert your GridPartition to 32-bit automatically
+# GAIO can convert your BoxGrid to 32-bit automatically
 # when you use GPU acceleration, but preferred are still 
 # explicit 32-bit literals like
 # center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
 center, radius = (0,0,25), (30,30,30)
 domain = Box(center, radius)
 
-P = GridPartition(domain, (128,128,128))
+P = BoxGrid(domain, (128,128,128))
 
 # All we need to do now is pass :gpu to the BoxMap command.
 G = BoxMap(:montecarlo, :gpu, F, domain)

@@ -3,7 +3,7 @@ using StaticArrays
 using Test
 
 @testset "exported functionality" begin
-    partition = GridPartition(Box(SVector(0.0, 0.0, 0.0, 0.0),
+    partition = BoxGrid(Box(SVector(0.0, 0.0, 0.0, 0.0),
                                      SVector(1.0, 1.0, 1.0, 1.0)))
     @testset "basics" begin
         @test ndims(partition) == 4
@@ -16,12 +16,12 @@ using Test
         @test ndims(partition) == 4
     end
     @testset "size" begin
-        partition = GridPartition(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), (4,2))
+        partition = BoxGrid(Box(SVector(0.0, 1.0), SVector(1.0, 1.0)), (4,2))
         @test size(partition) == (4, 2)
     end
 end
 @testset "internal functionality" begin
-    partition = GridPartition(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), (4,2,2))
+    partition = BoxGrid(Box(SVector(0.0, 0.0, 0.0), SVector(1.0, 1.0, 1.0)), (4,2,2))
     @testset "keys" begin
         @test length(keys(partition)) == length(partition)
     end

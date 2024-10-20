@@ -25,7 +25,7 @@ f(x) = rk4_flow_map(v, x, 0.002f0, 100)
 !!! tip "Single vs Double Precision Arithmetic"
     You MUST ensure that your map uses entirely 32-bit arithmetic! Apple's Metal explicitly disallows 64-bit precision arithmetic. 
 
-    GAIO can convert your `GridPartition` to 32-bit automatically when you use GPU acceleration, but preferred are still explicit 32-bit literals like
+    GAIO can convert your `BoxGrid` to 32-bit automatically when you use GPU acceleration, but preferred are still explicit 32-bit literals like
     ```julia
     center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
     ```
@@ -37,7 +37,7 @@ using Metal
 
 center, radius = (0f0,0f0,25f0), (30f0,30f0,30f0)
 Q = Box(center, radius)
-P = GridPartition(Q, (128,128,128))
+P = BoxGrid(Q, (128,128,128))
 F = BoxMap(:montecarlo, :gpu, f, Q)
 
 x = (sqrt(β*(ρ-1)), sqrt(β*(ρ-1)), ρ-1)

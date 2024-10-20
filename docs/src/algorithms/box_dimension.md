@@ -29,7 +29,7 @@ f((x,y)) = (1 - a*x^2 + y, b*x)
 
 center, radius = (0, 0), (3, 3)
 Q = Box(center, radius)
-P = GridPartition(Q)
+P = BoxGrid(Q)
 F = BoxMap(f, P)
 S = cover(P, :)
 
@@ -41,7 +41,7 @@ This method is simple, however it is not the most efficient since in each iterat
 ```@example 1
 # continuation of the example above
 
-P = TreePartition(Q)
+P = BoxTree(Q)
 S = cover(P, :)
 
 @kwdef mutable struct SubdivisionIterator{B<:BoxSet}

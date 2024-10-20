@@ -21,7 +21,7 @@ f((x, y)) = (α + β*x + γ*y*(1-y), δ + ω*y)
 midpoint = round.(Int, ( 1+(α+β+γ/4)/2, 1+(δ+ω)/2 ), RoundUp)
 domain = Box(midpoint, midpoint)
 
-P = GridPartition(domain, 2 .* midpoint)
+P = BoxGrid(domain, 2 .* midpoint)
 p = plot(cover(P, :), linewidth=0.5, fillcolor=nothing, lab="", leg=:outerbottom)
 
 # unit box

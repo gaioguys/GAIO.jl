@@ -45,7 +45,7 @@ f(x) = A*x
 c, r = (0,0), (4,4)
 domain = Box(c, r)
 
-P = GridPartition(domain, (64,64))
+P = BoxGrid(domain, (64,64))
 S = cover(P, c)
 
 F = BoxMap(:interval, f, domain)

@@ -14,7 +14,7 @@ PrecompileTools.@setup_workload begin
 
             _c = _r = ntuple(_->T(0.5), dim)
             _Q = Box{T}(_c, _r)
-            _P = GridPartition(_Q, ntuple(_->2, dim))
+            _P = BoxGrid(_Q, ntuple(_->2, dim))
             
             _S = cover(_P, :)
             _S = cover(_P, _Q)

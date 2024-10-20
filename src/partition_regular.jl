@@ -1,5 +1,5 @@
 """
-    GridPartition(domain::Box{N}, dims::NTuple{N,<:Integer} = ntuple(_->1, N)) 
+    BoxGrid(domain::Box{N}, dims::NTuple{N,<:Integer} = ntuple(_->1, N)) 
 
 Data structure to partition a domain into a 
 `dims[1] x dims[2] x ... dims[N]` equidistant box grid. 
@@ -16,84 +16,84 @@ Methods implemented:
 
 .
 """
-struct GridPartition{N,T,I<:Integer} <: BoxLayout{Box{N,T}}
+struct BoxGrid{N,T,I<:Integer} <: BoxLayout{Box{N,T}}
     domain::Box{N,T}
     left::SVector{N,T}
     scale::SVector{N,T}
     dims::SVector{N,I}
 end
 
-function GridPartition(domain::Box{N,T}, dims::SVNT{N,I}) where {N,T,I}
+function BoxGrid(domain::Box{N,T}, dims::SVNT{N,I}) where {N,T,I}
     dims = SVector{N,I}(dims)
     left = domain.center .- domain.radius
     scale = dims ./ (2 .* domain.radius)
     # nr. of boxes / diameter of the domain == 1 / diameter of each box
-    return GridPartition{N,T,I}(domain, left, scale, dims)
+    return BoxGrid{N,T,I}(domain, left, scale, dims)
 end
 
-function GridPartition{I}(domain::Box{N,T}) where {N,T,I}
+function BoxGrid{I}(domain::Box{N,T}) where {N,T,I}
     dims = ntuple(_->one(I), Val(N))
-    GridPartition(domain, dims)
+    BoxGrid(domain, dims)
 end
 
-GridPartition(domain::Box{N,T}) where {N,T} = GridPartition{Int}(domain)
+BoxGrid(domain::Box{N,T}) where {N,T} = BoxGrid{Int}(domain)
 
-function GridPartition(domain::Box{1}, dims::Integer)
-    GridPartition(domain, (dims,))
+function BoxGrid(domain::Box{1}, dims::Integer)
+    BoxGrid(domain, (dims,))
 end
 
-Base.:(==)(p1::GridPartition, p2::GridPartition) = p1.domain == p2.domain && p1.dims == p2.dims
-Base.ndims(::GridPartition{N}) where {N} = N
-Base.size(partition::GridPartition) = partition.dims.data # .data returns as tuple
-Base.length(partition::GridPartition) = prod(partition.dims)
-Base.keytype(::Type{<:GridPartition{N,T,I}}) where {N,T,I} = NTuple{N,I}
+Base.:(==)(p1::BoxGrid, p2::BoxGrid) = p1.domain == p2.domain && p1.dims == p2.dims
+Base.ndims(::BoxGrid{N}) where {N} = N
+Base.size(partition::BoxGrid) = partition.dims.data # .data returns as tuple
+Base.length(partition::BoxGrid) = prod(partition.dims)
+Base.keytype(::Type{<:BoxGrid{N,T,I}}) where {N,T,I} = NTuple{N,I}
 
-center(partition::GridPartition) = center(partition.domain)
-radius(partition::GridPartition) = radius(partition.domain)
+center(partition::BoxGrid) = center(partition.domain)
+radius(partition::BoxGrid) = radius(partition.domain)
 
-Base.CartesianIndices(partition::GridPartition) = CartesianIndices(size(partition))
-Base.LinearIndices(partition::GridPartition) = LinearIndices(size(partition))
+Base.CartesianIndices(partition::BoxGrid) = CartesianIndices(size(partition))
+Base.LinearIndices(partition::BoxGrid) = LinearIndices(size(partition))
 
-Base.checkbounds(::Type{Bool}, partition::GridPartition{N,T,I}, key) where {N,T,I} = all(1 .≤ key .≤ size(partition))
-Base.checkbounds(::Type{Bool}, partition::GridPartition{N,T,I}, ::Nothing) where {N,T,I} = false
+Base.checkbounds(::Type{Bool}, partition::BoxGrid{N,T,I}, key) where {N,T,I} = all(1 .≤ key .≤ size(partition))
+Base.checkbounds(::Type{Bool}, partition::BoxGrid{N,T,I}, ::Nothing) where {N,T,I} = false
 
-function Base.keys(partition::P) where {P<:GridPartition}
+function Base.keys(partition::P) where {P<:BoxGrid}
     K = keytype(P)
     (K(i.I) for i in CartesianIndices(partition))
 end
 
-function Base.show(io::IO, partition::P) where {N,P<:GridPartition{N}}
+function Base.show(io::IO, partition::P) where {N,P<:BoxGrid{N}}
     if N ≤ 5
-        print(io, join(size(partition), " x "), " - element GridPartition")
+        print(io, join(size(partition), " x "), " - element BoxGrid")
     else
         sz = size(partition)
-        print(io, sz[1], " x ", sz[2], " ... ", sz[N-1], " x ", sz[N], " - element GridPartition")
+        print(io, sz[1], " x ", sz[2], " ... ", sz[N-1], " x ", sz[N], " - element BoxGrid")
     end
 end
 
 """
-    subdivide(P::GridPartition, dim) -> GridPartition
+    subdivide(P::BoxGrid, dim) -> BoxGrid
     subdivide(B::BoxSet, dim) -> BoxSet
 
-Bisect every box in the `GridPartition` or `BoxSet` 
+Bisect every box in the `BoxGrid` or `BoxSet` 
 along the axis `dim`, giving rise to a new partition 
 of the domain, with double the amount of boxes. 
 """
-function subdivide(P::GridPartition{N,T,I}, dim) where {N,T,I}
+function subdivide(P::BoxGrid{N,T,I}, dim) where {N,T,I}
     new_dims = setindex(P.dims, 2 * P.dims[dim], dim)
     new_scale = setindex(P.scale, 2 * P.scale[dim], dim)
-    return GridPartition{N,T,I}(P.domain, P.left, new_scale, new_dims)
+    return BoxGrid{N,T,I}(P.domain, P.left, new_scale, new_dims)
 end
 
-subdivide(P::GridPartition{N,T,I}) where {N,T,I} = subdivide(P, argmin(P.dims))
+subdivide(P::BoxGrid{N,T,I}) where {N,T,I} = subdivide(P, argmin(P.dims))
 
 """
-    marginal(P::GridPartition{N}; dim) -> GridPartition{N-1}
+    marginal(P::BoxGrid{N}; dim) -> BoxGrid{N-1}
 
-Construct the projection of a `GridPartition` along an axis given by 
+Construct the projection of a `BoxGrid` along an axis given by 
 its dimension `dim`. 
 """
-function marginal(P⁺::GridPartition; dim)
+function marginal(P⁺::BoxGrid; dim)
     cen⁺, rad⁺ = P⁺.domain
     dims⁺ = size(P⁺)
 
@@ -101,16 +101,16 @@ function marginal(P⁺::GridPartition; dim)
     rad = tuple_deleteat(Tuple(rad⁺), dim)
     dims = tuple_deleteat(dims⁺, dim)
 
-    return GridPartition( Box(cen, rad), dims )
+    return BoxGrid( Box(cen, rad), dims )
 end
 
 """
-    key_to_box(P::GridPartition, key)
+    key_to_box(P::BoxGrid, key)
 
 Return the box associated with the index 
-within a `GridPartition`. 
+within a `BoxGrid`. 
 """
-@propagate_inbounds function key_to_box(partition::GridPartition{N,T,I}, x_ints) where {N,T,I}
+@propagate_inbounds function key_to_box(partition::BoxGrid{N,T,I}, x_ints) where {N,T,I}
     @boundscheck checkbounds(Bool, partition, x_ints) || throw(BoundsError(partition, x_ints))
     radius = partition.domain.radius ./ partition.dims
     left = partition.left
@@ -118,17 +118,17 @@ within a `GridPartition`.
     return Box{N,T}(center, radius)
 end
 
-key_to_box(partition::GridPartition{N,T,I}, x_ints::CartesianIndex) where {N,T,I} = key_to_box(partition, x_ints.I)
-key_to_box(partition::GridPartition{N,T,I}, x_ints::Nothing) where {N,T,I} = nothing
+key_to_box(partition::BoxGrid{N,T,I}, x_ints::CartesianIndex) where {N,T,I} = key_to_box(partition, x_ints.I)
+key_to_box(partition::BoxGrid{N,T,I}, x_ints::Nothing) where {N,T,I} = nothing
 
 """
-    point_to_key(P::GridPartition, point)
+    point_to_key(P::BoxGrid, point)
 
-Find the index for the box within a `GridPartition` 
+Find the index for the box within a `BoxGrid` 
 contatining a point, or `nothing` if the point does 
 not lie in the domain. 
 """
-@propagate_inbounds function point_to_key(partition::GridPartition{N,T,I}, point) where {N,T,I}
+@propagate_inbounds function point_to_key(partition::BoxGrid{N,T,I}, point) where {N,T,I}
     point in partition.domain || return nothing
     xi = (point .- partition.left) .* partition.scale
     x_ints = ntuple( i -> unsafe_trunc(I, xi[i]) + one(I), Val(N) )
@@ -140,10 +140,10 @@ not lie in the domain.
 end
 
 """
-    bounded_point_to_key(P::GridPartition, point)
+    bounded_point_to_key(P::BoxGrid, point)
 
 Find the cartesian index of the nearest box within a 
-`GridPartition` to a point. Conicides with `point_to_key` 
+`BoxGrid` to a point. Conicides with `point_to_key` 
 if the point lies in the partition. Default behavior 
 is to set `NaN = Inf` if `NaN`s are present in `point`. 
 """
@@ -160,7 +160,7 @@ end
 """
     point_to_box(P::BoxLayout, point)
 
-Find the box within a `GridPartition` containing a point. 
+Find the box within a `BoxGrid` containing a point. 
 """
 function point_to_box(partition::BoxLayout, point)
     x_ints = point_to_key(partition, point)

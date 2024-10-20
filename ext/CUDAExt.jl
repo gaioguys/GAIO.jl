@@ -86,7 +86,7 @@ end
 
 function map_boxes(
         G::GPUSampledBoxMap{N,T}, source::BoxSet{B,Q,S}
-    ) where {N,T,B,Q<:GridPartition,S}
+    ) where {N,T,B,Q<:BoxGrid,S}
 
     g = G.boxmap
     p = g.domain_points(g.domain...).iter
@@ -232,7 +232,7 @@ function GridBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; n_points=ntuple(_->4,N)
     PointDiscretizedBoxMap(c, map, domain, points)
 end
 
-function GridBoxMap(c::Val{:gpu}, map, P::GridPartition{N,T}; n_points=ntuple(_->4,N)) where {N,T}
+function GridBoxMap(c::Val{:gpu}, map, P::BoxGrid{N,T}; n_points=ntuple(_->4,N)) where {N,T}
     GridBoxMap(c, map, P.domain, n_points=n_points)
 end
 
@@ -249,7 +249,7 @@ function MonteCarloBoxMap(c::Val{:gpu}, map, domain::Box{N,T}; n_points=16*N) wh
     PointDiscretizedBoxMap(c, map, domain, points)
 end 
 
-function MonteCarloBoxMap(c::Val{:gpu}, map, P::GridPartition{N,T}; n_points=16*N) where {N,T}
+function MonteCarloBoxMap(c::Val{:gpu}, map, P::BoxGrid{N,T}; n_points=16*N) where {N,T}
     MonteCarloBoxMap(c, map, P.domain; n_points=n_points)
 end
 
@@ -286,21 +286,21 @@ cu_reduce(::Type{F}) where {F<:AbstractFloat} = Float32
 cu_reduce(::Type{Float16}) = Float16
 cu_reduce(::Type{<:NTuple{N,T}}) where {N,T} = NTuple{N,cu_reduce(T)}
 
-function out_of_bounds(::P) where {N,T,I,P<:GridPartition{N,T,I}}
+function out_of_bounds(::P) where {N,T,I,P<:BoxGrid{N,T,I}}
     K = cu_reduce(keytype(P))
     K(ntuple(_->0, Val(N)))
 end
 
-function out_of_bounds(::P) where {N,T,I,P<:TreePartition{N,T,I}}
+function out_of_bounds(::P) where {N,T,I,P<:BoxTree{N,T,I}}
     K = cu_reduce(keytype(P))
     K((0, ntuple(_->0, Val(N))))
 end
 
 
-function Adapt.adapt_structure(a::A, b::GridPartition{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayKernelAdaptor,<:CUDA.KernelAdaptor}}
+function Adapt.adapt_structure(a::A, b::BoxGrid{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayKernelAdaptor,<:CUDA.KernelAdaptor}}
     TT, II = cu_reduce(T), cu_reduce(I)
     Adapt.adapt_storage(a, 
-        GridPartition{N,TT,II}(
+        BoxGrid{N,TT,II}(
             Box{N,TT}(b.domain...),
             SVector{N,TT}(b.left),
             SVector{N,TT}(b.scale),
@@ -309,10 +309,10 @@ function Adapt.adapt_structure(a::A, b::GridPartition{N,T,I}) where {N,T,I,A<:Un
     )
 end
 
-function Adapt.adapt_structure(a::A, b::TreePartition{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayKernelAdaptor,<:CUDA.KernelAdaptor}}
+function Adapt.adapt_structure(a::A, b::BoxTree{N,T,I}) where {N,T,I,A<:Union{<:CUDA.CuArrayKernelAdaptor,<:CUDA.KernelAdaptor}}
     TT = cu_reduce(T)
     Adapt.adapt_storage(a,
-        TreePartition(
+        BoxTree(
             Box{N,TT}(b.domain...),
             Adapt.adapt(a, b.nodes)
         )
@@ -327,7 +327,7 @@ function Adapt.adapt_structure(
 end
 
 # hotfix to avoid errors due to cuda device-side printing
-@propagate_inbounds function point_to_key(partition::GridPartition{N,T,I}, point, ::Val{:gpu}) where {N,T,I}
+@propagate_inbounds function point_to_key(partition::BoxGrid{N,T,I}, point, ::Val{:gpu}) where {N,T,I}
     point in partition.domain || return nothing
     xi = (point .- partition.left) .* partition.scale
     x_ints = ntuple( i -> unsafe_trunc(I, xi[i]) + one(I), Val(N) )

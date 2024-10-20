@@ -11,11 +11,11 @@ There exists two constructors:
   the `codomain` is generated as the image of `domain` under 
   the `boxmap`. 
   ```julia
-  julia> P = GridPartition( Box((0,0), (1,0)), (10,10) )
-    10 x 10 - element GridPartition
+  julia> P = BoxGrid( Box((0,0), (1,0)), (10,10) )
+    10 x 10 - element BoxGrid
   
   julia> domain = BoxSet( P, Set((1,2), (2,3), (3,4)) )
-    3 - element Boxset over 10 x 10 - element GridPartition
+    3 - element Boxset over 10 x 10 - element BoxGrid
   
   julia> T = TransferOperator(boxmap, domain)
     TransferOperator over [...]
@@ -24,7 +24,7 @@ There exists two constructors:
   the size of the transition matrix is given. 
   ```julia
   julia> codomain = domain
-    3 - element Boxset over 10 x 10 - element GridPartition
+    3 - element Boxset over 10 x 10 - element BoxGrid
   
   julia> T = TransferOperator(boxmap, domain, codomain)
     TransferOperator over [...]

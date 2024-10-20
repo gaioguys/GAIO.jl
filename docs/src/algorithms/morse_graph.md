@@ -22,7 +22,7 @@ f((x, y)) = ( (θ₁*x + θ₂*y) * exp(-0.1*(x + y)), 0.7*x )
 
 center, radius = (38, 26), (38, 26)
 Q = Box(center, radius)
-P = GridPartition(Q, (256,256))
+P = BoxGrid(Q, (256,256))
 S = cover(P, :)
 
 F = BoxMap(:interval, f, Q)

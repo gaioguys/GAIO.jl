@@ -83,7 +83,7 @@ vf = interpolate_v(knotted_v, -3.5, 3.5, 30, 1e-12)
 f(x) = rk4_flow_map(vf, x, 0.075)
 
 center, radius = (0,0,0), (2,2,2)
-P = GridPartition(Box(center, radius))
+P = BoxGrid(Box(center, radius))
 F = BoxMap(:montecarlo, f, P, n_points = 200)
 
 S = cover(P, :)

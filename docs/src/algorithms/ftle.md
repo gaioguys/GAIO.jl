@@ -90,7 +90,7 @@ Tspan = t₁ - t₀
 Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)
 
 domain = Box((1.0, 0.5), (1.0, 0.5))
-P = GridPartition(domain, (256, 128))
+P = BoxGrid(domain, (256, 128))
 S = cover(P, :)
 
 F = BoxMap(:grid, Φₜ₀ᵗ¹, domain, n_points=(6,6))
@@ -141,7 +141,7 @@ Df((x,y)) = SA{Float64}[-2*a*x    1.;
                          b        0.]
 
 center, radius = (0, 0), (3, 3)
-P = GridPartition(Box(center, radius))
+P = BoxGrid(Box(center, radius))
 F = BoxMap(f, P)
 S = cover(P, :)
 A = relative_attractor(F, S, steps = 20)

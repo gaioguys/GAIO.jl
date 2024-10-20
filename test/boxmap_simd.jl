@@ -16,7 +16,7 @@ using Test
     g = BoxMap(:pointdiscretized, :simd, f, domain, test_points)
     @testset "basics with :cpu" begin
         #@test typeof(g) <: CPUSampledBoxMap
-        partition = GridPartition(domain, (32,32))
+        partition = BoxGrid(domain, (32,32))
         p1 = SVector(0.0, 0.0)
         p2 = SVector(0.5, 0.0)
         p3 = SVector(0.0, -0.5)

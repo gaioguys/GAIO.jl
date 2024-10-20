@@ -41,7 +41,7 @@ Q = Box(box_center, box_radius)
 ```
 This box will serve as the domain for our computation.  The box covering which we will compute is a subset of a _partition_ of `Q` into smaller boxes. The command
 ```@repl 1
-P = GridPartition(Q, (4,4)) 
+P = BoxGrid(Q, (4,4)) 
 ```
 yields a partition of `Q` into a grid of 4 x 4 equally sized smaller boxes. Note that this command does not explicitly construct the partition (as a set of subsets covering the domain `Q`) but rather serves as a ``\sigma``-algebra for constructing sets of boxes later. For example, the commands
 ```@repl 1

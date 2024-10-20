@@ -10,7 +10,7 @@ end
 
 dim = 3
 center, radius = zeros(dim), 40*ones(dim)
-P = GridPartition(Box(center, radius))
+P = BoxGrid(Box(center, radius))
 
 S = cover(P, :)
 R = cover_roots(g, Dg, S, steps=dim*8)

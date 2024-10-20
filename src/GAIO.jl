@@ -41,7 +41,7 @@ import Base: @deprecate_binding
 export Box
 export volume, center, radius, vertices, rescale
 
-export BoxLayout, GridPartition, TreePartition
+export BoxLayout, BoxGrid, BoxTree
 export key_to_box, point_to_key, bounded_point_to_key, point_to_box
 export depth, tree_search, find_at_depth, leaves, hidden_keys
 
@@ -117,7 +117,8 @@ include("transfer_operator.jl")
 
 @deprecate_binding BoxFun BoxMeasure
 @deprecate_binding AbstractBoxPartition BoxLayout
-@deprecate_binding BoxPartition GridPartition
+@deprecate_binding BoxPartition BoxGrid
+@deprecate_binding TreePartition BoxTree
 
 include("algorithms/invariant_sets.jl")
 include("algorithms/scalar_diagnostics.jl")

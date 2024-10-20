@@ -3,7 +3,7 @@ using Test
 
 @testset "exported functionality" begin
     domain = Box((0.0, 0.0), (1.0, 1.0))
-    partition = GridPartition(domain, (16,8))
+    partition = BoxGrid(domain, (16,8))
     left  = cover(partition, Box((-0.5, 0.0), (0.5, 1.0)))
     right = cover(partition, Box((0.5, 0.0), (0.5, 1.0)))
     full  = cover(partition, :)
