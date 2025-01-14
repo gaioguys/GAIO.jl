@@ -30,7 +30,7 @@ julia> cd("./examples")
 
 * [Relative attractor of the Hénon map](https://github.com/gaioguys/GAIO.jl/blob/master/examples/attractor.jl)
 * [Unstable manifold of the Lorenz system](https://github.com/gaioguys/GAIO.jl/blob/master/examples/unstable_manifold.jl)
-* [Chain recurrent of a knotted flow](https://github.com/gaioguys/GAIO.jl/blob/master/examples/recurrent_set.jl)
+* [Recurrent of a knotted flow](https://github.com/gaioguys/GAIO.jl/blob/master/examples/recurrent_set.jl)
 * [Invariant measure of the transfer operator for the logistic map](https://github.com/gaioguys/GAIO.jl/blob/master/examples/invariant_measure_1d.jl)
 * [Invariant measure of the transfer operator for the Hénon map over the relative attractor](https://github.com/gaioguys/GAIO.jl/blob/master/examples/advanced/invariant_measure_2d.jl)
 * [Invariant measure of the transfer operator for the Lorenz map over the unstable manifold](https://github.com/gaioguys/GAIO.jl/blob/master/examples/advanced/invariant_measure_3d.jl)

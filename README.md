@@ -6,7 +6,7 @@ Currently under development -- breaking changes may occur at any time ...
 
 GAIO.jl is a Julia package for set oriented computations. Sets are represented by collections of boxes (i.e. cubes). GAIO.jl provides algorithms for 
 * dynamical systems
-  * invariant sets (maximal invariant set, chain recurrent set, (relative) attractor, (un-)stable manifold)
+  * invariant sets (maximal invariant set, (chain) recurrent set, (relative) attractor, (un-)stable manifold)
   * almost invariant and coherent sets
   * finite time Lyapunov exponents
   * entropy and box dimension

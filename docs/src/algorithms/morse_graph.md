@@ -2,7 +2,7 @@
 
 ### Mathematical Background
 
-A pivotal result in dynamical systems theory due to Conley states (in essence) that a dynamical system can be deconstructed into "recurrent" and "gradient-like" parts. The recurrent dynamics are captured within the chain recurrent sets, and are often analyzed using the [Conley Index](@ref). 
+A pivotal result in dynamical systems theory due to Conley states (in essence) that a dynamical system can be deconstructed into "recurrent" and "gradient-like" parts. The recurrent dynamics are captured within the recurrent sets, and are often analyzed using the [Conley Index](@ref). 
 
 Much the same way that morse theory can describe a smooth closed manifold by means of a gradient field, Conley-Morse theory proves the existence of a gradient field which captures the dynamics of the nonrecurrent components of a dynamical system (this is referred to as Conley's decomposition theorem [conley](@cite), or occasionally the fundamental theorem of dynamical systems). 
 

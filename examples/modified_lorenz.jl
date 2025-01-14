@@ -18,7 +18,7 @@ A = cover(P, :)
 A = relative_attractor(F, A, steps=12)
 
 F = BoxMap(:gpusampled, f, domain, 750)
-A = chain_recurrent_set(F, A, steps=3)
+A = recurrent_set(F, A, steps=3)
 
 F♯ = TransferOperator(F, A, A)
 λs, μs, _ = eigs(F♯, nev=100)

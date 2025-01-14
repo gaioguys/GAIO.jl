@@ -17,13 +17,13 @@ function unstable_set(F::BoxMap, B::BoxSet)
 end
 
 """
-    chain_recurrent_set(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
+    recurrent_set(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
 
-Compute the chain recurrent set over the box set `B`. 
+Compute the (chain) recurrent set over the box set `B`. 
 `B` should be a (coarse) covering of the relative attractor, 
 e.g. `B = cover(P, :)` for a partition `P`.
 """
-function chain_recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+function recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     B = copy(B₀)
     for k in 1:steps
         B   = subdivide(B)

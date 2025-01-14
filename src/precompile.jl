@@ -53,7 +53,7 @@ PrecompileTools.@setup_workload begin
             _A = unstable_set(_F, _S)
 
             _A = relative_attractor(_F, _S, steps=1)
-            _A = chain_recurrent_set(_F, _S, steps=1)
+            _A = recurrent_set(_F, _S, steps=1)
             _A = maximal_forward_invariant_set(_F, _S, steps=1)
             _A = maximal_invariant_set(_F, _S, steps=1)
             _σ = finite_time_lyapunov_exponents(_F, _S; T=one(T))

@@ -87,7 +87,7 @@ P = BoxGrid(Box(center, radius))
 F = BoxMap(:montecarlo, f, P, n_points = 200)
 
 S = cover(P, :)
-C = chain_recurrent_set(F, S, steps = 18)
+C = recurrent_set(F, S, steps = 18)
 
 #using Plots: plot     # plot a 2D projection
 using WGLMakie

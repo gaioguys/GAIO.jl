@@ -8,7 +8,7 @@ GAIO (_Global Analysis of Invariant Objects_) is a Julia package for set oriente
 ```
 GAIO.jl provides algorithms for  
 * dynamical systems
-  * invariant sets (maximal invariant set, chain recurrent set, (relative) attractor, (un-)stable manifold)
+  * invariant sets (maximal invariant set, (chain) recurrent set, (relative) attractor, (un-)stable manifold)
   * almost invariant and coherent sets
   * finite time Lyapunov exponents
   * entropy and box dimension

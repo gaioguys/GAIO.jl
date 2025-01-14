@@ -43,7 +43,7 @@ pages = [
     #"BoxMaps" => "boxmap.md",
     "Invariant Sets" => [
         "Relative Attractor" => "algorithms/relative_attractor.md",
-        "Chain Reccurent Set" => "algorithms/chain_recurrent_set.md",
+        "Reccurent Set" => "algorithms/recurrent_set.md",
         "Maximal Invariant Set" => "algorithms/maximal_invariant_set.md", 
         "Stable and Unstable Manifold" => "algorithms/unstable_manifold.md"
     ],

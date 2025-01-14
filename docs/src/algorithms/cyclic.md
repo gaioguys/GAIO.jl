@@ -48,10 +48,10 @@ S = cover(P, (0,0))
 W = unstable_set(F, S)
 ```
 
-If we consider the chain recurrent set we notice that there seem to be some discrete "blobs". We may wonder how they interact. 
+If we consider the recurrent set we notice that there seem to be some discrete "blobs". We may wonder how they interact. 
 
 ```@example 1
-C = chain_recurrent_set(F, W, steps=2)
+C = recurrent_set(F, W, steps=2)
 ```
 
 ```@example 1
@@ -59,10 +59,10 @@ using Plots
 
 p = plot(C)
 
-savefig(p, "chain.svg"); nothing # hide
+savefig(p, "recurrent.svg"); nothing # hide
 ```
 
-![Chain Recurrent Set](chain.svg)
+![Recurrent Set](recurrent.svg)
 
 ```@example 1
 T = TransferOperator(F, W, W)
