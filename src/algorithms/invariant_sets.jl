@@ -23,14 +23,11 @@ Compute the (chain) recurrent set over the box set `B`.
 `B` should be a (coarse) covering of the relative attractor, 
 e.g. `B = cover(P, :)` for a partition `P`.
 """
-function recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
+function recurrent_set(F::BoxMap, B₀::BoxSet; steps=12)
     B = copy(B₀)
     for k in 1:steps
-        B   = subdivide(B)
-        F♯  = TransferOperator(F, B, B)
-        G   = MatrixNetwork(F♯)
-        SCC = scomponents(G)
-        B   = BoxSet(morse_tiles(F♯, SCC))
+        B = subdivide(B)
+        B = morse_tiles(F, B)
     end
     return B
 end
@@ -133,50 +130,32 @@ e.g. `B = cover(P, :)` for a partition `P`.
 function maximal_invariant_set end
 
 
-for (algorithm, func) in [
+for (algorithm, image_or_preimage) in [
         :maximal_forward_invariant_set  => preimage,
         :maximal_backward_invariant_set => restricted_image,
         :maximal_invariant_set          => symmetric_image
     ]
 
     @eval function $(algorithm)(
-            F::BoxMap, B₀::BoxSet{Box{N,T}}, subdivision::Val{true}; steps=12
-        ) where {N,T}
+            F::BoxMap, B₀::BoxSet;
+            steps=12, subdivision::Bool=true
+        )
 
-        H(B) = $(func)(F, B)
         B = copy(B₀)
         for k in 1:steps
-            B = subdivide(B)
-            B = H(B)
-        end
-        return B
-    end
-
-    @eval function $(algorithm)(
-            F::BoxMap, B₀::BoxSet{Box{N,T}}, subdivision::Val{false}; steps=12, 
-        ) where {N,T}
-
-        H(B) = $(func)(F, B)
-        B = copy(B₀)
-        for k in 1:steps
-            C = H(B)
-            B == C && break
+            subdivide  &&  ( B = subdivide(B) )
+            C = $(image_or_preimage)(F, B)
+            !subdivide  &&  C == B  &&  break
             B = C
         end
         return B
     end
 
-    @eval function $(algorithm)(
-            F::BoxMap, B₀::BoxSet{Box{N,T}};
-            steps=12, subdivision::Bool=true
-        ) where {N,T}
-
-        $(algorithm)(F, B₀, Val(subdivision); steps=steps)
-    end
-
 end
 
 #=
+# More efficient (but ugly) versions of invariant set algorithms
+
 """
 helper function to compute intersections
 """

@@ -31,6 +31,7 @@ using MatrixNetworks
 using MatrixNetworks: Strong_components_output, Strong_components_rich_output
 using SparseArrays
 using Arpack
+using SparseArrays: getcolptr
 
 # misc
 import Base: unsafe_trunc, IteratorEltype, HasEltype, OneTo

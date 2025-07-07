@@ -82,24 +82,7 @@ mutable struct TransferOperator{B,T,S<:BoxSet{B},M<:BoxMap} <: AbstractSparseMat
     mat::SparseMatrixCSC{T,Int}
 end
 
-construct_transfers(g::TransferOperator, domain::BoxSet; kwargs...) = construct_transfers(g.boxmap, domain; kwargs...)
-construct_transfers(g::BoxMap, domain::BoxSet, show_progress::Val{false}; kwargs...) = construct_transfers(g, domain; kwargs...)
-construct_transfers(g::BoxMap, domain::BoxSet, codomain::BoxSet, show_progress::Val{false}; kwargs...) = construct_transfers(g, domain, codomain; kwargs...)
-
-function construct_transfers(g::BoxMap, domain::BoxSet, show_progress::Val{true}; kwargs...)
-    @error "Progress meter code not loaded. Run `using ProgressMeter` to get progress meters."
-end
-
-function construct_transfers(g::BoxMap, domain::BoxSet, codomain::BoxSet, show_progress::Val{true}; kwargs...)
-    @error "Progress meter code not loaded. Run `using ProgressMeter` to get progress meters."
-end
-
 # ensure that `TransferOperator` uses an `OrderedSet`
-function TransferOperator(g::BoxMap, domain::BoxSet{B,P,S}; kwargs...) where {B,P,S}
-    dom = BoxSet(domain.partition, OrderedSet(domain.set))
-    TransferOperator(g, dom; kwargs...)
-end
-
 function TransferOperator(g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q,W}; kwargs...) where {B,P,S,R,Q,W}
     dom = BoxSet(domain.partition, OrderedSet(domain.set))
     codom = domain == codomain ? dom : BoxSet(codomain.partition, OrderedSet(codomain.set))
@@ -107,28 +90,14 @@ function TransferOperator(g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q
 end
 
 function TransferOperator(
-        g::BoxMap, domain::BoxSet{B,P,S};
-        show_progress::Bool=false, kwargs...
-    ) where {B,P,S<:OrderedSet}
-
-    dict, codomain = construct_transfers(g, domain, Val(show_progress); kwargs...)
-    mat = sparse(dict, domain, codomain)
-
-    s = vec(sum(mat, dims=1))
-    s[s .!= 0] .= 1 ./ s[s .!= 0]
-    mat = mat * Diagonal(s)
-
-    return TransferOperator(g, domain, codomain, mat)
-end
-
-function TransferOperator(
         g::BoxMap, domain::BoxSet{B,P,S}, codomain::BoxSet{R,Q,W};
         show_progress::Bool=false, kwargs...
     ) where {B,P,S<:OrderedSet,R,Q,W<:OrderedSet}
 
-    dict = construct_transfers(g, domain, codomain, Val(show_progress); kwargs...)
+    dict = construct_transfers(g, domain, codomain; show_progress=show_progress, kwargs...)
     mat = sparse(dict, domain, codomain)
 
+    # enforce stochasticity
     s = vec(sum(mat, dims=1))
     s[s .!= 0] .= 1 ./ s[s .!= 0]
     mat = mat * Diagonal(s)
@@ -168,7 +137,11 @@ Base.axes(g::TransferOperator) = (OneTo(length(g.codomain)), OneTo(length(g.doma
 end
 
 function Base.setindex!(g::K, u...) where {K<:Union{<:TransferOperator,<:LinearAlgebra.Transpose{<:Any,<:TransferOperator},LinearAlgebra.Adjoint{<:Any,<:TransferOperator}}}
-    @error "setindex! is deliberately not supported for TransferOperators. Use getindex to generate an index value. "
+    @error """
+        setindex! is deliberately not supported for TransferOperators. 
+        Use getindex to generate an index value, or (not recommended)
+        edit the transfer weight matrix directly via `F♯.mat[i, j] = ...`
+    """
 end
 
 for (type, (gmap, ind1, ind2, func)) in Dict(
@@ -272,7 +245,7 @@ Core.@doc raw"""
 Find the index in `1..length(iterable)` which holds `key`, 
 or return `nothing`. Used to enumerate `BoxSet`s as 
 ``\left\{ B_1, B_2, \ldots, B_n \right\}`` in 
-`TransferOperator`, `BoxGraph`. 
+`TransferOperator`. 
 """
 key_to_index(arr::AbstractArray, i) = findfirst(==(i), arr)
 key_to_index(dict::Dict, i) = (j = Base.ht_keyindex(dict, i); j > 0 ? j : nothing)
@@ -288,7 +261,7 @@ Core.@doc raw"""
 Return the object held in the `i`th position of `iterable`. 
 Used to enumerate `BoxSet`s as 
 ``\left\{ B_1, B_2, \ldots, B_n \right\}`` in 
-`TransferOperator`, `BoxGraph`. 
+`TransferOperator`. 
 """
 index_to_key(arr::AbstractArray, i) = arr[i]
 index_to_key(dict::Union{<:Dict,<:OrderedDict}, i) = dict.keys[i]
@@ -342,6 +315,22 @@ function Base.Dict(g::TransferOperator{B,T,S}) where {B,T,R,Q,G,S<:BoxSet{R,Q,G}
     return dict
 end
 
+
+function Base.checkbounds(::Type{Bool}, g::TransferOperator, keys)
+    keys ⊆ g.domain.set
+end
+
+function Base.checkbounds(
+        ::Type{Bool}, g::R, keys
+    ) where {R<:Union{<:LinearAlgebra.Transpose{<:Any,<:TransferOperator},<:LinearAlgebra.Adjoint{<:Any,<:TransferOperator}}}
+    keys ⊆ g.parent.codomain.set
+end
+
+function Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, key2, keys...)
+    checkbounds(b, g, [key1; key2; keys...])
+end
+
+#=
 # add new entries to transferoperator
 function Base.checkbounds(::Type{Bool}, g::TransferOperator{B,T,S}, keys) where {B,T,S}
     all(x -> checkbounds(Bool, g.domain.partition, x), keys) || return false
@@ -394,7 +383,4 @@ function Base.checkbounds(
     end
     return true
 end
-
-function Base.checkbounds(b::Type{Bool}, g::TransferOperator, key1, key2, keys...)
-    checkbounds(b, g, tuple(key1, key2, keys...))
-end
+=#
