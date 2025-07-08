@@ -4,6 +4,7 @@ module GAIO
 using LinearAlgebra
 using StaticArrays
 using MuladdMacro
+using ProgressMeter
 using PrecompileTools
 using TupleTools
 const tuple_deleteat = TupleTools.deleteat

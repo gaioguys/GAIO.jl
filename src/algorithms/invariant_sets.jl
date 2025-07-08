@@ -143,9 +143,9 @@ for (algorithm, image_or_preimage) in [
 
         B = copy(B₀)
         for k in 1:steps
-            subdivide  &&  ( B = subdivide(B) )
+            subdivision  &&  ( B = subdivide(B) )
             C = $(image_or_preimage)(F, B)
-            !subdivide  &&  C == B  &&  break
+            !subdivision  &&  C == B  &&  break
             B = C
         end
         return B
