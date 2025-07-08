@@ -128,7 +128,7 @@ end
 """
     linreg(xs, ys)
 
-Simple one-dimensional lunear regression used to 
+Simple one-dimensional linear regression used to 
 approximate box dimension. 
 """
 function linreg(xs, ys)

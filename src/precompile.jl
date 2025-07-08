@@ -25,22 +25,22 @@ PrecompileTools.@setup_workload begin
 
             _F = BoxMap(_f, _Q)
             _C = _F(_S)
-            _𝔽 = TransferOperator(_F, _S)
+            #_𝔽 = TransferOperator(_F, _S)
             _𝔽 = TransferOperator(_F, _S, _S)
 
             _F = BoxMap(:interval, _f, _Q)
             _C = _F(_S)
-            _𝔽 = TransferOperator(_F, _S)
+            #_𝔽 = TransferOperator(_F, _S)
             _𝔽 = TransferOperator(_F, _S, _S)
 
             _F = BoxMap(:montecarlo, _f, _Q, n_points=1)
             _C = _F(_S)
-            _𝔽 = TransferOperator(_F, _S)
+            #_𝔽 = TransferOperator(_F, _S)
             _𝔽 = TransferOperator(_F, _S, _S)
 
             _F = BoxMap(:grid, _f, _Q, n_points=ntuple(_->1, dim))
             _C = _F(_S)
-            _𝔽 = TransferOperator(_F, _S)
+            #_𝔽 = TransferOperator(_F, _S)
             _𝔽 = TransferOperator(_F, _S, _S)
 
             _μ = BoxMeasure(_S, T)
