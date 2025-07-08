@@ -188,6 +188,10 @@ function typesafe_map(g::SampledBoxMap{N,T}, x::SVNT{N}) where {N,T}
     convert(SVector{N,T}, g.map(x))
 end
 
+function typesafe_map(::Q, g, p) where {N,T,B<:Box{N,T},Q<:BoxLayout{B}}
+    SVector{N,T}( g(p) )
+end
+
 # BoxMap API
 
 function map_boxes(

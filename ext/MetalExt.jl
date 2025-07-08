@@ -20,6 +20,46 @@ struct NumLiteral{T} end
 Base.:(*)(x, ::Type{NumLiteral{T}}) where T = T(x)
 const i32, ui32 = NumLiteral{Int32}, NumLiteral{UInt32}
 
+# Constructors are copied from CUDAExt
+"""
+    BoxMap(:gpu, map, domain; n_points) -> GPUSampledBoxMap
+
+Transforms a ``map: Q → Q`` defined on points in 
+the domain ``Q ⊂ ℝᴺ`` to a `GPUSampledBoxMap` defined 
+on `Box`es. 
+
+Uses the GPU's acceleration capabilities. 
+
+By default uses a grid of sample points. 
+
+
+    BoxMap(:montecarlo, :gpu, boxmap_args...)
+    BoxMap(:grid, :gpu, boxmap_args...)
+    BoxMap(:pointdiscretized, :gpu, boxmap_args...)
+    BoxMap(:sampled, :gpu, boxmap_args...)
+
+Type representing a dicretization of a map using 
+sample points, which are mapped on the gpu. This 
+type performs orders of magnitude faster than 
+standard `SampledBoxMap`s when point mapping is the 
+bottleneck. 
+
+!!! warning "`image_points` with `GPUSampledBoxMap`"
+    `GPUSampledBoxMap` makes NO use of the `image_points` 
+    field in `SampledBoxMap`s. 
+
+Fields:
+* `map`:              map that defines the dynamical system.
+* `domain`:           domain of the map, `B`.
+* `domain_points`:    the spread of test points to be mapped forward 
+                      in intersection algorithms.
+                      WARNING: this differs from 
+                      SampledBoxMap.domain_points in that it is a vector 
+                      of "global" test points within [-1, 1]ᴺ. 
+
+
+Requires a Metal-capable gpu. 
+"""
 struct GPUSampledBoxMap{N,T,F<:Function} <: BoxMap
     map::F
     domain::Box{N,T}
@@ -32,6 +72,18 @@ end
 
 function GPUSampledBoxMap(map::F, domain::Box, domain_points::MtlArray{SVector{N,T}}) where {N,T,F<:Function}
     GPUSampledBoxMap{N,T,F}(map, domain, domain_points)
+end
+
+function GPUSampledBoxMap(boxmap::SampledBoxMap{N}) where {N}
+    c, r = boxmap.domain
+    points = boxmap.domain_points(c, r)
+    map!(x -> (x .- c) ./ r, points, points)    # send all points to [-1, 1]ᴺ
+    GPUSampledBoxMap(boxmap.map, boxmap.domain, mtl(points))
+end
+
+function BoxMap(symb::Symbol, ::Val{:gpu}, args...; kwargs...)
+    F = BoxMap(symb, args...; kwargs...)
+    GPUSampledBoxMap(F)
 end
 
 @muladd function map_boxes_kernel!(g, P::Q, in_keys, out_keys, domain_points, offset) where {N,T,B<:Box{N,T},Q<:BoxLayout{B}}
@@ -54,35 +106,6 @@ function map_boxes(G::GPUSampledBoxMap{F}, source::BoxSet{B,Q,S}) where {B,Q,S,F
     union!(image.set, ThreadsX.Set(cpu_keys))
     delete!(image.set, out_of_bounds(P))
     return image
-end
-
-function construct_transfers(
-        G::GPUSampledBoxMap{F}, domain::BoxSet{R,_Q,S}#, codomain::BoxSet{U,_H,W}
-    ) where {N,T,R<:Box{N,T},_Q,S,F}
-
-    P = domain.partition
-    codomain = BoxSet(P, S())
-    P = mtl(P)
-
-    in_cpu, out_cpu = execute_boxmap(G, domain)
-
-    oob = out_of_bounds(P)
-    Q = typeof(P)
-    K = keytype(Q)
-
-    union!(codomain.set, out_cpu)
-    delete!(codomain.set, oob)
-
-    mat = Dict{Tuple{K,K},cu_reduce(T)}()
-    for cartesian_ind in CartesianIndices(out_cpu)
-        i, j = cartesian_ind.I
-        key = in_cpu[i]
-        hit = out_cpu[i,j]
-        checkbounds(Bool, P, hit) || continue # check for oob
-        mat = mat ⊔ ((hit,key) => 1)
-    end
-
-    return mat, codomain
 end
 
 function construct_transfers(
@@ -141,63 +164,13 @@ function execute_boxmap(G::GPUSampledBoxMap, source::BoxSet)
     return Array(in_keys), Array(out_keys)
 end
 
-# constructors
-"""
-    BoxMap(:pointdiscretized, :gpu, map, domain::Box{N}, points) -> GPUSampledBoxMap
-
-Construct a `GPUSampledBoxMap` that uses the Vector `points` as test points. 
-`points` must be a VECTOR of test points within the unit cube 
-`[-1,1]^N`. 
-
-Requires a Metal-capable gpu. 
-"""
-function PointDiscretizedBoxMap(::Val{:gpu}, map, domain::Box{N,T}, points) where {N,T}
-    domain_points = MtlArray{SVector{N,T}}(points)
-    GPUSampledBoxMap(map, domain, domain_points)
-end
-
-"""
-    BoxMap(:grid, :gpu, map, domain::Box{N}; n_points::NTuple{N} = ntuple(_->16, N)) -> GPUSampledBoxMap
-
-Construct a `GPUSampledBoxMap` that uses a grid of test points. 
-The size of the grid is defined by `n_points`, which is 
-a tuple of length equal to the dimension of the domain. 
-
-Requires a Metal-capable gpu. 
-"""
-function GridBoxMap(::Val{:gpu}, map, domain::Box{N,T}; n_points=ntuple(_->4,N)) where {N,T}
-    Δp = 2 ./ n_points
-    points = SVector{N,T}[ Δp.*(i.I.-1).-1 for i in CartesianIndices(n_points) ]
-    GPUSampledBoxMap(map, domain, mtl(points))
-end
-
-function GridBoxMap(c::Val{:gpu}, map, P::BoxGrid{N,T}; n_points=ntuple(_->4,N)) where {N,T}
-    GridBoxMap(c, map, P.domain, n_points=n_points)
-end
-
-"""
-    BoxMap(:montecarlo, :gpu, map, domain::Box{N}; n_points=16*N) -> GPUSampledBoxMap
-
-Construct a `GPUSampledBoxMap` that uses `n_points` 
-Monte-Carlo test points. 
-
-Requires a Metal-capable gpu. 
-"""
-function MonteCarloBoxMap(::Val{:gpu}, map, domain::Box{N,T}; n_points=16*N) where {N,T}
-    points = SVector{N,T}[ 2*rand(T,N).-1 for _ = 1:n_points ] 
-    GPUSampledBoxMap(map, domain, mtl(points))
-end 
-
-function MonteCarloBoxMap(c::Val{:gpu}, map, P::BoxGrid{N,T}; n_points=16*N) where {N,T}
-    MonteCarloBoxMap(c, map, P.domain; n_points=n_points)
-end
 
 # helper + compatibility functions are almost entirely copied from CUDAExt.
 # This amount of code-copying is unfortunate, though I don't know of a good 
 # way to get around it
-
-function typesafe_map(::Q, g, p) where {N,T,B<:Box{N,T},Q<:BoxLayout{B}}
-    SVector{N,T}( g(p) )
+function Base.show(io::IO, g::GPUSampledBoxMap)
+    n = length(g.boxmap.domain_points(g.boxmap.domain...).iter)
+    print(io, "GPUSampledBoxMap with $(n) sample points")
 end
 
 # hotfix to avoid errors due to cuda device-side printing
