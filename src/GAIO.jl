@@ -117,11 +117,6 @@ include("boxmeasure.jl")
 include("transfer_operator.jl")
 #include("boxgraph.jl")
 
-@deprecate_binding BoxFun BoxMeasure
-@deprecate_binding AbstractBoxPartition BoxLayout
-@deprecate_binding BoxPartition BoxGrid
-@deprecate_binding TreePartition BoxTree
-
 include("algorithms/invariant_sets.jl")
 include("algorithms/scalar_diagnostics.jl")
 include("algorithms/optimization.jl")
@@ -134,5 +129,10 @@ const nbhd = neighborhood
 
 include("common_gpu_code.jl")
 include("precompile.jl")
+
+@deprecate_binding BoxFun BoxMeasure
+@deprecate_binding AbstractBoxPartition BoxLayout
+@deprecate_binding BoxPartition BoxGrid
+@deprecate_binding TreePartition BoxTree
 
 end # module
