@@ -132,6 +132,7 @@ include("algorithms/maps.jl")
 
 const nbhd = neighborhood
 
+include("common_gpu_code.jl")
 include("precompile.jl")
 
 end # module
