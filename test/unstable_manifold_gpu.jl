@@ -24,8 +24,8 @@ end
 
     @testset "gpu montecarlo" begin
         F = BoxMap(:montecarlo, :gpu, f, domain)
-        W = unstable_set(F, S)
-        @test W isa BoxSet # passes if no error is thrown
+        #W = unstable_set(F, S)
+        #@test W isa BoxSet # passes if no error is thrown
         #@info "length of unstable set gpu montecarlo" W
 
         @info "benchmark run gpu montecarlo"

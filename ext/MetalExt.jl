@@ -28,7 +28,11 @@ import GAIO: @common_gpu_code
     return nothing
 end
 
-function map_boxes(G::GPUSampledBoxMap{F}, source::BoxSet{B,Q,S}) where {B,Q,S,F}
+function map_boxes(
+        G::GPUSampledBoxMap{F}, source::BoxSet{B,Q,S}; 
+        show_progress=false     # does nothing here
+    ) where {B,Q,S,F}
+
     P = mtl(source.partition)
     _, cpu_keys = execute_boxmap(G, source)
     image = BoxSet(P, S())
@@ -38,7 +42,8 @@ function map_boxes(G::GPUSampledBoxMap{F}, source::BoxSet{B,Q,S}) where {B,Q,S,F
 end
 
 function construct_transfers(
-        G::GPUSampledBoxMap{F}, domain::BoxSet{R,_Q,S}, codomain::BoxSet{U,_H,W}
+        G::GPUSampledBoxMap{F}, domain::BoxSet{R,_Q,S}, codomain::BoxSet{U,_H,W}; 
+        show_progress=false     # does nothing here
     ) where {N,T,R<:Box{N,T},_Q,S,U,_H,W,F}
 
     P = mtl(domain.partition)

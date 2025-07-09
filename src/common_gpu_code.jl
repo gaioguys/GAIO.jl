@@ -72,9 +72,9 @@ end
 
 function GPUSampledBoxMap(boxmap::SampledBoxMap{N}) where {N}
     c, r = boxmap.domain
-    points = boxmap.domain_points(c, r)
+    points = collect(boxmap.domain_points(c, r))
     map!(x -> (x .- c) ./ r, points, points)    # send all points to [-1, 1]ᴺ
-    GPUSampledBoxMap(boxmap.map, boxmap.domain, converter(points))
+    GPUSampledBoxMap(boxmap.map, boxmap.domain, $converter(points))
 end
 
 function BoxMap(symb::Symbol, ::Val{:gpu}, args...; kwargs...)
@@ -84,7 +84,7 @@ end
 
 # helper + compatibility functions
 function Base.show(io::IO, g::GPUSampledBoxMap)
-    n = length(g.boxmap.domain_points(g.boxmap.domain...).iter)
+    n = length(g.domain_points)
     print(io, "GPUSampledBoxMap with $(n) sample points")
 end
 
