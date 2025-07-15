@@ -6,7 +6,7 @@ the domain ``Q ⊂ ℝᴺ`` to a `SampledBoxMap` defined
 on `Box`es. 
 
 By default uses adaptive test-point sampling. 
-For SIMD- and GPU-accelerated `BoxMap`s, uses
+For GPU-accelerated `BoxMap`s, uses
 a grid of test points by default. 
 """
 BoxMap(symb::Symbol, args...; kwargs...) = BoxMap(Val(symb), args...; kwargs...)

@@ -1,6 +1,6 @@
 # `GridBoxMap`
 
-Another naive but still useful approach is to place the test points on an equidistant grid within a box. This approach removes an element of randomness from the Monte-Carlo approach. 
+Another naive but still useful approach is to place the test points on an equidistant grid within a box. This approach removes randomness from the Monte-Carlo approach. 
 
 ```@docs; canonical=false
 GridBoxMap
@@ -24,7 +24,7 @@ p = plot(cover(P, :), linewidth=0.5, fillcolor=nothing, lab="", leg=:outerbottom
 
 # unit box
 B = cover(P, (0,0))
-p = plot!(p, B, linewidth=4, fillcolor=RGBA(0.,0.,1.,0.2), linecolor=RGBA(0.,0.,1.,0.4), lab="Box")
+p = plot!(p, B, linewidth=4, fillcolor=RGBA(0.,0.4,1.,0.2), linecolor=RGBA(0.,0.4,1.,0.4), lab="Box")
 
 # Plot the true image of B under f.
 z = zeros(100)

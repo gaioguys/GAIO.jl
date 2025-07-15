@@ -1,7 +1,7 @@
 # `SampledBoxMap`
 
 We can even further generalize the concept of `MonteCarloBoxMap`, `GridBoxMap`, `PointDiscretizedBoxMap` as follows: we define two functions `domain_points(c, r)` and `image_points(c, r)` for any `Box(c, r)`. 
-1. for each box `Box(c, r)` a set of test points within the box is initialized using `domain_points(C, r)` and mapped forward by the point map. 
+1. for each box `Box(c, r)` a set of test points within the box is initialized using `domain_points(c, r)` and mapped forward by the point map. 
 2. For each of the pointwise images `fc`, an optional set of "perturbations" can be applied. These perturbations are generated with `image_points(fc, r)`. The boxes which are hit by these perturbations are recorded. 
 
 ```@docs; canonical=false
@@ -26,7 +26,7 @@ p = plot(cover(P, :), linewidth=0.5, fillcolor=nothing, lab="", leg=:outerbottom
 
 # unit box
 B = cover(P, (0,0))
-p = plot!(p, B, linewidth=4, fillcolor=RGBA(0.,0.,1.,0.2), linecolor=RGBA(0.,0.,1.,0.4), lab="Box")
+p = plot!(p, B, linewidth=4, fillcolor=RGBA(0.,0.4,1.,0.2), linecolor=RGBA(0.,0.4,1.,0.4), lab="Box")
 
 # Plot the true image of B under f.
 z = zeros(100)
@@ -48,7 +48,7 @@ using StaticArrays
 # we will recreate the AdaptiveBoxMap using SampledBoxMap
 domain_points(center, radius) = sample_adaptive(f, center, radius)
 
-# vertices of a box
+# vertices of the box [-1, 1]ᵈ
 vertex_test_points = SVector{2,Float64}[
     (1,  1),
     (1, -1),
@@ -87,7 +87,7 @@ p = plot(cover(P, :), linewidth=0.5, fillcolor=nothing, lab="", leg=:outerbottom
 
 # unit box
 B = cover(P, (0,0))
-p = plot!(p, B, linewidth=4, fillcolor=RGBA(0.,0.,1.,0.2), linecolor=RGBA(0.,0.,1.,0.4), lab="Box")
+p = plot!(p, B, linewidth=4, fillcolor=RGBA(0.,0.4,1.,0.2), linecolor=RGBA(0.,0.4,1.,0.4), lab="Box")
 
 # Plot the true image of B under f.
 z = zeros(100)
