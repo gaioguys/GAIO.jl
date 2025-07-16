@@ -56,7 +56,7 @@ key_to_box( P, (4, 2) ) == key_to_box( P2, (4, (4, 2)) )
 
 ## BoxSet
 
-The core idea behind GAIO.jl is to approximate a subset of the domain via a collection of small boxes. To construct `BoxSet`s, there are two main options: getting all boxes in the partition, or locating a box surrounding a point ``x \in Q``
+The core idea behind GAIO.jl is to approximate a subset of the domain via a collection of small boxes. To construct `BoxSet`s, there are two typical options: getting all boxes in the partition, or locating a box surrounding a point ``x \in Q``
 ```@repl 1
 B = cover(P, x)    # one box surrounding the point x
 B = cover(P, :)    # set of all boxes in P
@@ -71,7 +71,7 @@ box2 = point_to_box(P, x2)
 B = cover(P, [box1, box2])
 ```
 
-`BoxSet` is a highly memory-efficient way of storing boxes. However, should you want to access the boxes or their internal data, this can be done via iteration:
+`BoxSet` is a meant to be a memory-efficient way of storing boxes. However, should you want to access the boxes or their internal data, this can be done via iteration:
 ```@repl 1
 for box in B
     center, radius = box
@@ -108,7 +108,7 @@ initialize the corresponding `BoxMap` `F` by
 ```@repl 1
 F = BoxMap(f, Q)
 ```
-This will generate a `BoxMap` which attempts to calculate setwise images of `f`. One can also use a `DynamicalSystem` from `DynamicalSystems.jl`: 
+This will generate a `BoxMap` which attempts to calculate setwise images of `f`. One can also use a `DynamicalSystem` from the very good `DynamicalSystems.jl`: 
 ```@repl 1
 using DynamicalSystems: DiscreteDynamicalSystem
 using StaticArrays
@@ -128,7 +128,7 @@ The same works for a continuous dynamical system.
     Currently, you must hard-code your systems, and cannot rely on `DifferentialEquations` or `DynamicalSystems` for GPU-acceleration. 
 
 !!! warning "Check your time-steps!"
-    GAIO.jl ALWAYS performs integration over **one** time unit! To perform smaller steps, rescale your dynamical system accordingly!
+    GAIO.jl ALWAYS performs integration over **one** time unit for `ContinuousDynamicalSystem`s! To perform smaller steps, rescale your dynamical system accordingly!
 
 ```@repl 1
 using DynamicalSystems: ContinuousDynamicalSystem
@@ -173,13 +173,13 @@ C = F(B; show_progress = true)
 
 ## TransferOperator
 
-The _Perron-Frobenius operator_ (or _transfer operator_) [lasotamackey](@cite) is discretized in GAIO.jl using the `TransferOperator` type. To initialize a `TransferOperator` that acts on a subdomain of ``Q``, type
+The _Perron-Frobenius operator_ (or _transfer operator_) [lasotamackey](@cite) is discretized in GAIO.jl using the `TransferOperator` type. To initialize a `TransferOperator` that acts on a domain `BoxSet` `B` and codomain `BoxSet` `C` 
+```@repl 1
+T = TransferOperator(F, B, C)   # T operates on the domain covered by the box set B
+```
+Most often (e.g. in eigenvalue calculations), one wants the domain and codomain to be equal 
 ```@repl 1
 B = cover(P, :)
-T = TransferOperator(F, B)   # T operates on the domain covered by the box set B
-```
-In this case, the codomain is generated automatically. This is not always ideal (e.g. in eigenvalue calculations), so the codomain should often be specified as the third argument
-```@repl 1
 T = TransferOperator(F, B, B)
 ```
 Again, a progress meter can be displayed for long computations
@@ -187,10 +187,16 @@ Again, a progress meter can be displayed for long computations
 using ProgressMeter
 T = TransferOperator(F, B, B; show_progress = true)
 ```
-To convert this to the underlying transfer matrix described in [algGAIO](@cite), one can simply call the `sparse` function from `SparseArrays` 
+Internally, `GAIO.jl` will choose some enumeration of the domain and codomain, and use this for indexing the columns and rows, respectively. 
+```@repl 1
+enumerated_B = collect(T.domain)
+```
+To convert the transfer operator to the underlying transfer matrix described in [algGAIO](@cite), one can simply call the `sparse` function from `SparseArrays` 
 ```@repl 1
 using SparseArrays
-sparse(T)
+
+# mat[i, j] ≈ probability( f(x) ∈ enumerated_B[j]  |  x ∈ enumerated_B[i] )
+mat = sparse(T)
 ```
 To find an approximate invariant measure over `B` use the `eigs` function from `Arpack.jl`. All keyword arguments from `Arpack.eigs` are supported. 
 ```@repl 1
@@ -244,8 +250,10 @@ Similarly, finite signed measures can be given a vector space structure. This is
 2ν - μ/2
 ```
 A `BoxMeasure` is implemented by a dictionary, mapping boxes to weights
-```
-Iterators.take(μ, 3)
+```@repl 1
+for (box, val) in μ
+    println(box, " => ", val)
+end
 ```
 To access this structure oneself one can call
 ```
@@ -260,7 +268,7 @@ One could equivalently view the transfer operator as a weighted directed graph. 
 using Graphs, MetaGraphsNext
 G = MetaGraph(T)
 ```
-See the [MetaGraphsNext documentation](https://juliagraphs.org/MetaGraphsNext.jl/stable/) for how to interface with this data type. 
+See also the [Graphs](https://juliagraphs.org/Graphs.jl/stable/) and [MetaGraphsNext](https://juliagraphs.org/MetaGraphsNext.jl/stable/) documentation. 
 
 ## Plotting
 

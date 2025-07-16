@@ -4,6 +4,7 @@ module GAIO
 using LinearAlgebra
 using StaticArrays
 using MuladdMacro
+using ProgressMeter
 using PrecompileTools
 using TupleTools
 const tuple_deleteat = TupleTools.deleteat
@@ -31,6 +32,7 @@ using MatrixNetworks
 using MatrixNetworks: Strong_components_output, Strong_components_rich_output
 using SparseArrays
 using Arpack
+using SparseArrays: getcolptr
 
 # misc
 import Base: unsafe_trunc, IteratorEltype, HasEltype, OneTo
@@ -115,11 +117,6 @@ include("boxmeasure.jl")
 include("transfer_operator.jl")
 #include("boxgraph.jl")
 
-@deprecate_binding BoxFun BoxMeasure
-@deprecate_binding AbstractBoxPartition BoxLayout
-@deprecate_binding BoxPartition BoxGrid
-@deprecate_binding TreePartition BoxTree
-
 include("algorithms/invariant_sets.jl")
 include("algorithms/scalar_diagnostics.jl")
 include("algorithms/optimization.jl")
@@ -130,6 +127,12 @@ include("algorithms/maps.jl")
 
 const nbhd = neighborhood
 
+include("common_gpu_code.jl")
 include("precompile.jl")
+
+@deprecate_binding BoxFun BoxMeasure
+@deprecate_binding AbstractBoxPartition BoxLayout
+@deprecate_binding BoxPartition BoxGrid
+@deprecate_binding TreePartition BoxTree
 
 end # module

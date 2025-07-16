@@ -40,11 +40,6 @@ ENV["JULIA_DEBUG"] = GAIO
     @safetestset "SampledBoxMap" begin
         include("boxmap.jl")
     end
-
-    @info "testing boxmap_simd.jl"
-    @safetestset "SampledBoxMap :simd" begin
-        include("boxmap_simd.jl")
-    end
     
     if ( isapple() && ARCH === :aarch64 ) || CUDA.functional()
         @info "testing boxmap_gpu.jl"
@@ -56,11 +51,6 @@ ENV["JULIA_DEBUG"] = GAIO
     @info "testing boxmap_interval.jl"
     @safetestset "IntervalBoxMap" begin
         include("boxmap_interval.jl")
-    end
-
-    @info "testing progressmeter.jl"
-    @safetestset "Progrss Meter" begin
-        include("progressmeter.jl")
     end
 
     @info "testing boxmeasure.jl"

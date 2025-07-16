@@ -1,6 +1,6 @@
 # `AdaptiveBoxMap`
 
-The above approaches may not necessarily be effective for covering the setwise image of a box. For choosing test points more effectively, we can use some knowledge of the Lipschitz matrix for ``f`` in a box `Box(c, r)`, that is, a matrix ``L \in \mathbb{R}^{d \times d}`` such that 
+The previous approaches may not necessarily be effective for covering the setwise image of a box. For choosing test points more effectively, we can use some knowledge of the Lipschitz matrix for ``f`` in a box `Box(c, r)`, that is, a matrix ``L \in \mathbb{R}^{d \times d}`` such that 
 ```math
 | f(y) - f(z) | \leq L \, | y - z | \quad \text{for all } y, z \in \text{Box}(c, r),
 ```
@@ -28,7 +28,7 @@ p = plot(cover(P, :), linewidth=0.5, fillcolor=nothing, lab="", leg=:outerbottom
 
 # unit box
 B = cover(P, (0,0))
-p = plot!(p, B, linewidth=4, fillcolor=RGBA(0.,0.,1.,0.2), linecolor=RGBA(0.,0.,1.,0.4), lab="Box")
+p = plot!(p, B, linewidth=4, fillcolor=RGBA(0.,0.4,1.,0.2), linecolor=RGBA(0.,0.4,1.,0.4), lab="Box")
 
 # Plot the true image of B under f.
 z = zeros(100)

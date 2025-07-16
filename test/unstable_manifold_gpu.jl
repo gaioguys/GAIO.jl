@@ -24,14 +24,13 @@ end
 
     @testset "gpu montecarlo" begin
         F = BoxMap(:montecarlo, :gpu, f, domain)
-        W = unstable_set(F, S)
-        @test W isa BoxSet # passes if no error is thrown
+        #W = unstable_set(F, S)
+        #@test W isa BoxSet # passes if no error is thrown
         #@info "length of unstable set gpu montecarlo" W
 
         @info "benchmark run gpu montecarlo"
         @time W = unstable_set(F, S);
 
-        T = TransferOperator(F, W)
         T = TransferOperator(F, W, W)
         λ, ev, nconv = eigs(T, nev=1, tol=100*eps())
         @test ev[1] isa BoxMeasure # passes if no error is thrown

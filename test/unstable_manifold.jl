@@ -17,9 +17,7 @@ using Test
     for (name, args) in [
             "montecarlo"        => (:montecarlo,),
             "grid"              => (:grid,),
-            "adaptive"          => (:adaptive,),
-            "simd montecarlo"   => (:montecarlo, :simd),
-            "simd grid"         => (:grid, :simd)
+            "adaptive"          => (:adaptive,)
         ]
 
         @testset "$name" begin
@@ -30,7 +28,6 @@ using Test
             @info "benchmark run $name"
             @time W = unstable_set(F, S);
         
-            T = TransferOperator(F, W)
             T = TransferOperator(F, W, W)
             λ, ev, nconv = eigs(T, nev=1, tol=100*eps())
             @test ev[1] isa BoxMeasure  # passes if no error is thrown    
@@ -49,7 +46,6 @@ using Test
             W = unstable_set(F, S)
             @test W isa BoxSet  # passes if no error is thrown
         
-            T = TransferOperator(F, W; show_progress=true)
             T = TransferOperator(F, W, W; show_progress=true)
             λ, ev, nconv = eigs(T, nev=1, tol=100*eps())
             @test ev[1] isa BoxMeasure  # passes if no error is thrown    

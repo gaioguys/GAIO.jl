@@ -18,15 +18,6 @@ using Test
     F = BoxMap(:grid, f, domain)
     P = BoxGrid(domain, (16,16))
 
-    S = cover(P, (0,0))
-    F♯ = TransferOperator(F, S)
-    @test F♯.codomain == F(S)
-
-    μ = BoxMeasure(S, (1,))
-    @test BoxSet(μ) == S
-    ν = F♯ * μ
-    @test BoxSet(ν) == F(S)
-
     S = cover(P, :)
     F♯ = TransferOperator(F, S, S)
 

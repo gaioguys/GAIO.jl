@@ -10,6 +10,8 @@ We now introduce a set of `BoxMap` subtypes for different discretization algorit
 
 ![Type Hierarchy](../assets/type_tree.jpg)
 
+!!! warning "`CPUSampledBoxMap` is deprecated"
+
 We will work from the "bottom up", starting with specific types that are of practical use, and then generalizing these approaches for the reader who wishes to know more. 
 
 ### Example
@@ -39,8 +41,8 @@ B = cover(P, (0,0))
 p = plot!(
     p, B, 
     linewidth=4, 
-    fillcolor=RGBA(0.,0.,1.,0.2), 
-    linecolor=RGBA(0.,0.,1.,0.4), 
+    fillcolor=RGBA(0.,0.4,1.,0.2), 
+    linecolor=RGBA(0.,0.4,1.,0.4), 
     lab="Box"
 )
 

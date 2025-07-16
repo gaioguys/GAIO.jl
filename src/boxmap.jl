@@ -6,7 +6,7 @@ the domain ``Q ⊂ ℝᴺ`` to a `SampledBoxMap` defined
 on `Box`es. 
 
 By default uses adaptive test-point sampling. 
-For SIMD- and GPU-accelerated `BoxMap`s, uses
+For GPU-accelerated `BoxMap`s, uses
 a grid of test points by default. 
 """
 BoxMap(symb::Symbol, args...; kwargs...) = BoxMap(Val(symb), args...; kwargs...)
@@ -34,14 +34,6 @@ Base.show(io::IO, g::BoxMap) = print(io, "BoxMap over $(g.domain)")
 # this is a no-op outside of extensions
 preprocess(args...) = args
 
-function (g::BoxMap)(source::BoxSet; show_progress::Bool=false, kwargs...) 
-    map_boxes(g, source, Val(show_progress); kwargs...)
-end
-
-function map_boxes(g::BoxMap, source::BoxSet, show_progress::Val{false}; kwargs...)
+function (g::BoxMap)(source::BoxSet; kwargs...) 
     map_boxes(g, source; kwargs...)
-end
-
-function map_boxes(g::BoxMap, source::BoxSet, show_progress::Val{true}; kwargs...)
-    @error "Progress meter code not loaded. Run `using ProgressMeter` to get progress meters."
 end

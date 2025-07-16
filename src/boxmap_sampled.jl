@@ -188,11 +188,20 @@ function typesafe_map(g::SampledBoxMap{N,T}, x::SVNT{N}) where {N,T}
     convert(SVector{N,T}, g.map(x))
 end
 
+function typesafe_map(::Q, g, p) where {N,T,B<:Box{N,T},Q<:BoxLayout{B}}
+    SVector{N,T}( g(p) )
+end
+
 # BoxMap API
 
 function map_boxes(
-        g::SampledBoxMap, source::BoxSet{B,Q,S}
+        g::SampledBoxMap, source::BoxSet{B,Q,S}; 
+        show_progress=false
     ) where {B,Q,S}
+
+    prog = Progress(length(source); 
+        desc="Computing image...", showspeed=true, enabled=show_progress
+    )
 
     P = source.partition
     @floop for box in source
@@ -209,40 +218,20 @@ function map_boxes(
                 end
             end
         end
+        next!(prog)
     end
+
     return BoxSet(P, image::S)
-end 
-
-function construct_transfers(
-        g::SampledBoxMap, domain::BoxSet{R,Q,S}
-    ) where {N,T,R<:Box{N,T},Q,S}
-
-    P = domain.partition
-    D = Dict{Tuple{keytype(Q),keytype(Q)},T}
-    @floop for key in keys(domain)
-        box = key_to_box(P, key)
-        c, r = box
-        for p in g.domain_points(c, r)
-            c = typesafe_map(g, p)
-            hitbox = point_to_box(P, c)
-            isnothing(hitbox) && continue
-            _, r = hitbox
-            for ip in g.image_points(c, r)
-                hit = point_to_key(P, ip)
-                weight = (hit,key) => 1
-                @reduce() do (image = S(); hit), (mat = D(); weight)    # Initialize empty key set and dict-of-keys sparse matrix
-                    image = image ⊔ hit                                 # Add hit key to image
-                    mat = mat ⊔ weight                                  # Add weight to mat[hit, key]
-                end
-            end
-        end
-    end
-    return mat::D, BoxSet(P, image::S)
 end
 
 function construct_transfers(
-        g::SampledBoxMap, domain::BoxSet{R,Q}, codomain::BoxSet{U,H}
+        g::SampledBoxMap, domain::BoxSet{R,Q}, codomain::BoxSet{U,H};
+        show_progress=false
     ) where {N,T,R<:Box{N,T},Q,U,H}
+
+    prog = Progress(length(domain); 
+        desc="Computing transfer weights...", showspeed=true, enabled=show_progress
+    )
 
     P1, P2 = domain.partition, codomain.partition
     D = Dict{Tuple{keytype(H),keytype(Q)},T}
@@ -263,6 +252,8 @@ function construct_transfers(
                 end
             end
         end
+        next!(prog)
     end
+    
     return mat::D
 end
