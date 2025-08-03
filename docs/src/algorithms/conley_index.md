@@ -24,12 +24,6 @@ Then the _Conley index_ is the topological shift equivalence class of ``\iota_\b
 
 ![intuitive example of the Conley index](../assets/Conley-21.jpg)
 
-```@docs; canonical=false
-index_pair
-index_quad
-@save
-```
-
 ### Example
 
 ```@example 1
@@ -143,4 +137,10 @@ Dim 0:  0
 Dim 1:  f (x1) = y1
 Total time used: 0.00 sec (0.000 min).
 Thank you for using this software. We appreciate your business.
+```
+
+```@docs; canonical=false
+index_pair
+index_quad
+@save
 ```

@@ -1,37 +1,3 @@
-"""
-    unstable_set(F::BoxMap, B::BoxSet) -> BoxSet
-
-Compute the unstable set for a box set `B`. Generally, `B` should be 
-a small box surrounding a fixed point of `F`. The partition must 
-be fine enough, since no subdivision occurs in this algorithm. 
-"""
-function unstable_set(F::BoxMap, B::BoxSet)
-    B₀ = copy(B)
-    B₁ = copy(B)
-    while !isempty(B₁)
-        B₁ = F(B₁)
-        setdiff!(B₁, B₀)
-        union!(B₀, B₁)
-    end
-    return B₀
-end
-
-"""
-    recurrent_set(F::BoxMap, B::BoxSet; steps=12) -> BoxSet
-
-Compute the (chain) recurrent set over the box set `B`. 
-`B` should be a (coarse) covering of the relative attractor, 
-e.g. `B = cover(P, :)` for a partition `P`.
-"""
-function recurrent_set(F::BoxMap, B₀::BoxSet; steps=12)
-    B = copy(B₀)
-    for k in 1:steps
-        B = subdivide(B)
-        B = morse_tiles(F, B)
-    end
-    return B
-end
-
 Core.@doc raw"""
     preimage(F::BoxMap, B::BoxSet, Q::BoxSet) -> BoxSet
 
@@ -42,30 +8,23 @@ F^{-1} (B) \cap Q .
 Note that the larger ``Q`` is, the more calculation time required. 
 """
 function preimage(F::BoxMap, B::BoxSet, Q::BoxSet)
-    μ = BoxMeasure(B)
     T = TransferOperator(F, Q, B)
+    μ = BoxMeasure(B)
     return BoxSet(T'μ)
 end
 
-Core.@doc raw"""
-    preimage(F::BoxMap, B::BoxSet) -> BoxSet
-
-Efficiently compute 
-```math
-F^{-1} (B) \cap B . 
-``` 
-Significantly faster than calling `preimage(F, B, B)`. 
-
-!!! warning "This is not the entire preimage in the mathematical sense!"
-    `preimage(F, B)` computes the RESTRICTED preimage
-    ``F^{-1} (B) \cap B``, NOT the full preimage 
-    ``F^{-1} (B)``. 
-"""
-function preimage(F::BoxMap, B::BoxSet)
-    P  = TransferOperator(F, B, B)
-    C⁻ = vec( sum(P.mat, dims=1) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
-    return BoxSet(P.domain, C⁻)
+#=
+function preimage(F::BoxMap, B::BoxSet, Q::BoxSet)
+    T = TransferOperator(F, Q, B)
+    if B == Q
+        C⁻ = vec( sum(T.mat, dims=1) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
+        return BoxSet(T.domain, C⁻)     # same result but faster
+    else
+        μ = BoxMeasure(B)
+        return BoxSet(T'μ)
+    end
 end
+=#
 
 Core.@doc raw"""
     symmetric_image(F::BoxMap, B::BoxSet) -> BoxSet
@@ -98,62 +57,117 @@ function symmetric_image(F::BoxMap, B::BoxSet)
 end
 
 """
-    relative_attractor(F::BoxMap, B::BoxSet; steps=12, subdivision=true) -> BoxSet
-    maximal_backward_invariant_set(F::BoxMap, B::BoxSet; steps=12, subdivision=true) -> BoxSet
+    iterate_until_equal(f, start; max_iterations = Inf)
 
-Compute the attractor relative to `B`. `B` should be 
-a (coarse) covering of the relative attractor, e.g. 
-`B = cover(P, :)` for a partition `P`.
+Iterate a function `f` starting at `start` until 
+a fixed point is reached or `max_iterations` 
+have been performed. 
+One iteration is always guaranteed! 
 """
-function maximal_backward_invariant_set end
+function iterate_until_equal(f, start; max_iterations=Inf)
+    state, state_old = f(start), start
+    n_iterations = 1
 
-const relative_attractor = maximal_backward_invariant_set
-
-"""
-    maximal_forward_invariant_set(F::BoxMap, B::BoxSet; steps=12, subdivision=true)
-
-Compute the maximal forward invariant set contained in `B`. 
-`B` should be a (coarse) covering of a forward invariant set, 
-e.g. `B = cover(P, :)` for a partition `P`.
-"""
-function maximal_forward_invariant_set end
-
-restricted_image(F, B) = F(B) ∩ B
-
-"""
-    maximal_invariant_set(F::BoxMap, B::BoxSet; steps=12, subdivision=true)
-
-Compute the maximal invariant set contained in `B`. 
-`B` should be a (coarse) covering of an invariant set, 
-e.g. `B = cover(P, :)` for a partition `P`.
-"""
-function maximal_invariant_set end
-
-
-for (algorithm, image_or_preimage) in [
-        :maximal_forward_invariant_set  => preimage,
-        :maximal_backward_invariant_set => restricted_image,
-        :maximal_invariant_set          => symmetric_image
-    ]
-
-    @eval function $(algorithm)(
-            F::BoxMap, B₀::BoxSet;
-            steps=12, subdivision::Bool=true
-        )
-
-        B = copy(B₀)
-        for k in 1:steps
-            subdivision  &&  ( B = subdivide(B) )
-            C = $(image_or_preimage)(F, B)
-            !subdivision  &&  C == B  &&  break
-            B = C
-        end
-        return B
+    while state ≠ state_old  &&  n_iterations < max_iterations
+        state_old = state
+        state = f(state)
+        n_iterations += 1
     end
 
+    @debug "number of iterations" n_iterations max_iterations
+    return state
 end
 
+"""
+    ω(F::BoxMap, B::BoxSet; subdivision=true, steps=subdivision ? 12 : 64) -> BoxSet
+
+Compute the ω-limit set of `B` under `F`. 
+"""
+function ω(F, B::BoxSet; 
+            subdivision=true, steps=subdivision ? 12 : 64)
+    iter = (S -> S ∩ F(S)) ∘ (subdivision ? subdivide : identity)
+    return iterate_until_equal(iter, B; max_iterations=steps)
+end
+
+"""
+    ω(F::BoxMap, B::BoxSet; subdivision=true, steps=subdivision ? 12 : 64) -> BoxSet
+
+Compute the α-limit set of `B` under `F`. 
+"""
+function α(F, B::BoxSet; 
+            subdivision=true, steps=subdivision ? 12 : 64)
+    F⁻¹(S) = preimage(F, S, S)  # computes  F⁻¹(S) ∩ S  which is all we need
+    return ω(F⁻¹, B; subdivision=subdivision, steps=steps)
+end
+
+const maximal_backward_invariant_set = ω
+const relative_attractor = ω
+const maximal_forward_invariant_set = α
+
+"""
+    maximal_invariant_set(F::BoxMap, B::BoxSet; subdivision=true, steps=subdivision ? 12 : 64) -> BoxSet
+
+Compute the maximal invariant set of `F` 
+within the set `B`. 
+"""
+function maximal_invariant_set(F, B::BoxSet; 
+                                subdivision=true, steps=subdivision ? 12 : 64)
+    G(S) = F(S) ∩ preimage(F, S, S)  # computes  F⁻¹(S) ∩ S ∩ F(S)
+    return ω(G, B; subdivision=subdivision, steps=steps)
+end
+
+"""
+    recurrent_set(F::BoxMap, B::BoxSet; subdivision=true, steps=subdivision ? 12 : 64) -> BoxSet
+
+Compute the (chain) recurrent set within the box set `B`. 
+"""
+function recurrent_set(F::BoxMap, B::BoxSet; 
+                        subdivision=true, steps=subdivision ? 12 : 64)
+    iter = (S -> morse_sets(F, S)) ∘ (subdivision ? subdivide : identity)
+    return iterate_until_equal(iter, B; max_iterations=steps)
+end
+
+"""
+    unstable_set(F::BoxMap, B::BoxSet) -> BoxSet
+
+Compute the unstable set for a box set `B`. Generally, `B` should be 
+a small box surrounding a fixed point of `F`. The partition must 
+be fine enough, since no subdivision occurs in this algorithm. 
+"""
+function unstable_set(F::BoxMap, B::BoxSet)
+    B₀ = copy(B)
+    B₁ = copy(B)
+    while !isempty(B₁)
+        B₁ = F(B₁)
+        setdiff!(B₁, B₀)
+        union!(B₀, B₁)
+    end
+    return B₀
+end
+
+
 #=
+Core.@doc raw"""
+    preimage(F::BoxMap, B::BoxSet) -> BoxSet
+
+Efficiently compute 
+```math
+F^{-1} (B) \cap B . 
+``` 
+Significantly faster than calling `preimage(F, B, B)`. 
+
+!!! warning "This is not the entire preimage in the mathematical sense!"
+    `preimage(F, B)` computes the RESTRICTED preimage
+    ``F^{-1} (B) \cap B``, NOT the full preimage 
+    ``F^{-1} (B)``. 
+"""
+function preimage(F::BoxMap, B::BoxSet)
+    P  = TransferOperator(F, B, B)
+    C⁻ = vec( sum(P.mat, dims=1) .> 0 ) # C⁻ = B ∩ F⁻¹(B)
+    return BoxSet(P.domain, C⁻)
+end
+
+
 # More efficient (but ugly) versions of invariant set algorithms
 
 """

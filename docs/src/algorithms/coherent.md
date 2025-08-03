@@ -2,7 +2,7 @@
 
 ### Mathematical Background
 
-The following approach is decribed in [1]. 
+The following approach is decribed in [coherent](@cite). 
 
 Recalling the section on [Almost Invariant (metastable) Sets](@ref), we wish to understand sets which resist mixing over time. In the constext of autonomous dynamics, these are _almost invariant_ sets. However, in the context of nonautonomous dynamics these are often referred to as _coherent_ sets. To distinguish the maps for different times `t` we will write ``f_t`` to denote the dynamics at time ``t``. 
 
@@ -90,10 +90,11 @@ using Plots
 
 p = plot(sign ∘ μ, colormap=:redsblues);
 
-savefig(p, "sv1.svg"); nothing # hide
+p = plot(sign ∘ μ, colormap=:redsblues, dpi=500); # hide
+savefig(p, "sv1.png"); nothing # hide
 ```
 
-![Second left singular measure](sv1.svg)
+![Second left singular measure](sv1.png)
 
 ```julia
 n_frames = 120
@@ -124,7 +125,3 @@ gif(anim, "coherent.gif", fps=20)
 
 ![Coherent Sets](../assets/coherent.gif)
 
-
-### References
-
-[1] Froyland, G., Padberg-Gehle, K. (2014). Almost-Invariant and Finite-Time Coherent Sets: Directionality, Duration, and Diffusion. In: Bahsoun, W., Bose, C., Froyland, G. (eds) Ergodic Theory, Open Dynamics, and Coherent Structures. Springer Proceedings in Mathematics & Statistics, vol 70. Springer, New York, NY. https://doi.org/10.1007/978-1-4939-0419-8_9

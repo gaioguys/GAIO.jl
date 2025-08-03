@@ -10,10 +10,6 @@ One can follow a technique very similar to the root finding technique using Newt
 
 While this is very similar to the root finding algorithm, it differs in that we use a binary search instead of Newton's method to guarantee that the entire manifold is covered. In order to practically realise the selection step, GAIO.jl uses interval arithmetic to obtain a rigorous outer covering of the setwise images of ``h``. 
 
-```@docs; canonical=false
-cover_manifold
-```
-
 ### Example
 
 ```@example 1
@@ -31,7 +27,12 @@ S = cover(P, :)
 M = cover_manifold(H, S; steps=16)
 p = plot(M);
 
-savefig("implicit_manifold.svg"); nothing # hide
+p = plot(M, dpi=500); # hide
+savefig("implicit_manifold.png"); nothing # hide
 ```
 
-![Devil's curve](implicit_manifold.svg)
+![Devil's curve](implicit_manifold.png)
+
+```@docs; canonical=false
+cover_manifold
+```

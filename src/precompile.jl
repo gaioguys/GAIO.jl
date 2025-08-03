@@ -48,7 +48,6 @@ PrecompileTools.@setup_workload begin
             _ν = _𝔽'_μ
 
             _A = preimage(_F, _S, _S)
-            _A = preimage(_F, _S)
             _A = symmetric_image(_F, _S)
             _A = unstable_set(_F, _S)
 

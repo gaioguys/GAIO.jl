@@ -52,10 +52,6 @@ Using an extension of the Birkhoff ergodic theorem it can be proven that this me
 ```
 where ``\mu`` is a measure which is ergodic and invariant under ``f``. 
 
-```@docs; canonical=false
-finite_time_lyapunov_exponents
-```
-
 ### Example
 
 We will continue using the periodically driven double-gyre introduced in the section on [Almost Invariant (metastable) Sets](@ref). See that code block for the definition of the map. 
@@ -103,10 +99,11 @@ using Plots
 
 p = plot(γ, clims=(0,2), colormap=:jet);
 
-savefig("ftle1.svg"); nothing # hide
+p = plot(γ, clims=(0,2), colormap=:jet, dpi=500); # hide
+savefig("ftle1.png"); nothing # hide
 ```
 
-![FTLE field at time 0](ftle1.svg)
+![FTLE field at time 0](ftle1.png)
 
 Since this map is time-dependent, the FTLE field will change over time as well. 
 
@@ -154,4 +151,8 @@ T = TransferOperator(F, A, A)
 σ8  = finite_time_lyapunov_exponents(f, Df, μ, n=8)
 
 σ = 2*σ16 - σ8
+```
+
+```@docs; canonical=false
+finite_time_lyapunov_exponents
 ```

@@ -61,13 +61,14 @@ F = BoxMap(:sampled, f, domain, domain_points, image_points)
 p = plot!(
     p, F(B), 
     color=RGBA(1.,0.,0.,0.5), 
-    lab="Recreation of AdaptiveBoxMap using SampledBoxMap"
+    lab="Recreation of AdaptiveBoxMap using SampledBoxMap", 
+    dpi=500 # hide
 )
 
-savefig("sampled.svg"); nothing # hide
+savefig("sampled.png"); nothing # hide
 ```
 
-![Sampled BoxMap](sampled.svg)
+![Sampled BoxMap](sampled.png)
 
 ### Example (continued)
 
@@ -125,11 +126,12 @@ F = BoxMap(:sampled, f, domain, domain_points, image_points)
 p = plot!(
     p, F(B), 
     color=RGBA(1.,0.,0.,0.5), 
-    lab="Recreation of AdaptiveBoxMap using fallback points if an exception is thrown"
+    lab="Recreation of AdaptiveBoxMap using fallback points if an exception is thrown", 
+    dpi=500 # hide
 )
 
-savefig("sampled2.svg"); nothing # hide
+savefig("sampled2.png"); nothing # hide
 ```
 
-![Sampled BoxMap](sampled2.svg)
+![Sampled BoxMap](sampled2.png)
 

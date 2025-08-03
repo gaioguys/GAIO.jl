@@ -165,10 +165,11 @@ using Plots
 
 p = plot(real ∘ ev[2], colormap=:jet)
 
-savefig(p, "gyre_almost_inv.svg"); nothing # hide
+p = plot(real ∘ ev[2], colormap=:jet, dpi=500) # hide
+savefig(p, "gyre_almost_inv.png"); nothing # hide
 ```
 
-![almost invariant sets in the doube-gyre](gyre_almost_inv.svg)
+![almost invariant sets in the doube-gyre](gyre_almost_inv.png)
 
 Since the map is nonautonomous, this image should change if we vary the start time `t₀`. 
 

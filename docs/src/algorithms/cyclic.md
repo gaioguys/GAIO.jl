@@ -59,10 +59,11 @@ using Plots
 
 p = plot(C)
 
-savefig(p, "recurrent.svg"); nothing # hide
+p = plot(C, dpi=500) # hide
+savefig(p, "recurrent.png"); nothing # hide
 ```
 
-![Recurrent Set](recurrent.svg)
+![Recurrent Set](recurrent.png)
 
 ```@example 1
 T = TransferOperator(F, W, W)
@@ -76,10 +77,11 @@ T = TransferOperator(F, W, W)
 ```@example 1
 p = scatter(λ)
 
-savefig(p, "evs.svg"); nothing # hide
+p = scatter(λ, dpi=500) # hide
+savefig(p, "evs.png"); nothing # hide
 ```
 
-![Eigenvalues](evs.svg)
+![Eigenvalues](evs.png)
 
 We see that the ``6``th roots of unity clearly seem to be part of the spectrum. We therefore can conclude that there is an approximate 6-cycle, and can extract the sets corresponding to the cycle. 
 
@@ -117,9 +119,14 @@ for (i, Aᵢ) in enumerate(A)
     p = plot!(p, Aᵢ, color=i, fillalpha=0.6);
 end
 
-savefig(p, "supps.svg"); nothing # hide
+p = plot(dpi=500); # hide
+for (i, Aᵢ) in enumerate(A) # hide
+    global p; # hide
+    p = plot!(p, Aᵢ, color=i, fillalpha=0.6); # hide
+end # hide
+savefig(p, "supps.png"); nothing # hide
 ```
 
-![Cyclic Sets](supps.svg)
+![Cyclic Sets](supps.png)
 
 Note that we can also approximate the cyclic sets from the measures `μ` using sparse eigenbasis approximation (SEBA) as described in the corresponding section of the documentation. 

@@ -21,10 +21,11 @@ end
 ```@repl 1
 using Plots
 p = scatter(orbit)
-savefig(p, "henon-simulation.svg"); nothing # hide
+p = scatter(orbit, dpi=500) # hide
+savefig(p, "henon-simulation.png"); nothing # hide
 ```
 
-![Hénon attractor](henon-simulation.svg)
+![Hénon attractor](henon-simulation.png)
 
 This map is _chaotic_ [henonchaos1](@cite), [henonchaos2](@cite), it has sensitive dependence on initial conditions. That is, small perturbations (as unavoidable on a computer) during the computation grow exponentially during the iteration.  Thus, apart from a few iterates at the beginning, the computed trajectory does not (necessarily) follow a true trajectory. One might therefore question how reliable this figure is.
 
@@ -68,9 +69,10 @@ A = relative_attractor(F, B, steps = 19)
 
 ```@repl 1
 p = plot(A)
-savefig(p, "henon.svg"); nothing # hide
+p = plot(A; dpi=500) # hide
+savefig(p, "henon.png"); nothing # hide
 ```
 
-![box covering of the Hénon attractor](henon.svg)
+![box covering of the Hénon attractor](henon.png)
 
 In addition to covering the attractor, this box collection also covers an unstable fixed point near (-1,-0.3) and its unstabe manifold (cf. [subalg](@cite)). 

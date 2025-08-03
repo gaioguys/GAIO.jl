@@ -62,10 +62,11 @@ p = plot!(
     boundary[:, 1], boundary[:, 2], 
     linewidth=4, fill=(0, RGBA(0.,0.,1.,0.2)), 
     color=RGBA(0.,0.,1.,0.4), 
-    lab="True image under f"
+    lab="True image under f", 
+    dpi=500 # hide
 )
 
-savefig("box_image.svg"); nothing # hide
+savefig("box_image.png"); nothing # hide
 ```
 
-![Example map](box_image.svg)
+![Example map](box_image.png)

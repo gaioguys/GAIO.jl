@@ -14,10 +14,6 @@ The method used to compute ``D`` follows that of [PhysRevLett.45.1175](@cite): i
 
 Using this method we have everything we need to compute the box dimension for general objects. All that is required is a sequence of successively finer box sets which cover the object. 
 
-```@docs; canonical=false
-box_dimension
-```
-
 ### Example
 
 ```@example 1
@@ -61,4 +57,8 @@ end
 
 s = SubdivisionIterator(boxset = S)
 box_dimension(s)
+```
+
+```@docs; canonical=false
+box_dimension
 ```

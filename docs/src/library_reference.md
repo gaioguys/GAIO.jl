@@ -10,7 +10,6 @@ Pages = ["library_reference.md"]
 Modules = [
     GAIO,
     get_extension(GAIO, :MetaGraphsNextExt),
-    get_extension(GAIO, :SIMDExt),
     get_extension(GAIO, :CUDAExt),
     get_extension(GAIO, :PlotsExt),
     get_extension(GAIO, :MakieExt)
@@ -24,7 +23,6 @@ Private = false
 Modules = [
     GAIO,
     get_extension(GAIO, :MetaGraphsNextExt),
-    get_extension(GAIO, :SIMDExt),
     get_extension(GAIO, :CUDAExt),
     get_extension(GAIO, :PlotsExt),
     get_extension(GAIO, :MakieExt)

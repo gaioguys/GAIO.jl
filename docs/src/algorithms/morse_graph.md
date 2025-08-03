@@ -8,10 +8,6 @@ Much the same way that morse theory can describe a smooth closed manifold by mea
 
 For practical purposes, this means a dynamical system can be described as an acyclic directed graph where the nodes are the recurrent components, and edges are drawn if there exists an orbit between recurrent components. 
 
-```@docs; canonical=false
-morse_graph
-```
-
 ### Example
 
 ```@repl 1
@@ -60,10 +56,11 @@ p2 = plot(BoxMeasure(G), colormap=colors, colorbar=false)
 
 p = plot(p1, p2)
 
-savefig(p, "morse_graph.svg"); nothing # hide
+p = plot(p1, p2, dpi=500) # hide
+savefig(p, "morse_graph.png"); nothing # hide
 ```
 
-![Morse graph](morse_graph.svg)
+![Morse graph](morse_graph.png)
 
 The same result can be created using Makie.jl and GraphMakie.jl: 
 
@@ -85,4 +82,8 @@ for (i, label) in enumerate(labels(G))
     morse_set = G[label]
     plot!(ax, morse_set, color=colors[i])
 end
+```
+
+```@docs; canonical=false
+morse_graph
 ```

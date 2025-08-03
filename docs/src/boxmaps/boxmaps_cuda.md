@@ -58,10 +58,11 @@ F = BoxMap(:montecarlo, :simd, f, domain, n_points = n_points)
 p = plot!(
     p, F(B), 
     color=RGBA(1.,0.,0.,0.5), 
-    lab="$n_points MonteCarlo test points"
+    lab="$n_points MonteCarlo test points", 
+    dpi=500 # hide
 )
 
-savefig("cuda.svg"); nothing # hide
+savefig("cuda.png"); nothing # hide
 ```
 
-![MonteCarlo BoxMap](cuda.svg)
+![MonteCarlo BoxMap](cuda.png)

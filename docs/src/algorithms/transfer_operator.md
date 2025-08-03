@@ -37,14 +37,7 @@ where `R` is also a `BoxSet`.
 ```julia
 M = Matrix(F♯)
 ```
-It is important to note that `TransferOperator` is only supported over the box set `B`, but if one lets a `TransferOperator` act on a `BoxMeasure` via multiplication (see the example below), then the support `B` is extended "on the fly" to include the support of the `BoxMeasure`.
-
-```@docs; canonical=false
-TransferOperator
-BoxMeasure
-sum(::Any, ::BoxMeasure)
-∘(f, boxmeas::BoxMeasure)
-```
+It is important to note that `TransferOperator` is only supported over the box set `B`. 
 
 ### Example : Invariant Measure of the Lorenz Attractor
 

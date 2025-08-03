@@ -14,10 +14,6 @@ The idea for the algorithm is to construct a directed graph ``G`` whose vertices
 
 If we repeadetly refine the strongly connected box set through ``k`` subdivision steps, then the algorithm converges to the recurrent set as ``k \to \infty`` in the Hausdorff metric. 
 
-```@docs; canonical=false
-recurrent_set
-```
-
 ### Example
 
 ```@example 1
@@ -27,8 +23,8 @@ using GAIO
 const a, b = 1.4, 0.3
 f((x,y)) = (1 - a*x^2 + y, b*x)
 
-center, radius = (0, 0), (3, 3)
-P = BoxGrid(Box(center, radius))
+cen, rad = (0, 0), (3, 3)
+P = BoxGrid(Box(cen, rad))
 F = BoxMap(f, P)
 S = cover(P, :)
 A = recurrent_set(F, S, steps = 22)
@@ -37,10 +33,11 @@ using Plots
 p = plot(A);
 
 using Plots: savefig # hide
-savefig(p, "henon_rec.svg"); nothing # hide
+p = plot(A, dpi=500) # hide
+savefig(p, "henon_rec.png"); nothing # hide
 ```
 
-![Recurrent Set](henon_rec.svg)
+![Recurrent Set](henon_rec.png)
 
 ### Example
 
@@ -65,10 +62,11 @@ C = recurrent_set(F, S, steps=18)
 using Plots
 p = plot(C);
 
-savefig(p, "recurrent_set.svg"); nothing # hide
+p = plot(C, dpi=500) # hide
+savefig(p, "recurrent_set.png"); nothing # hide
 ```
 
-![Recurrent set](recurrent_set.svg)
+![Recurrent set](recurrent_set.png)
 
 We find an unstable manifold surroundng a fixed point as well as a stable periodic orbit. 
 
@@ -87,4 +85,8 @@ function recurrent_set(F::BoxMap, B₀::BoxSet{Box{N,T}}; steps=12) where {N,T}
     end
     return B
 end
+```
+
+```@docs; canonical=false
+recurrent_set
 ```

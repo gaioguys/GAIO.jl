@@ -46,10 +46,11 @@ F = BoxMap(:grid, f, domain, n_points = n_points)
 p = plot!(
     p, F(B), 
     color=RGBA(0.,1.,0.,0.5), 
-    lab="$(join(n_points, "x")) grid of test points"
+    lab="$(join(n_points, "x")) grid of test points", 
+    dpi=500 # hide
 )
 
-savefig("grid.svg"); nothing # hide
+savefig("grid.png"); nothing # hide
 ```
 
-![Grid BoxMap](grid.svg)
+![Grid BoxMap](grid.png)

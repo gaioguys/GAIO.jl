@@ -1,7 +1,7 @@
 function MatrixNetworks.MatrixNetwork(F♯::TransferOperator)
     @assert F♯.domain == F♯.codomain
     adj = copy(F♯.mat')
-    MatrixNetwork(size(adj, 1), getcolptr(adj), rowvals(adj), nonzeros(adj))
+    MatrixNetwork(size(adj, 1), getcolptr(adj), rowvals(adj), ones(Int, size(nonzeros(adj))))
 end
 
 function MatrixNetworks.scomponents(F♯::TransferOperator)
@@ -81,7 +81,7 @@ end
 
 function morse_component_map(strong_components::Strong_components_output)
     morse_map_ = morse_map(strong_components)
-    morse_component_map(strong_components, morse_map_)
+    return morse_component_map(strong_components, morse_map_)
 end
 
 #=
@@ -179,7 +179,7 @@ function morse_tiles(F::BoxMap, B::BoxSet)
     F♯ = TransferOperator(F, B, B)
     strong_components = scomponents(F♯)
     morse_component_map_F♯ = morse_component_map(strong_components)
-    morse_tiles(F♯.domain, morse_component_map_F♯)
+    return morse_tiles(F♯.domain, morse_component_map_F♯)
 end
 
 #=
@@ -192,6 +192,27 @@ function morse_tiles(F::BoxMap, B::BoxSet)
     morse_tiles(TransferOperator(F, B, B))
 end
 =#
+
+"""
+Given a `BoxMap`, a domain `BoxSet` (together interpreted 
+as a transfer graph `G`), 
+compute the boxes corresponding to the vertices 
+of the morse graph, return their union as a `BoxSet`. 
+"""
+function morse_sets(
+        domain::BoxSet{R,Q,S}, morse_component_map::AbstractVector;
+        dicttype=OrderedDict{keytype(Q),Int}
+    ) where {R,Q,S<:OrderedSet}
+
+    return BoxSet(morse_tiles(domain, morse_component_map, dicttype=dicttype))
+end
+
+function morse_sets(F::BoxMap, B::BoxSet)
+    F♯ = TransferOperator(F, B, B)
+    strong_components = scomponents(F♯)
+    morse_component_map_F♯ = morse_component_map(strong_components)
+    return morse_sets(F♯.domain, morse_component_map_F♯)
+end
 
 """
 Given a `BoxMap` and a domain `BoxSet` (together interpreted 
