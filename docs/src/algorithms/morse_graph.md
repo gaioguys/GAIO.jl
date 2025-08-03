@@ -22,9 +22,8 @@ P = BoxGrid(Q, (256,256))
 S = cover(P, :)
 
 F = BoxMap(:interval, f, Q)
-F♯ = TransferOperator(F, S, S)
 
-G = morse_graph(F♯)
+G = morse_graph(F, S)
 
 labels(G)
 

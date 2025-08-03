@@ -54,7 +54,7 @@ p = plot!(
 using SIMD
 
 n_points = 2048
-F = BoxMap(:montecarlo, :simd, f, domain, n_points = n_points)
+F = BoxMap(:montecarlo, f, domain, n_points = n_points)
 p = plot!(
     p, F(B), 
     color=RGBA(1.,0.,0.,0.5), 
