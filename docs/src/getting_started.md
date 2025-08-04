@@ -10,8 +10,8 @@ f((x,y)) = ( 1 - a*x^2 + y,  b*x )
 Iterating some random intial point exhibits a strange attractor 
 
 ```@repl 1
-orbit = NTuple{2, Float64}[]
 x = (1, 1)
+orbit = [x]
 for k in 1:10000
     x = f(x)
     push!(orbit, x)

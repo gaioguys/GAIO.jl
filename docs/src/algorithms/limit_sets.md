@@ -1,6 +1,6 @@
 # Limit Sets and Invariance
 
-### The ``omega``-limit set
+### The ``\omega``-limit set
 
 The ``\omega``-limit set describes the asymptotic behavior of trajectories based on some fixed starting points. It is the set which is reached after "infinite time". For some starting set ``S`` in the domain ``Q``, let ``O^k (S) = \bigcup_{n \geq k} f^n (S)`` be the set ``S`` at all times _after_ ``k`` iterations. Now, 
 ```math
@@ -79,9 +79,9 @@ In GAIO.jl this subdivision algorithm is built into `ω` via the `subdivision` k
 ω
 ```
 
-### The ``alpha``-limit set
+### The ``\alpha``-limit set
 
-The ``alpha``-limit set is the "time-reversed" ``\omega``-limit set
+The ``\alpha``-limit set is the "time-reversed" ``\omega``-limit set
 ```math
 \alpha (S) = \bigcap_{k \geq 0} \overline{O^{-k} (S)} . 
 ```
