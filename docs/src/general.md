@@ -20,38 +20,29 @@ c, r = box
 
 Most algorithms in GAIO.jl revolve around a partition $\scr P$  of some domain $X\subset\mathbb{R}^d$ into small boxes.  Often, the domain `X` is a `Box` and the partition `𝒫` is a grid of boxes on `X`. To create an $n_1 \times \ldots \times n_d$-element grid of boxes on a box `X`, pass `X` and the tuple `n = (n_1,...,n_d)` to the function `BoxGrid`
 ```@repl 1
+X = box     # domain
 n = (4, 2)
 𝒫 = BoxGrid(X, n)
 ```
 
-<!--`BoxGrid`s use a cartesian indexing structure to be memory-efficient. These indices are accessed and used through the API:
 ```@repl 1
 x = (0.2, 0.1)
-key = point_to_key(P, x)    # x is some point in the domain Q
-box = key_to_box(P, key)    # cover the point x with a box from P
-box = point_to_box(P, x)    # performs both above functions
-```-->
+key = point_to_key(𝒫, x)    # x is some point in the domain Q
+box = key_to_box(𝒫, key)    # cover the point x with a box from P
+box = point_to_box(𝒫, x)    # performs both above functions
+```
 
 ## BoxTree
 
 For partitions of `X` into variably sized boxes, one can use `BoxTree`:
 ```@repl 1
-𝒫 = BoxTree(X)
+𝒫_tree = BoxTree(X)
 ```
 A `BoxTree` uses a binary tree structure to store a box partition of the domain.  One can refine a  partition by bisecting all boxes in `𝒫` along the $i$-th coordinate direction through 
 ```@repl 1
-𝒫 = subdivide!(𝒫, i)
+i = 1   # for example, the first coord. direction
+subdivide!(𝒫_tree, i)
 ```
-
-<!--The `BoxTree` created above is equivalent to a 4x2 `BoxGrid`. One can retrieve this using 
-```@repl 1
-P3 = BoxGrid(P2)
-```
-`BoxTree`s use indices of the type `(depth, cartesian_index)` where `cartesian_index` is the equivalent index of a `BoxGrid` with the same size as a `BoxTree` subdivided `depth` times. In other words,
-```@repl 1
-key_to_box( P, (1, 1) ) == key_to_box( P2, (4, (1, 1)) )
-key_to_box( P, (4, 2) ) == key_to_box( P2, (4, (4, 2)) )
-```-->
 
 ## BoxSet
 
@@ -65,15 +56,6 @@ x = (0.2, 0.4)
 xs = [ rand(2) for _=1:10 ]
 ℬ = cover(𝒫, xs)   # set of boxes containing the points in xs
 ```
-
-<!--One can also create a `Boxset` from an iterable of `Box`es. This will cover every element of the iterable with boxes from `P`:
-```@repl 1
-x1 = (0.2, 0.1)
-box1 = point_to_box(P, x1)
-x2 = (0.3, 0.6)
-box2 = point_to_box(P, x2)
-B = cover(P, [box1, box2])
-```-->
 
 You can access the boxes or their internal data via iteration
 ```@repl 1
@@ -120,17 +102,12 @@ using ProgressMeter
 
 The _Perron-Frobenius operator_ (or _transfer operator_) [[lasotamackey](@cite)] associated to a map $f$ can be approximated using the `TransferOperator` type.  To construct a (discretized) `TransferOperator` from a `BoxMap` $F$ on the domain `BoxSet` `ℬ`, you type
 ```@repl 1
-T = TransferOperator(F, ℬ)
+𝒫 = BoxGrid(X, (20,20))     # 20 x 20 so there's more going on
+ℬ = cover(𝒫, :)             # cover the whole partition
+T = TransferOperator(F, ℬ, ℬ)
 ```
 Again, a progress meter can be displayed with the additional keyword argument `show_progress = true`.
 
-<!--Internally, `GAIO.jl` will choose some enumeration of the domain and codomain, and use this for indexing the columns and rows, respectively.  You can generate the associated vector of boxes by `enumerated_ℬ = collect(T.domain)`. To convert the transfer operator to a matrix (cf. [[algGAIO](@cite)]), one can simply call the `sparse` function from `SparseArrays` 
-```@repl 1
-using SparseArrays
-
-# mat[i, j] ≈ probability( f(x) ∈ enumerated_B[j]  |  x ∈ enumerated_B[i] )
-mat = sparse(T)
-```-->
 Formally, `T` is a linear (in fact, a Markov) operator on the space of steps functions on the box set ℬ.  Of particular interest are often certain eigenvectors. For example, an eigenvector at the eigenvalue 1 is an (approximate) invariant measure, which characterizes the long term behaviour of $f$ according to [Birkhoff's ergodic theorem](https://en.wikipedia.org/wiki/Birkhoff%27s_ergodic_theorem). 
 ```@repl 1
 λ, ev = eigs(T)
@@ -173,17 +150,6 @@ Finite signed measures can be given a vector space structure. This is also suppo
 ν + μ
 2ν - μ/2
 ```
-<!--A `BoxMeasure` is implemented by a dictionary, mapping boxes to weights
-```@repl 1
-for (box, val) in μ
-    println(box, " => ", val)
-end
-```
-To access this structure oneself one can call
-```
-P = μ.partition
-key_val_pairs = pairs(μ)
-```-->
 
 ## Graphs of Boxes
 
