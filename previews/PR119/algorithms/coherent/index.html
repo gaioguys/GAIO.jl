@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Coherent Sets · GAIO.jl</title><meta name="title" content="Coherent Sets · GAIO.jl"/><meta property="og:title" content="Coherent Sets · GAIO.jl"/><meta property="twitter:title" content="Coherent Sets · GAIO.jl"/><meta name="description" content="Documentation for GAIO.jl."/><meta property="og:description" content="Documentation for GAIO.jl."/><meta property="twitter:description" content="Documentation for GAIO.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/citations.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="GAIO.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">GAIO.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../getting_started/">Getting started</a></li><li><a class="tocitem" href="../../general/">General usage</a></li><li><span class="tocitem">Invariant Sets</span><ul><li><a class="tocitem" href="../limit_sets/">Limit Sets and Attractors</a></li><li><a class="tocitem" href="../recurrent_set/">Reccurent Set</a></li><li><a class="tocitem" href="../unstable_manifold/">Stable and Unstable Manifold</a></li></ul></li><li><span class="tocitem">Transfer- and Koopman Operators</span><ul><li><a class="tocitem" href="../transfer_operator/">Ulam&#39;s method and Invariant Measures</a></li><li><a class="tocitem" href="../almost_invariant/">Almost Invariant (metastable) Sets</a></li><li><a class="tocitem" href="../cyclic/">Cyclic Sets</a></li><li class="is-active"><a class="tocitem" href>Coherent Sets</a></li><li><a class="tocitem" href="../seba/">Extracting Multiple Sets via SEBA</a></li></ul></li><li><span class="tocitem">Scalar Diagnostics</span><ul><li><a class="tocitem" href="../box_dimension/">Fractal Dimension</a></li><li><a class="tocitem" href="../ftle/">Lyapunov Exponents / FTLEs</a></li></ul></li><li><span class="tocitem">Conley-Morse Theory</span><ul><li><a class="tocitem" href="../morse_graph/">Morse Graph</a></li><li><a class="tocitem" href="../conley_index/">Conley Index</a></li></ul></li><li><span class="tocitem">Misceallenous Algorithms</span><ul><li><a class="tocitem" href="../root_covering/">Root Covering</a></li><li><a class="tocitem" href="../implicit_manifold/">Covering Implicitly Defined Manifolds</a></li></ul></li><li><a class="tocitem" href="../../plotting/">Plotting</a></li><li><span class="tocitem">Maximizing Performance</span><ul><li><a class="tocitem" href="../../cuda/">Using the GPU (Nvidia)</a></li><li><a class="tocitem" href="../../metal/">Using the GPU (Metal)</a></li></ul></li><li><a class="tocitem" href="../../examples/">Other Examples</a></li><li><span class="tocitem">BoxMaps</span><ul><li><a class="tocitem" href="../../boxmaps/boxmaps_general/">An Overview of BoxMap Types</a></li><li><a class="tocitem" href="../../boxmaps/montecarlo/"><code>MonteCarloBoxMap</code></a></li><li><a class="tocitem" href="../../boxmaps/grid/"><code>GridBoxMap</code></a></li><li><a class="tocitem" href="../../boxmaps/adaptive/"><code>AdaptiveBoxMap</code></a></li><li><a class="tocitem" href="../../boxmaps/interval/"><code>IntervalBoxMap</code></a></li><li><a class="tocitem" href="../../boxmaps/boxmaps_cuda/"><code>GPUSampledBoxmap</code></a></li><li><a class="tocitem" href="../../boxmaps/pointdiscretized/"><code>PointDiscretizedBoxMap</code></a></li><li><a class="tocitem" href="../../boxmaps/sampled/"><code>SampledBoxMap</code></a></li><li><a class="tocitem" href="../../boxmaps/new_types/">Creating you own BoxMap type</a></li></ul></li><li><a class="tocitem" href="../../library_reference/">Library Reference</a></li><li><a class="tocitem" href="../../references/">References</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Transfer- and Koopman Operators</a></li><li class="is-active"><a href>Coherent Sets</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Coherent Sets</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/gaioguys/GAIO.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/gaioguys/GAIO.jl/blob/master/docs/src/algorithms/coherent.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Coherent-Sets"><a class="docs-heading-anchor" href="#Coherent-Sets">Coherent Sets</a><a id="Coherent-Sets-1"></a><a class="docs-heading-anchor-permalink" href="#Coherent-Sets" title="Permalink"></a></h1><h3 id="Mathematical-Background"><a class="docs-heading-anchor" href="#Mathematical-Background">Mathematical Background</a><a id="Mathematical-Background-1"></a><a class="docs-heading-anchor-permalink" href="#Mathematical-Background" title="Permalink"></a></h3><p>The following approach is decribed in [<a href="../../references/#coherent">9</a>]. </p><p>Recalling the section on <a href="../almost_invariant/#Almost-Invariant-(metastable)-Sets">Almost Invariant (metastable) Sets</a>, we wish to understand sets which resist mixing over time. In the constext of autonomous dynamics, these are <em>almost invariant</em> sets. However, in the context of nonautonomous dynamics these are often referred to as <em>coherent</em> sets. To distinguish the maps for different times <code>t</code> we will write <span>$f_t$</span> to denote the dynamics at time <span>$t$</span>. </p><p>If the sets <span>$A_t$</span> and <span>$A_{t+\tau}$</span> satisfy <span>$A_t \approx f_{t}^{-1} (A_{t+\tau})$</span> then the set of points currently in <span>$A_t$</span> will be transported to <span>$A_{t+\tau}$</span> with little mixing, i.e. </p><p class="math-container">\[\frac{m( A_t \cap f_{t}^{-1} (A_{t+\tau}) )}{m(A_t)} \approx 1 .\]</p><p>As in the previous sections, we will summarize this as an eigenproblem. We would like to translate this problem to one of the form </p><p class="math-container">\[(f_t)_{\#}\,\mu_t \approx \mu_{t+\tau}\]</p><p>for some measures <span>$\mu_t,\ \mu_{t+\tau}$</span> with supports on <span>$A_t,\ A_{t+\tau}$</span>, respectively. However, in general we cannot expect <span>$A_t = A_{t+\tau}$</span> and hence cannot expect <span>$\mu_t = \mu_{t+\tau}$</span> either. Therefore, the above equation is not an eigenproblem. </p><p>Instead, our heuristic will be to push forward <span>$\mu_t$</span> using <span>$(f_{t})_{\#}$</span> to obtain something close to <span>$\mu_{t+\tau}$</span>, and then pull back with the adjoint operator <span>$(f_{t})_{\#}^{\,*}$</span> to return something close to <span>$\mu_t$</span>. (Analogously we could pull back <span>$\mu_{t+\tau}$</span> with <span>$(f_{t})_{\#}^{\,*}$</span> and then push forward with <span>$(f_{t})_{\#}$</span>.) </p><p>This leaves a new eigenproblem of the form <span>$(f_{t})_{\#}^{\,*} \, (f_{t})_{\#}$</span> (or <span>$(f_{t})_{\#} \, (f_{t})_{\#}^{\,*}$</span>). These eigenvalues are precisely the right (or left) singular vectors of the operator <span>$(f_t)_{\#}$</span>. </p><h3 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h3><p>We will consider the <em>periodically driven double-gyre</em> described in the section on <a href="../almost_invariant/#Almost-Invariant-(metastable)-Sets">Almost Invariant (metastable) Sets</a>. See that page for details on the map. </p><pre><code class="language-julia hljs">t₀, τ, steps = 0, 0.1, 20
+t₁ = t₀ + τ * steps
+Tspan = t₁ - t₀
+Φₜ₀ᵗ¹(z) = Φ(z, t₀, τ, steps)
+
+domain = Box((1.0, 0.5), (1.0, 0.5))
+P = BoxGrid(domain, (256, 128))
+S = cover(P, :)
+
+F = BoxMap(:grid, Φₜ₀ᵗ¹, domain, n_points=(6,6))
+
+T = TransferOperator(F, S, S)
+
+# we need to rescale the operator so that we
+# can be certain that the second-largest
+# singular value is the desired one
+function rescale!(T::TransferOperator)
+    M = T.mat
+    p = ones(size(T, 2))
+    q = M * p
+    M .= Diagonal(1 ./ sqrt.(q)) * M
+end
+
+rescale!(T)
+
+# we give Arpack some help converging to the singular values,
+# see the Arpack docs for explanations of keywords
+tol, maxiter, v0 = eps()^(1/2), 1000, ones(size(T, 2))
+U, σ, V = svds(T; nsv=32, maxiter=maxiter, tol=tol, v0=v0)
+
+σ</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">32-element Vector{Float64}:
+ 1.0
+ 0.9999667529824439
+ 0.9998753180044381
+ 0.9998711805027466
+ 0.9998276390873286
+ 0.9998233162413814
+ 0.9997971943727411
+ 0.9996932575197699
+ 0.9996145813928398
+ 0.9995697900007197
+ ⋮
+ 0.9990048108041221
+ 0.9989567143661751
+ 0.998922495310833
+ 0.9989116047695611
+ 0.998900185707294
+ 0.9988661553791491
+ 0.9987727359682239
+ 0.9987053450068214
+ 0.998671710738242</code></pre><pre><code class="language-julia hljs">μ = U[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BoxMeasure in 256 x 128 - element BoxGrid with 32768 boxes in its suport</code></pre><pre><code class="language-julia hljs">using Plots
+
+p = plot(sign ∘ μ, colormap=:redsblues);</code></pre><p><img src="../sv1.png" alt="Second left singular measure"/></p><pre><code class="language-julia hljs">n_frames = 120
+times = range(t₀, t₁, length=n_frames)
+
+anim = @animate for t in times
+    Φₜ(z) = Φ(z, t, τ, steps)
+
+    F = BoxMap(:grid, Φₜ, domain, n_points=(6,6))
+    F♯ = TransferOperator(F, S, S)
+    rescale!(F♯)
+
+    global maxiter, tol, v0
+    U, σ, V = svds(F♯; maxiter=maxiter, tol=tol, v0=v0)
+
+    μ = U[2]
+
+    # do some rescaling to get a nice plot
+    μ = ( x -&gt; sign(x) * log(abs(x) + 1e-4) ) ∘ μ
+    s = sign(μ[(10,40)])
+    M = maximum(abs ∘ μ)
+    μ = s/M * μ
+
+    plot(μ, clims=(-1,1), colormap=:redsblues)
+end;
+gif(anim, &quot;coherent.gif&quot;, fps=20)</code></pre><p><img src="../../assets/coherent.gif" alt="Coherent Sets"/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../cyclic/">« Cyclic Sets</a><a class="docs-footer-nextpage" href="../seba/">Extracting Multiple Sets via SEBA »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Tuesday 16 September 2025 08:45">Tuesday 16 September 2025</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
