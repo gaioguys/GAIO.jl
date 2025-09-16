@@ -2,13 +2,13 @@
 
 ### The ``\omega``-limit set
 
-The ``\omega``-limit set describes the asymptotic behavior of trajectories based on some fixed starting points. It is the set which is reached after "infinite time". For some starting set ``S`` in the domain ``Q``, let ``O^k (S) = \bigcup_{n \geq k} f^n (S)`` be the set ``S`` at all times _after_ ``k`` iterations. Now, 
+The ``\omega``-limit set describes the asymptotic behavior of trajectories based on some fixed starting points. It is the set which is "reached after infinite time". For some starting set ``S`` in the domain ``X``, let ``O^k (S) = \bigcup_{n \geq k} f^n (S)`` be the set ``S`` at all times _after_ ``k`` iterations. Now, 
 ```math
 \omega (S) = \bigcap_{k \geq 0} \overline{O^k (S)} . 
 ```
 By taking the intersection over all ``k``, we are "stripping away" all finite-time behavior, leaving only the set which is maintained in infinite time. 
 
-Let us lift this definition onto the `BoxMap` `F` over some `BoxLayout` `P` and initial set `S ⊂ P`. We give `P` the discrete topology so that ``\overline{O^k (S)} = O^k (S)`` and hence the ``\omega``-limit set reduces to ``\omega (S) = \bigcap_{k \geq 0} F^k (S)``. This can be easily iteratively obtained by 
+Let us lift this definition onto the `BoxMap` `F` over some `BoxGrid` `𝒫` and initial set `𝒮 ⊂ 𝒫`. We give `𝒫` the discrete topology so that ``\overline{O^k (𝒮)} = O^k (𝒮)`` and hence the ``\omega``-limit set reduces to ``\omega (𝒮) = \bigcap_{k \geq 0} F^k (𝒮)``. This can be easily iteratively obtained by 
 ```julia
 function my_ω(F, S)
     Sₖ = S
@@ -22,22 +22,22 @@ function my_ω(F, S)
     return Sₖ
 end
 ```
-Since `P` is finite, this iteration must halt after finitely many steps. 
+Since `𝒫` is finite, this iteration must halt after finitely many steps. 
 
 ```@example 1
 using GAIO
 
 # the Henon map
 const a, b = 1.4, 0.3
-f((x,y)) = (1 - a*x^2 + y, b*x)
+f((x,y)) = (1-a*x^2+y, b*x)
 
-cen, rad = (0, 0), (3, 3)
-Q = Box(cen, rad)
-P = BoxGrid(Q, (40,40))
-F = BoxMap(f, P)
-S = cover(P, :)
+c, r = (0, 0), (3, 3)
+X = Box(c, r)
+𝒫 = BoxGrid(X, (40,40))
+F = BoxMap(f, 𝒫)
+𝒮 = cover(𝒫, :)
 
-A = ω(F, S, subdivision=false)
+A = ω(F, 𝒮, subdivision=false)
 
 using Plots
 
@@ -51,7 +51,7 @@ savefig("omega_limit.png"); nothing # hide
 ![omega-limit set of the discrete boxset](omega_limit.png)
 
 
-(Provided the `BoxMap` is accurate enough), this is now a covering of the original ``\omega``-limit set. This is useful since we may now refine the `BoxSet` which was returned by `ω(F, S)`, and run the iteration once more
+Provided the `BoxMap` is accurate enough, this is now a covering of the original ``\omega``-limit set. This is useful since we may now refine the `BoxSet` which was returned by `ω(F, S)`, and run the iteration once more
 
 ```julia
 function my_ω_with_subdivision(F, S, steps)
@@ -85,7 +85,7 @@ The ``\alpha``-limit set is the "time-reversed" ``\omega``-limit set
 ```math
 \alpha (S) = \bigcap_{k \geq 0} \overline{O^{-k} (S)} . 
 ```
-where ``O^{-k} (S) = \bigcup_{n \geq k} f^{-n} (S)`` and ``f^{-n} (A)`` is the preimage of ``A`` under ``f^n``. When we again lift this definition to `BoxMap`s, we arrive at ``\alpha (S) = \bigcap_{k \geq 0} F^{-k} (S)``, so that the previous algorithms still work with ``F^{-1}`` (the preimage function) replacing ``F``, 
+where ``O^{-k} (S) = \bigcup_{n \geq k} f^{-n} (S)`` and ``f^{-n} (A)`` is the preimage of ``A`` under ``f^n``. When we again lift this definition to `BoxMap`s, we arrive at ``\alpha (𝒮) = \bigcap_{k \geq 0} F^{-k} (𝒮)``, so that the previous algorithms still work with ``F^{-1}`` (the preimage function) replacing ``F``, 
 ```julia
 function α(F, S)
     F⁻¹(B) = preimage(F, B, B)   # actually computes  F⁻¹(B) ∩ B  
