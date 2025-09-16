@@ -17,34 +17,22 @@ const neighborhood = GAIO.neighborhood
 bib = CitationBibliography(joinpath(@__DIR__, "src", "references.bib"))
 ci = get(ENV, "CI", "false") == "true"
 
-#ENV["JULIA_DEBUG"] = Documenter
-ENV["JULIA_DEBUG"] = nothing
+ENV["JULIA_DEBUG"] = Documenter
+#ENV["JULIA_DEBUG"] = nothing
 
-ENV["n_frames"] = ci ? 120 : 20
-ENV["GKSwstype"] = "100"
+ENV["n_frames"] = ci ? 120 : 20    # use higher framerate in production
+ENV["GKSwstype"] = "100"    # allow Plots, Makie to run headless
 
 pages = [
     "Home" => "index.md",
     #"Testing Page" => "test.md",
     "Getting started" => "getting_started.md",
     "General usage" => "general.md",
-    "BoxMaps" => [
-        "boxmaps/boxmaps_general.md",
-        "boxmaps/montecarlo.md",
-        "boxmaps/grid.md",
-        "boxmaps/adaptive.md",
-        "boxmaps/interval.md",
-        "boxmaps/boxmaps_simd.md",
-        "boxmaps/boxmaps_cuda.md",
-        "boxmaps/pointdiscretized.md",
-        "boxmaps/sampled.md",
-        "boxmaps/new_types.md"
-    ],
-    #"BoxMaps" => "boxmap.md",
     "Invariant Sets" => [
-        "Relative Attractor" => "algorithms/relative_attractor.md",
+        "Limit Sets and Attractors" => "algorithms/limit_sets.md",
+        #"Relative Attractor" => "algorithms/relative_attractor.md",
         "Reccurent Set" => "algorithms/recurrent_set.md",
-        "Maximal Invariant Set" => "algorithms/maximal_invariant_set.md", 
+        #"Maximal Invariant Set" => "algorithms/maximal_invariant_set.md", 
         "Stable and Unstable Manifold" => "algorithms/unstable_manifold.md"
     ],
     "Transfer- and Koopman Operators" => [
@@ -69,12 +57,24 @@ pages = [
     ],
     "Plotting" => "plotting.md",
     "Maximizing Performance" => [
-        "simd.md",
+        #"simd.md",
         "cuda.md",
         "metal.md"
     ],
     "Other Examples" => "examples.md",
-    "Data Structures" => "data_structures.md", 
+    "BoxMaps" => [
+        "boxmaps/boxmaps_general.md",
+        "boxmaps/montecarlo.md",
+        "boxmaps/grid.md",
+        "boxmaps/adaptive.md",
+        "boxmaps/interval.md",
+        #"boxmaps/boxmaps_simd.md",
+        "boxmaps/boxmaps_cuda.md",
+        "boxmaps/pointdiscretized.md",
+        "boxmaps/sampled.md",
+        "boxmaps/new_types.md"
+    ],
+    #"Data Structures" => "data_structures.md", 
     "Library Reference" => "library_reference.md",
     "References" => "references.md"
 ]
@@ -83,7 +83,7 @@ makedocs(
     modules = [
         GAIO,
         get_extension(GAIO, :MetaGraphsNextExt),
-        get_extension(GAIO, :SIMDExt),
+        #get_extension(GAIO, :SIMDExt),
         get_extension(GAIO, :CUDAExt),
         get_extension(GAIO, :PlotsExt),
         get_extension(GAIO, :MakieExt)

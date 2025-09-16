@@ -45,10 +45,11 @@ F = BoxMap(:interval, f, domain)
 p = plot!(
     p, F(B), 
     color=RGBA(1.,0.5,0.,0.5), 
-    lab="interval arithmetic"
+    lab="interval arithmetic", 
+    dpi=500 # hide
 )
 
-savefig("interval.svg"); nothing # hide
+savefig("interval.png"); nothing # hide
 ```
 
-![Interval Arithmetic BoxMap](interval.svg)
+![Interval Arithmetic BoxMap](interval.png)

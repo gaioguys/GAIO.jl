@@ -18,10 +18,6 @@ Note that the final heuristic does not return a strict partition of the features
 
 By default when calling GAIO.jl's `seba`, hard partitioning is performed. 
 
-```@docs; canonical=false
-seba
-```
-
 ### Example
 
 We will continue using the periodically driven double-gyre introduced in the section on [Almost Invariant (metastable) Sets](@ref). See that code block for the definition of the map. 
@@ -114,10 +110,11 @@ using Plots
 
 p = plot(μ, colormap=:jet);
 
-savefig("second_eigvec.svg"); nothing # hide
+p = plot(μ, colormap=:jet, dpi=500); # hide
+savefig("second_eigvec.png"); nothing # hide
 ```
 
-![Second egienvector of the transfer operator](second_eigvec.svg)
+![Second egienvector of the transfer operator](second_eigvec.png)
 
 We notice there are two "blobs" defining the second eigenmeasure. These correspond to the almost invariant sets; there are two "vortices" where mass flows in a circular pattern and doesn't mix with the rest of the domain. We wish to isolate these blobs using `seba`
 
@@ -139,7 +136,13 @@ setdiff!(S2, S1) # hide
 p = plot(S1, xlims=(0,2), ylims=(0,1), color=:red);
 p = plot!(p, S2, color=:blue);
 
-savefig("seba.svg"); nothing # hide
+p = plot(S1, xlims=(0,2), ylims=(0,1), color=:red, dpi=500); # hide
+p = plot!(p, S2, color=:blue); # hide
+savefig("seba.png"); nothing # hide
 ```
 
-![Almost invriant sets isolated by SEBA](seba.svg)
+![Almost invriant sets isolated by SEBA](seba.png)
+
+```@docs; canonical=false
+seba
+```

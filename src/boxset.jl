@@ -196,6 +196,7 @@ function max_radius(boxset::BoxSet{B,P,S}) where {N,T,I,B,P<:BoxTree{N,T,I},S}
 end
 
 max_radius(boxset::BoxSet{B,P,S}) where {B,P<:BoxGrid,S} = first(boxset).radius
+volume(boxset::BoxSet) = sum(volume(box) for box in boxset)
 Base.isempty(boxset::BoxSet) = isempty(boxset.set)
 Base.empty!(boxset::BoxSet) = (empty!(boxset.set); boxset)
 Base.copy(boxset::BoxSet) = BoxSet(boxset.partition, copy(boxset.set))
@@ -322,4 +323,21 @@ function marginal(B⁺::BoxSet; dim)
     P = marginal(P⁺; dim=dim)
     B = BoxSet(P)
     return union!( B, tuple_deleteat.(keys(B⁺), dim) )
+end
+
+function Base.isapprox(
+        b1::BoxSet{B1}, b2::BoxSet{B2}; 
+        atol::Real=0, rtol::Real=atol>0 ? 0 : √(max(eps(T1),eps(T2)))
+    ) where {N,T1,T2,B1<:Box{N,T1},B2<:Box{N,T2}}
+    
+    P1, P2 = b1.partition, b2.partition
+    tol = if atol > 0
+        atol
+    else
+        rtol * max(volume(P1.partition.domain), volume(P2.partition.domain))
+    end
+
+    b1_cover, b2_cover = cover(P2, b1), cover(P1, b2)
+    volume_difference = volume(setdiff(b1, b2_cover)) + volume(setdiff(b2, b1_cover))
+    return volume_difference ≤ tol
 end

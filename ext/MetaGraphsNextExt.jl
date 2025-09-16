@@ -56,19 +56,21 @@ function MetaGraph(digraph::AbstractGraph{Code}, tiles::BoxMeasure{B,K,V}; setty
     )
 end
 
-"""
-    morse_graph(F::BoxMap, B::BoxSet) -> MetaGraph
-    morse_graph(F♯::TransferOperator) -> MetaGraph
-
-Construct the morse graph
-"""
+#=
 function morse_graph(F♯::TransferOperator)
     adj, tiles = morse_adjacencies_and_tiles(F♯)
     MetaGraph(DiGraph(adj), tiles)
 end
+=#
 
+"""
+    morse_graph(F::BoxMap, B::BoxSet) -> MetaGraph
+
+Construct the morse graph
+"""
 function morse_graph(F::BoxMap, B::BoxSet)
-    morse_graph(TransferOperator(F, B, B))
+    adj, tiles = morse_adjacencies_and_tiles(F, B)
+    MetaGraph(DiGraph(adj), tiles)
 end
 
 function BoxMeasure(G::MetaGraph{<:Any,<:Any,L,<:BoxSet,<:Any,P}) where {L,P<:BoxLayout}

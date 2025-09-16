@@ -67,10 +67,10 @@ export IntervalBoxMap
 
 export rk4, rk4_flow_map
 export preimage, symmetric_image
-export morse_map, morse_component_map, morse_graph, morse_tiles, morse_graph_and_tiles
+export morse_map, morse_component_map, morse_graph, morse_tiles, morse_sets, morse_graph_and_tiles
 export isolating_neighborhood, isloating_nbhd, index_pair, index_quad, @save
 
-export relative_attractor, maximal_forward_invariant_set, maximal_backward_invariant_set, maximal_invariant_set
+export ω, α, relative_attractor, maximal_forward_invariant_set, maximal_backward_invariant_set, maximal_invariant_set
 export unstable_set, recurrent_set
 export box_dimension, finite_time_lyapunov_exponents
 export armijo_rule, adaptive_newton_step, cover_roots, cover_manifold

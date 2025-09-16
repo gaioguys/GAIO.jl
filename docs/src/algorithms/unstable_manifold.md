@@ -19,10 +19,6 @@ The idea behind the algorithm [subalg](@cite) to compute the unstable manifold c
     One might not be able to compute the parts of the unstable manifold whose preimage lies outside the domain ``Q``.
     Thus, it is important to choose ``Q`` large enough.
 
-```@docs; canonical=false
-unstable_set
-```
-
 ### Example
 
 ```@example 1
@@ -138,4 +134,8 @@ function unstable_set(F::BoxMap, B::BoxSet)
     end
     return B₀
 end
+```
+
+```@docs; canonical=false
+unstable_set
 ```

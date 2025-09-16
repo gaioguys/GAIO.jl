@@ -49,10 +49,11 @@ F = BoxMap(:adaptive, f, domain)
 p = plot!(
     p, F(B), 
     color=RGBA(1.,0.,1.,0.5), 
-    lab="adaptive test points"
+    lab="adaptive test points", 
+    dpi=500 # hide
 )
 
-savefig("adaptive.svg"); nothing # hide
+savefig("adaptive.png"); nothing # hide
 ```
 
-![Adaptive BoxMap](adaptive.svg)
+![Adaptive BoxMap](adaptive.png)
