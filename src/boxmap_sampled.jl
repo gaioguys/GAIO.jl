@@ -178,11 +178,13 @@ Make sure that the dynamical system is well-defined
 or use a different `BoxMap` discretization. 
 """
 
+#=
 function Base.show(io::IO, g::SampledBoxMap)
     center, radius = g.domain
     n = length(g.domain_points(center, radius))
     print(io, "SampledBoxMap with $(n) sample points")
 end
+=#
 
 function typesafe_map(g::SampledBoxMap{N,T}, x::SVNT{N}) where {N,T}
     convert(SVector{N,T}, g.map(x))

@@ -1,4 +1,13 @@
+# Using GAIO with DynamicalSystems.jl
+
 `BoxMap`s can also be generated via the `DynamicalSystems.jl` package: 
+```@repl 1
+using GAIO
+c, r = (0.5, 0.5), (0.5, 0.5)
+Q = Box(c, r)
+f((x,y)) = (1-1.4*x^2+y, 0.3*x)   # the Hénon map
+```
+
 ```@repl 1 
 using DynamicalSystems: DiscreteDynamicalSystem
 using StaticArrays
