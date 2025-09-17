@@ -1,5 +1,5 @@
 ---
-title: "GAIO.jl - a concise package for the global analysis of dynamical systems"
+title: "GAIO.jl - a concise Julia package for the global analysis of dynamical systems"
 keywords:
   - dynamical system, invariant set, chain recurrent set, invariant manifold, attractor, invariant measure, almost invariant set, metastable set, coherent set, transfer operator, Koopman operator
 authors:
@@ -20,7 +20,6 @@ date: 9 March 2024
 bibliography: ref.bib
 ---
 
-
 # Summary
 
 We provide an implementation of set-oriented numerical methods [@DeJu:02; @DeFrJu:01] in a Julia package. In the context of dynamical systems, the package enables the rigorous computation of invariant sets (e.g. chain recurrent sets, attractors and invariant manifolds) and provides discretizations of the transfer and the Koopman operator, enabling the computation of, e.g., invariant measures, almost invariant, cyclic and coherent sets. The redesign of the original implementation [@GAIO] in Julia presented in this note has a more concise syntax, while showing the same or even better performance.
@@ -35,41 +34,39 @@ This note presents an implementation of a set-oriented approach  to numerical co
 
 # Global Analysis of Dynamical Systems
 
-A dynamical system in which time is modelled in discrete steps is given by a map $f : X \to X$ on some domain $X$. Here, we assume $X$ to be a compact subset of $\mathbb{R}^d$ and $f$ to be a homeomorphism, i.e. bijective and continuous with a continuous inverse. We recall some basic notions from dynamical systems  required for the subsequent examples. 
-
+A dynamical system in which time is modelled in discrete steps is given by a map $f : X \to X$ on some domain $X$. For simplicity, we here assume $X$ to be a compact subset of $\mathbb{R}^d$ and $f$ to be a homeomorphism, i.e. bijective and continuous with a continuous inverse (but most concepts also work under weaker assumptions). We recall some basic notions from dynamical systems  required for the subsequent examples. 
 
 ## Geometric/topological analysis
 
-A set $S \subset X$ is *forward invariant* if $f(S) \subset S$, *backward invariant* if $f^{-1}(S) \subset S$ [^preimage], and *invariant* if it is both forward and backward invariant. An invariant set $S$ is called *attracting* if there exists a neighborhood $U \supset S$ such that for any other neighborhood $V \supset S$ there exists a $k_0 \in \mathbb{N}$ such that $f^k (U) \subset V$ for all $k\geq k_0$. 
-
-[^preimage]: $f^{-1}(S)=\{x\in X: f(x)\in S\}$ denotes the *preimage* of $S$
-
-The *maximal invariant set* contained in some set $S$ is  
-    $$
-        \text{Inv} (S) = \{ x \in S \mid f^k (x) \in S \text{ for all } k \in \mathbb{Z} \} .
-    $$
-
+A set $S \subset X$ is *forward invariant* if $f(S) \subset S$, *backward invariant* if $f^{-1}(S) \subset S$ [^preimage], and *invariant* if it is both forward and backward invariant. An invariant set $S$ is called *attracting* if there exists a neighborhood $U \supset S$ such that for any other neighborhood $V \supset S$ there exists a $k_0 \in \mathbb{N}$ such that $f^k (U) \subset V$ for all $k\geq k_0$. The *maximal invariant set* contained in some set $S$ is  
+$$
+    \text{Inv} (S) = \{ x \in S \mid f^k (x) \in S \text{ for all } k \in \mathbb{Z} \} .
+$$
 It follows immediately from the definition that $\text{Inv} (S)$ contains all other invariant sets which are contained in $S$. The following proposition is important for its computation. 
 
-**Proposition:**
+[^preimage]: $f^{-1}(S)=\{x\in X: f(x)\in S\}$ denotes the *preimage* of $S$.
+
+**Proposition 1:**
     [@maxinvset]
     If $S \subset X$ is forward invariant, then $\text{Inv} (S) = \bigcap_{k \geq 0} f^k (S)$. 
 
-If $S$ is not forward invariant, the set $A_S := \bigcap_{k \geq 0} f^k (S)$ is called the *attractor relative to $S$* [@DeHo:97]. 
+If $S$ is not forward invariant, the set $A_S := \bigcap_{k \geq 0} f^k (S)$ is called the *attractor relative to $S$* [@DeHo:97]. This characterization leads to a natural algorithm for approximating $A_S$ by repeatedly tightening a cover by finite collections of subsets of $X$ [@DeHo:97]: 
 
-The proposition leads to a natural algorithm for approximation by repeatedly tightening a cover of the set $A_S$ by finite collections of subsets of $X$ [@DeHo:97]. Specifically, given a partition $\mathcal{Q}$ of $X$ into (essentially) disjoint sets and some covering $\mathcal{A}\subset\mathcal{Q}$ of $A_Y$, repeat the following two steps until a prescribed diameter of the partition elements is reached:
+**Algorithm 2:** 
+    Given a partition $\mathcal{X}$ of $X$ into (essentially) disjoint sets and some covering $\mathcal{A}\subset\mathcal{X}$ of $A_S$, repeat the following two steps until a prescribed diameter of the partition elements is reached:
 
-- Refine $\mathcal{Q}$ into a strictly finer partition $\mathcal{Q}'$ (i.e.\ such that $\text{diam} (\mathcal{Q}') \leq \theta \cdot \text{diam} (\mathcal{Q})$ for some fixed $\theta < 1$). Let $\mathcal{A}'$ be the corresponding refinement of the covering $\mathcal{A}$ of $A_Y$. 
-- Map the refined covering forward under $f$, i.e. cover [^cover] $f(\vert\mathcal{A}'\vert)$  by elements of $\mathcal{X}'$. Intersect this covering with $\mathcal{A}'$. 
+1. Refine $\mathcal{X}$ into a strictly finer partition $\mathcal{X}'$ (i.e.\ such that $\text{diam} (\mathcal{X}') \leq \theta \cdot \text{diam} (\mathcal{X})$ for some fixed $\theta < 1$). Let $\mathcal{A}'$ be the corresponding refinement of the covering $\mathcal{A}$ of $A_S$. 
+2. Map the refined covering forward under $f$, i.e. cover [^cover] $f(\vert\mathcal{A}'\vert)$  by elements of $\mathcal{X}'$. Intersect this covering with $\mathcal{A}'$. 
 
 [^cover]: $\vert \mathcal{A} \vert = \bigcup_{\chi \in \mathcal{A}} \chi$
 
-A simple way to partition a *box* $$X = \left[ \ell_1, u_1 \right] \times \ldots \times \left[ \ell_d, u_d \right]$$  is to divide it into an $n_1 \times \ldots \times n_d$ - element grid of boxes. 
+In GAIO.jl, partitions resp. coverings are implemented as collections of *boxes*, i.e. multidimensional intervals of the form $\left[ \ell_1, u_1 \right] \times \ldots \times \left[ \ell_d, u_d \right]
+$.
 
 
 ## Example: A four wing attractor
 
-Consider the ordinary differential equation [@3dattractor]
+We now implement the above algorithm in GAIO.jl and then use it to compute a covering of the attractor of the following system [@3dattractor]:
 $$
     \begin{split}
         &\dot{x} = ax + yz \\
@@ -84,7 +81,7 @@ const a, b, d = 0.2, -0.01, -0.4
 v((x,y,z)) = @. (a*x+y*z, d*y+b*x-z*y, -z-x*y)
 f(x) = rk4_flow_map(v, x, 0.01, 20)
 ```
-We start by computing a long trajectory, starting at some point close to the attractor of the system:
+We begin by computing a long trajectory, starting at some point close to the attractor:
 ```Julia
 x0 = (0.94, -2.2, 0.4)
 trajectory = [x0]
@@ -94,43 +91,43 @@ for _ in 1:100_000
 end
 lines(trajectory)
 ```
-Figure \ref{fig:trajectories} shows the resulting trajectory.  Of course, any other package for solving initial value problems can be used in order to approximate the flow map. Note, however, that later we will need to evaluate $f$ on many initial conditions so efficiency of the solver matters.
+Figure \ref{fig:trajectories} shows the resulting trajectory.  Of course, any other package for solving initial value problems can be used in order to approximate the flow map. Note, however, that later we will need to evaluate $f$ on many initial conditions, so efficiency of the solver matters.
 
 ![A trajectory of the four wing system.\label{fig:trajectories}](trajectories.png)
 
-We now implement the above algorithm and then use it to compute a covering of the attractor of the system.  
 
-For step (1), we construct a `BoxGrid` $\mathcal{Q}$ which partitions the domain box $X = \left[ -5, 5 \right]^3$ into a $2 \times 2 \times 2$ grid of boxes. We choose a (very rough) covering of where we expect the relative attractor may be, namely the whole domain: 
+For step 1. in Algorithm 2, we construct a `BoxGrid` `PX` which partitions the domain box $X = \left[ -5, 5 \right]^3$ into a $2 \times 2 \times 2$ grid of boxes. One can think of `PX` as a representation of the power set[^power] $\mathcal{P}(\mathcal{X})$ of the partition $\mathcal{X}$: 
 ```Julia
 center, radius = (0.,0.,0.), (5.,5.,5.)
 X = Box(center, radius)
-Q = BoxGrid(X, (2, 2, 2))
-A = cover(Q, :)
+PX = BoxGrid(X, (2, 2, 2))
 ```
-One can think of the `BoxGrid`[^grid] $\mathcal{P}$ as a representation of the power set[^power] $\mathcal{P}(\mathcal{X})$ of $\mathcal{X}$. The command
+  We next construct a (very coarse) initial covering, namely the `BoxSet` `A` consisting of all boxes in `PX`, covering the entire domain $X$: 
+```Julia
+A = cover(PX, :)
+```
+ The command
 ```Julia
 subdivide(A, k)
 ```
-yields a refinement $\mathcal{A}'$ of the `BoxSet` $\mathcal{A}$ by bisecting each box in the $k$-th coordinate direction.
-
-[^grid]: In Julia, one can input characters like $\mathcal{P}$ by typing `\scrP`.
+could then be used for refining the `BoxSet` `A`  by bisecting each box in the $k$-th coordinate direction.
 
 [^power]: The *power set* $\mathcal{P}(S)$ of some set $S$ is the set of all subsets of $S$.
 
-In order to implement step (2) of the algorithm, we first note that the flow map $f$ induces a map $F : \mathcal{P}(\mathcal{Q}) \to \mathcal{P}(\mathcal{Q})$ on the power set via 
+In order to implement step 2. in Algorithm 2, we first note that the flow map $f$ induces a map $F : \mathcal{P}(\mathcal{X}) \to \mathcal{P}(\mathcal{X})$ via
 $$
     F \left( \left\{ \chi \right\} \right) = 
     %\bigcup_{\substack{
     %    C \in \mathcal{X} \\ C \cap f(B) \neq \emptyset
     %}} \left\{ C\right\}
-    \left\{ \hat\chi \in \mathcal{Q} \mid \hat\chi \cap f(\chi) \neq \emptyset \right\}.
+    \left\{ \hat\chi \in \mathcal{X} \mid \hat\chi \cap f(\chi) \neq \emptyset \right\}.
 $$
 
-![The map $F : \mathcal{P}(\mathcal{Q}) \to \mathcal{P}(\mathcal{Q})$ induced by $f:X\to X$. \label{fig:boxcover}](boxcover.png){ width=60% }
+![The map $F : \mathcal{P}(\mathcal{X}) \to \mathcal{P}(\mathcal{X})$ induced by $f:X\to X$. \label{fig:boxcover}](boxcover.png){ width=50% }
 
 GAIO.jl provides multiple methods for approximating the map $F$. An intuitive method is to randomly sample some points (from a uniform distribution) within a box, and then map each point with $f$. Such an approximation to the map $F$ can be instantiated by  
 ```Julia
-F = BoxMap(:montecarlo, f, P)
+F = BoxMap(:montecarlo, f, PX)
 ```
 If a rigorous (outer) cover of the image $F(\{\chi\})$ is required, special sampling techniques [@rigoroussampling] and/or interval arithmetic can be used. We can now implement the above algorithm: 
 ```Julia
@@ -142,7 +139,7 @@ function relative_attractor(F, A; steps)
     return A
 end
 ```
-In each iteration we cycle through the coordinate direction in which we bisect the boxes of the current covering. Compare with the implementation in Matlab, below. We invoke this function on the initial covering $\mathcal{A}$, resulting in the covering of the attractor shown in Fig. \ref{fig:attractor}:
+In each iteration we cycle through the coordinate direction in which we bisect the boxes of the current covering. Compare with the implementation in Matlab below. We invoke this function on the initial covering `A`, resulting in the covering of the attractor shown in Fig. \ref{fig:attractor}:
 ```Julia
 A = relative_attractor(F, A, steps=21)
 plot(A)
@@ -160,11 +157,11 @@ $$
     f_\sharp\, \mu := \mu \circ f^{-1}.
 $$
 
-[^measure]: $\mathcal{M}$ denotes the space of finite, complex valued Borel measures on $X$
+[^measure]: $\mathcal{M}$ denotes the space of finite, complex valued Borel measures on $X$.
 
 This is a bounded linear Markov operator, the *Perron-Frobenius* or *transfer operator*. Much information about macroscopic features of the dynamics of $f$ can be extracted from eigenmeasures of $f_\sharp$ at eigenvalues with modulus close to one [@DeJu:99]. 
 
-In particular, in our setting there exists [@invariantmeasureexistence] an eigenmeasure $\mu = f_\sharp\, \mu$ at the eigenvalue $1$ of $f_\sharp$, an *invariant measure*. A *natural* invariant measure [@Hunt2004] quantifies the statistics of typical trajectories: regions of phase space which are visited more often by such trajectories receive more $\mu$-mass.  
+In particular, in our setting there exists [@invariantmeasureexistence] an eigenmeasure $\mu = f_\sharp\, \mu$ at the eigenvalue $1$ of $f_\sharp$, an *invariant measure*. A *natural* invariant measure [@young2002srb] quantifies the statistics of typical trajectories: regions of phase space which are visited more often by such trajectories receive more $\mu$-mass.  
 
 
 ## Discretization
@@ -173,7 +170,7 @@ One can approximate some $\mu\in\mathcal{M}$ by a discrete measure
 $$
     \mu_g(S) = \sum_{j=1}^{n} g_j \frac{m(\chi_j \cap S)}{m(\chi_j)}, 
 $$
-where $\{ \chi_1, \chi_2, \ldots, \chi_n\}$ is a (subset of a) partition $\mathcal{Q}$ of $X$, $g=(g_1,\ldots,g_n)\in\mathbb{C}^n$ and $m$ is Lebesgue measure on $\mathbb{R}^d$. The coefficients $g$ of an approximate invariant measure should then satisfy
+where $\{ \chi_1, \chi_2, \ldots, \chi_n\}$ is a subset of the partition $\mathcal{X}$ (e.g. the covering that we computed above), $g=(g_1,\ldots,g_n)\in\mathbb{C}^n$ and $m$ is Lebesgue measure on $\mathbb{R}^d$. The coefficients $g$ of an approximate invariant measure $\mu_g$ should then satisfy
 $$
     g_i = \mu_g (\chi_i) \overset{!}{=} f_\sharp\, \mu_g (\chi_i) = 
     \sum_{j=1}^{n} g_j
@@ -181,7 +178,7 @@ $$
     =: \left( F_\sharp \right)_{ij}
     }. 
 $$
-The matrix $F_\sharp\in\mathbb{R}^{n\times n}$ defines a Markov chain on $\mathcal{Q}$ and is our finite approximation of $f_\sharp$ on $\mathcal{M}_n=\{\mu_g:g\in\mathbb{C}^n\}$. Convergence of the spectrum of this approximation (known as *Ulam's method*) can be shown by considering a small random perturbation of the original map $f$ [@DeJu:99]. The matrix $F_\sharp$ can be computed similarly to how the image for $F$ is computed, e.g. by approximating the transition probabilities $(F_\sharp)_{ij}$ using random sample points.
+The matrix $F_\sharp\in\mathbb{R}^{n\times n}$ defines a Markov chain on the mentioned subset of $\mathcal{X}$ and is our finite approximation of $f_\sharp$ on $\mathcal{M}_n=\{\mu_g:g\in\mathbb{C}^n\}$. Convergence of the spectrum of this approximation (known as *Ulam's method*) can be shown by considering a small random perturbation of the original map $f$ [@DeJu:99]. The matrix $F_\sharp$ can be computed similarly to how the image for $F$ is computed, e.g. by approximating the transition probabilities $(F_\sharp)_{ij}$ using random sample points.
 
 As an example, we compute $F_\sharp$ on the covering of the attractor constructed  above and then use the `eigs` function from Arpack.jl in order to compute part of the spectrum of $F_\sharp$, which is shown in Fig. \ref{fig:spectrum}.
 ```Julia
@@ -214,7 +211,7 @@ GAIO was fully redesigned and rebuilt in the Julia language starting in 2020. Th
 
 - *Solving the two language problem.* The set-oriented techniques require too many evaluations of the map $f$ to be reasonably implemented in an interpreted language. As with many scientific computing applications, compilation into fast machine code is necessary if one wishes to apply the methods to a non-trivial problem. However, the code should still be easy to write and read. 
     
-- *Abstraction of the syntax.* The original GAIO code required the user to be aware of the details of the internal data structures. For example, box collections were stored in a binary tree and flags in the nodes of that tree were used in order to implement the box map $F:\mathcal{P}(\mathcal{Q})\to \mathcal{P}(\mathcal{Q})$. Here is the original GAIO/MATLAB implementation of the algorithm for computing the relative global attractor:
+- *Abstraction of the syntax.* The original GAIO code required the user to be aware of the details of the internal data structures. For example, box collections were stored in a binary tree and flags in the nodes of that tree were used in order to implement the box map $F:\mathcal{P}(\mathcal{X})\to \mathcal{P}(\mathcal{X})$. Here is the original GAIO/MATLAB implementation of the Algorithm 2 for computing the relative global attractor:
 ```matlab
 function relative_attractor(tree, f, steps)
     for i = 1:steps,
@@ -232,7 +229,7 @@ function relative_attractor(tree, f, steps)
     end
 ```
 
-In contrast, in GAIO.jl, details on how box collections are stored and how the box map $F:\mathcal{P}(\mathcal{Q})\to \mathcal{P}(\mathcal{Q})$ is realized are essentially completely hidden from the user. After defining $F$ as a `BoxMap`, it can simply be applied to a `BoxSet`, resulting in another `BoxSet`. Since `BoxSet` is a subtype of `AbstractSet`, all set operations can be applied. As a result, the implementation of set-oriented algorithms - like the algorithm for computing relative attractors - is very close to its mathematical formulation.
+In contrast, in GAIO.jl, details on how box collections are stored and how the box map $F:\mathcal{P}(\mathcal{X})\to \mathcal{P}(\mathcal{X})$ is realized are essentially completely hidden from the user. After defining $F$ as a `BoxMap`, it can simply be applied to a `BoxSet`, resulting in another `BoxSet`. Since `BoxSet` is a subtype of `AbstractSet`, all set operations can be applied. As a result, the implementation of set-oriented algorithms - like the algorithm for computing relative attractors - is very close to its mathematical formulation.
 
 
 ## Fitting into Julia's ecosystem
