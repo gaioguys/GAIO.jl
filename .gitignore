@@ -9,4 +9,5 @@ GAIO-remote.code-workspace
 *LocalPreferences.toml
 *.DS_Store
 *logs
-*.jats
+*jats
+paper.pdf
