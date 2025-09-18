@@ -28,6 +28,7 @@ pages = [
     #"Testing Page" => "test.md",
     "Getting started" => "getting_started.md",
     "General usage" => "general.md",
+    "DynamicalSystems.jl" => "DynamicalSystems.md",
     "Invariant Sets" => [
         "Limit Sets and Attractors" => "algorithms/limit_sets.md",
         #"Relative Attractor" => "algorithms/relative_attractor.md",

@@ -21,7 +21,7 @@ end
 
 IntervalBoxMap(map, P::Q) where {Q<:BoxLayout} = IntervalBoxMap(map, P.domain)
 
-Base.show(io::IO, ::IntervalBoxMap) = print(io, "IntervalBoxMap")
+#Base.show(io::IO, ::IntervalBoxMap) = print(io, "IntervalBoxMap")
 
 typesafe_map(g::IntervalBoxMap{N,T}, x) where {N,T} = Box{N,T}(g.map(x)...)
 

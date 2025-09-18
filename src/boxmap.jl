@@ -29,7 +29,16 @@ for str in (
 
 end
 
-Base.show(io::IO, g::BoxMap) = print(io, "BoxMap over $(g.domain)")
+function Base.show(io::IO, g::BoxMap) 
+    println(io, "BoxMap over $(g.domain)")
+    if ndims(g.domain) == 1
+        @info """
+        You are using a one-dimensional map. Make sure 
+        that your map returns vectors/tuples, and NOT scalars!
+        E.g. you map must return (0.5,) and not 0.5
+        """ maxlog=1
+    end
+end
 
 # this is a no-op outside of extensions
 preprocess(args...) = args
