@@ -48,7 +48,7 @@ points = [
     (1, 1),
     (2, 1)
 ];
-B = cover(P, test_points)
+B = cover(P, points)
 ```
 yields a `BoxSet` containing boxes from the partition `P` which cover each of `points`. Similarly, 
 ```@repl 1
