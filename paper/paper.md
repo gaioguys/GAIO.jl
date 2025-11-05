@@ -26,7 +26,7 @@ We provide an implementation of set-oriented numerical methods [@DeJu:02; @DeFrJ
 
 # Statement of Need
 
-The original implementation [@GAIO] in C/Python/MATLAB suffered from (1) a complex synatx which required unnecessary technical knowledge on the underyling data structures and (2) the two language problem, rendering extensions and maintance difficult. The data structures and the algorithmic interface have been completely redesigned for GAIO.jl. As a result, the code is concise and close to the mathematical formulation of the underlying algorithms. At the same time, the performance is equal or better.   
+The original implementation [@GAIO] in C/Python/MATLAB suffered from (1) a complex syntax which required unnecessary technical knowledge on the underlying data structures and (2) the two language problem, rendering extensions and maintenance difficult. The data structures and the algorithmic interface have been completely redesigned for GAIO.jl. As a result, the code is concise and close to the mathematical formulation of the underlying algorithms. At the same time, the performance is equal or better.   
 
 # Global Analysis of Dynamical Systems
 
@@ -117,7 +117,7 @@ We compute $F_\sharp$ on the covering constructed above and then compute part of
 
 ![](code8.png){width=49%}
 
-The eigenvalue $1$ is simple, the corresponding eigenvector approximates an invariant measure shown in the left plotin Fig. \ref{fig:invariantmeasure}. Such a (natural) invariant measure [@young2002srb] quantifies the statistics of typical trajectories: regions of phase space which are visited more often by such trajectories receive more $\mu$-mass.  In the right of Fig. \ref{fig:invariantmeasure}, we show the eigenmeasure at the second largest real eigenvalue $\lambda\approx 0.978$. Its sign structure decomposes the attractor into two almost invariant sets [@DeJu:99], i.e. two sets $A_-,A_+$ for which the invariance ratio $m(A_+\cap f^{-1}(A_+))/m(A_+)$ (resp. $A_-$) is close to $1$.
+The eigenvalue $1$ is simple, the corresponding eigenvector approximates an invariant measure shown in the left plot in Fig. \ref{fig:invariantmeasure}. Such a (natural) invariant measure [@young2002srb] quantifies the statistics of typical trajectories: regions of phase space which are visited more often by such trajectories receive more $\mu$-mass.  In the right of Fig. \ref{fig:invariantmeasure}, we show the eigenmeasure at the second largest real eigenvalue $\lambda\approx 0.978$. Its sign structure decomposes the attractor into two almost invariant sets [@DeJu:99], i.e. two sets $A_-,A_+$ for which the invariance ratio $m(A_+\cap f^{-1}(A_+))/m(A_+)$ (resp. $A_-$) is close to $1$.
 
 ![Natural invariant measure of $f$ and eigenmeasure for the eigenvalue $0.978$\label{fig:invariantmeasure}](measures.png){width=90%}
 
