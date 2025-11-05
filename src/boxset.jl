@@ -122,11 +122,18 @@ cover(partition::P, ::Nothing) where {P<:BoxLayout} = BoxSet(partition, Set{keyt
 cover(partition::BoxLayout{<:Box{1}}, x::Number) = cover(partition, (x,))
 
 function cover(partition::P, box::Box{N,T}) where {N,T,P<:BoxGrid}
+    out = BoxSet(partition)
     c, r = box
-    key_lo = bounded_point_to_key(partition, c .- r)
-    key_hi = bounded_point_to_key(partition, c .+ r .- 10*eps(T))
-    carts = CartesianIndices(ntuple(i -> key_lo[i]:key_hi[i], Val(N)))
-    return BoxSet(partition, Set{keytype(P)}(Tuple(c) for c in carts))
+    c_dom, r_dom = partition.domain
+
+    if any(c .+ r .< c_dom .- r_dom) || any(c .- r .> c_dom .+ r_dom)
+    else
+        key_lo = bounded_point_to_key(partition, c .- r)
+        key_hi = bounded_point_to_key(partition, c .+ r .- 10*eps(T))
+        carts = CartesianIndices(ntuple(i -> key_lo[i]:key_hi[i], Val(N)))
+        union!(out.set, (Tuple(c) for c in carts))
+    end
+    return out
 end
 
 function cover(partition::P, box::Box{N,R}) where {N,R,T,I,P<:BoxTree{N,T,I}}
