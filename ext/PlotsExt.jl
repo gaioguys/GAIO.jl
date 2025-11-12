@@ -28,7 +28,7 @@ end
 @recipe function plot!(boxset::BoxMeasure{Box{N,T}}; projection=x->x[1:2]) where {N,T}
     xs = Vector{Float32}(undef, 5*length(boxset))
     ys = Vector{Float32}(undef, 5*length(boxset))
-    cs = Vector{Float32}(undef, 5*length(boxset))
+    cs = Vector{Float32}(undef, length(boxset))
     q = projection
     
     for (i, (box, val)) in enumerate(boxset)
@@ -36,7 +36,7 @@ end
         lo, hi = c .- r, c .+ r
         xs[5*(i-1)+1:5*i] .= (lo[1], hi[1], hi[1], lo[1], NaN)
         ys[5*(i-1)+1:5*i] .= (lo[2], lo[2], hi[2], hi[2], NaN)
-        cs[5*(i-1)+1:5*i] .= (val, val, val, val, NaN)
+        cs[i] = val
     end
     
     seriestype := :shape
