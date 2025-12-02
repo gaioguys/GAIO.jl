@@ -1,5 +1,5 @@
 ---
-title: "GAIO.jl - a concise Julia package for the global analysis of dynamical systems"
+title: "GAIO.jl - A concise Julia package for the global analysis of dynamical systems"
 keywords:
   - dynamical system, invariant set, chain recurrent set, invariant manifold, attractor, invariant measure, almost invariant set, metastable set, coherent set, transfer operator, Koopman operator
 authors:
@@ -32,7 +32,7 @@ The original implementation [@GAIO] in C/Python/MATLAB suffered from (1) a compl
 
 A discrete-time dynamical system is given by a map $f:X\to X$ on some domain $X$. For simplicity, we here assume a compact $X\subset\mathbb{R}^d$ and $f$ to be a homeomorphism. 
 
-## Geometric/topological analysis
+## Geometric/Topological analysis
 
 A set $S\subset X$ is *forward invariant* if $f(S)\subset S$, *backward invariant* if $f^{-1}(S)\subset S$ [^preimage], and *invariant* if it is both forward and backward invariant. 
 
@@ -63,7 +63,7 @@ For demonstration we compute a long trajectory, shown in the left plot in Figure
 
 ![A trajectory of the four wing system and its (relative) attractor. \label{fig:trajectories}](trajectory_and_attractor.png){ width=90% }
 
-For step 1. in Algorithm 2, we construct a `BoxGrid` `PX` which partitions the domain $X = \left[-5,5\right]^3$ into a $2\times 2\times 2$ grid of boxes. One can think of `PX` as the power set[^power] $\mathcal{P}(\mathcal{X})$ of the partition $\mathcal{X}$: 
+For Step 1. in Algorithm 2, we construct a `BoxGrid` `PX` which partitions the domain $X = \left[-5,5\right]^3$ into a $2\times 2\times 2$ grid of boxes. One can think of `PX` as the power set[^power] $\mathcal{P}(\mathcal{X})$ of the partition $\mathcal{X}$: 
 
 ![](code2.png){width=50%}
 
@@ -79,7 +79,7 @@ can then be used for refining the `BoxSet` `A`  by bisecting each box in the $k$
 
 [^power]: The *power set* $\mathcal{P}(S)$ of some set $S$ is the set of all subsets of $S$.
 
-To implement step 2. in Algorithm 2, note that the flow map $f$ induces a map $F:\mathcal{P}(\mathcal{X})\to\mathcal{P}(\mathcal{X})$ via
+To implement Step 2. in Algorithm 2, note that the flow map $f$ induces a map $F:\mathcal{P}(\mathcal{X})\to\mathcal{P}(\mathcal{X})$ via
 $$F\left(\left\{\chi\right\}\right)=\left\{\hat\chi\in\mathcal{X}\mid\hat\chi\cap f(\chi)\neq\emptyset\right\}.$$
 
 ![Lifting point maps to maps on boxes. \label{fig:boxcover}](boxcover.png){width=50%}
@@ -109,7 +109,7 @@ This is a linear Markov operator, the *transfer operator*. Much information abou
 
 One can approximate $\mu\in\mathcal{M}$ by a discrete measure 
 $$\mu_g(S)=\sum_{j=1}^{n}g_j\frac{m(\chi_j\cap S)}{m(\chi_j)},$$
-where $\{\chi_1,\chi_2,\ldots,\chi_n\}$ is enumerates the partition $\mathcal{X}$, $g=(g_1,\ldots,g_n)\in\mathbb{C}^n$ and $m$ is Lebesgue measure on $\mathbb{R}^d$. The coefficients $g$ of an approximate invariant measure $\mu_g$ should then satisfy
+where $\{\chi_1,\chi_2,\ldots,\chi_n\}$ enumerates the partition $\mathcal{X}$, $g=(g_1,\ldots,g_n)\in\mathbb{C}^n$ and $m$ is Lebesgue measure on $\mathbb{R}^d$. The coefficients $g$ of an approximate invariant measure $\mu_g$ should then satisfy
 $$g_i=\mu_g(\chi_i)\overset{!}{=}f_\sharp\,\mu_g(\chi_i)=\sum_{j=1}^{n}g_j\underbrace{\frac{m(\chi_j\cap f^{-1}(\chi_i))}{m(\chi_j)}}_{=:\left(F_\sharp\right)_{ij}}.$$
 $F_\sharp\in\mathbb{R}^{n\times n}$ defines a Markov chain on $\mathcal{X}$ and is our approximation of $f_\sharp$ on $\mathcal{M}_n=\{\mu_g:g\in\mathbb{C}^n\}$. It can be computed  by approximating the transition probabilities $(F_\sharp)_{ij}$ e.g. using random sample points.
 
@@ -117,7 +117,7 @@ We compute $F_\sharp$ on the covering constructed above and then compute part of
 
 ![](code8.png){width=49%}
 
-The eigenvalue $1$ is simple, the corresponding eigenvector approximates an invariant measure shown in the left plot in Fig. \ref{fig:invariantmeasure}. Such a (natural) invariant measure [@young2002srb] quantifies the statistics of typical trajectories: regions of phase space which are visited more often by such trajectories receive more $\mu$-mass.  In the right of Fig. \ref{fig:invariantmeasure}, we show the eigenmeasure at the second largest real eigenvalue $\lambda\approx 0.978$. Its sign structure decomposes the attractor into two almost invariant sets [@DeJu:99], i.e. two sets $A_-,A_+$ for which the invariance ratio $m(A_+\cap f^{-1}(A_+))/m(A_+)$ (resp. $A_-$) is close to $1$.
+The eigenvalue $1$ is simple, the corresponding eigenvector approximates an invariant measure shown in the left plot in Fig. \ref{fig:invariantmeasure}. Such a (natural) invariant measure [@young2002srb] quantifies the statistics of typical trajectories: Regions of phase space which are visited more often by such trajectories receive more $\mu$-mass.  In the right of Fig. \ref{fig:invariantmeasure}, we show the eigenmeasure at the second largest real eigenvalue $\lambda\approx 0.978$. Its sign structure decomposes the attractor into two almost invariant sets [@DeJu:99], i.e. two sets $A_-,A_+$ for which the invariance ratio $m(A_+\cap f^{-1}(A_+))/m(A_+)$ (resp. $A_-$) is close to $1$.
 
 ![Natural invariant measure of $f$ and eigenmeasure for the eigenvalue $0.978$\label{fig:invariantmeasure}](measures.png){width=90%}
 
