@@ -1,5 +1,5 @@
 ---
-title: "GAIO.jl - a concise Julia package for the global analysis of dynamical systems"
+title: "GAIO.jl - A concise Julia package for the global analysis of dynamical systems"
 keywords:
   - dynamical system, invariant set, chain recurrent set, invariant manifold, attractor, invariant measure, almost invariant set, metastable set, coherent set, transfer operator, Koopman operator
 authors:
@@ -32,7 +32,7 @@ The original implementation [@GAIO] in C/Python/MATLAB suffered from (1) a compl
 
 A discrete-time dynamical system is given by a map $f:X\to X$ on some domain $X$. For simplicity, we here assume a compact $X\subset\mathbb{R}^d$ and $f$ to be a homeomorphism. 
 
-## Geometric/topological analysis
+## Geometric/Topological analysis
 
 A set $S\subset X$ is *forward invariant* if $f(S)\subset S$, *backward invariant* if $f^{-1}(S)\subset S$ [^preimage], and *invariant* if it is both forward and backward invariant. 
 
@@ -117,7 +117,7 @@ We compute $F_\sharp$ on the covering constructed above and then compute part of
 
 ![](code8.png){width=49%}
 
-The eigenvalue $1$ is simple, the corresponding eigenvector approximates an invariant measure shown in the left plot in Fig. \ref{fig:invariantmeasure}. Such a (natural) invariant measure [@young2002srb] quantifies the statistics of typical trajectories: regions of phase space which are visited more often by such trajectories receive more $\mu$-mass.  In the right of Fig. \ref{fig:invariantmeasure}, we show the eigenmeasure at the second largest real eigenvalue $\lambda\approx 0.978$. Its sign structure decomposes the attractor into two almost invariant sets [@DeJu:99], i.e. two sets $A_-,A_+$ for which the invariance ratio $m(A_+\cap f^{-1}(A_+))/m(A_+)$ (resp. $A_-$) is close to $1$.
+The eigenvalue $1$ is simple, the corresponding eigenvector approximates an invariant measure shown in the left plot in Fig. \ref{fig:invariantmeasure}. Such a (natural) invariant measure [@young2002srb] quantifies the statistics of typical trajectories: Regions of phase space which are visited more often by such trajectories receive more $\mu$-mass.  In the right of Fig. \ref{fig:invariantmeasure}, we show the eigenmeasure at the second largest real eigenvalue $\lambda\approx 0.978$. Its sign structure decomposes the attractor into two almost invariant sets [@DeJu:99], i.e. two sets $A_-,A_+$ for which the invariance ratio $m(A_+\cap f^{-1}(A_+))/m(A_+)$ (resp. $A_-$) is close to $1$.
 
 ![Natural invariant measure of $f$ and eigenmeasure for the eigenvalue $0.978$\label{fig:invariantmeasure}](measures.png){width=90%}
 
