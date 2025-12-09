@@ -22,7 +22,7 @@ bibliography: ref.bib
 
 # Summary
 
-We provide an implementation of set-oriented numerical methods [@DeJu:02; @DeFrJu:01] in a Julia package. The package enables the rigorous computation of invariant sets (e.g. chain recurrent sets, attractors and invariant manifolds) in dynamical systems and provides discretizations of the transfer and the Koopman operator, enabling the computation of, e.g., invariant measures, almost invariant, cyclic and coherent sets.  We showcase the features of GAIO.jl by some classical computations of (almost) invariant sets and invariant measures in dynamical systems.
+We provide an implementation of set-oriented numerical methods [@DeJu:02; @DeFrJu:01] in a Julia package. The package enables the rigorous computation of invariant sets (e.g., chain recurrent sets, attractors, invariant manifolds) in dynamical systems and provides discretizations of the transfer and the Koopman operator, enabling the computation of, e.g., invariant measures, almost invariant, cyclic and coherent sets.  We showcase the features of GAIO.jl by some classical computations of (almost) invariant sets and invariant measures in dynamical systems.
 
 # Statement of Need
 
@@ -45,12 +45,12 @@ It follows from the definition that $\text{Inv}(S)$ contains all other invariant
 **Algorithm 1:** 
     Given a partition $\mathcal{X}$ of $X$ into (essentially) disjoint sets and some covering $\mathcal{A}\subset\mathcal{X}$ of $A_S$, repeat the following two steps until a prescribed diameter of the partition elements is reached:
 
-1. Refine $\mathcal{X}$ into a strictly finer partition $\mathcal{X}'$ (i.e.\ such that $\text{diam}(\mathcal{X}')\leq\theta\cdot\text{diam}(\mathcal{X})$ for some fixed $\theta <1$). Let $\mathcal{A}'$ be the corresponding refinement of the covering $\mathcal{A}$ of $A_S$. 
-2. Map the refined covering forward under $f$, i.e. cover [^cover] $f(\vert\mathcal{A}'\vert)$  by elements of $\mathcal{X}'$. Intersect this covering with $\mathcal{A}'$. 
+1. Refine $\mathcal{X}$ into a strictly finer partition $\mathcal{X}'$ (i.e., such that $\text{diam}(\mathcal{X}')\leq\theta\cdot\text{diam}(\mathcal{X})$ for some fixed $\theta <1$). Let $\mathcal{A}'$ be the corresponding refinement of the covering $\mathcal{A}$ of $A_S$. 
+2. Map the refined covering forward under $f$, i.e., cover [^cover] $f(\vert\mathcal{A}'\vert)$  by elements of $\mathcal{X}'$. Intersect this covering with $\mathcal{A}'$. 
 
 [^cover]: $\vert\mathcal{A}\vert =\bigcup_{\chi\in\mathcal{A}}\chi$
 
-In GAIO.jl, partitions resp. coverings are implemented as collections of *boxes*, i.e. multidimensional intervals of the form $\left[\ell_1,u_1\right]\times\ldots\times\left[ \ell_d,u_d\right]$.
+In GAIO.jl, partitions resp. coverings are implemented as collections of *boxes*, i.e., multidimensional intervals of the form $\left[\ell_1,u_1\right]\times\ldots\times\left[ \ell_d,u_d\right]$.
 
 
 ## Example: A four wing attractor
@@ -117,14 +117,14 @@ We compute $F_\sharp$ on the covering constructed above and then compute part of
 
 ![](code8.png){width=49%}
 
-The eigenvalue $1$ is simple, the corresponding eigenvector approximates an invariant measure shown in the left plot in Fig. \ref{fig:invariantmeasure}. Such a (natural) invariant measure [@young2002srb] quantifies the statistics of typical trajectories: Regions of phase space which are visited more often by such trajectories receive more $\mu$-mass.  In the right of Fig. \ref{fig:invariantmeasure}, we show the eigenmeasure at the second largest real eigenvalue $\lambda\approx 0.978$. Its sign structure decomposes the attractor into two almost invariant sets [@DeJu:99], i.e. two sets $A_-,A_+$ for which the invariance ratio $m(A_+\cap f^{-1}(A_+))/m(A_+)$ (resp. $A_-$) is close to $1$.
+The eigenvalue $1$ is simple, and the corresponding eigenvector approximates an invariant measure shown in the left plot in Fig. \ref{fig:invariantmeasure}. Such a (natural) invariant measure [@young2002srb] quantifies the statistics of typical trajectories: Regions of phase space which are visited more often by such trajectories receive more $\mu$-mass.  In the right of Fig. \ref{fig:invariantmeasure}, we show the eigenmeasure at the second largest real eigenvalue $\lambda\approx 0.978$. Its sign structure decomposes the attractor into two almost invariant sets [@DeJu:99], i.e., two sets $A_-,A_+$ for which the invariance ratio $m(A_+\cap f^{-1}(A_+))/m(A_+)$ (resp. $A_-$) is close to $1$.
 
 ![Natural invariant measure of $f$ and eigenmeasure for the eigenvalue $0.978$\label{fig:invariantmeasure}](measures.png){width=90%}
 
 
 # GAIO in the Julia Language
 
-GAIO was originally developed in the $90$'s in C [@DeFrJu:01]. Interfaces were written in Numerical Python [@harris2020array] and MATLAB, and 3D plotting was done by the dedicated software GRAPE [@RuWi92a]. This architecture (Fig. \ref{fig:old_arch}) was hard to maintain. GAIO was a picture book incarnation of the *two language problem* [@bezanson2017julia]. 
+GAIO was originally developed in the $90$s in C [@DeFrJu:01]. Interfaces were written in Numerical Python [@harris2020array] and MATLAB, and 3D plotting was done by the dedicated software GRAPE [@RuWi92a]. This architecture (Fig. \ref{fig:old_arch}) was hard to maintain. GAIO was a picture book incarnation of the *two language problem* [@bezanson2017julia]. 
 
 ![An earlier software architecture. \label{fig:old_arch}](gaio_architecture.png){width=80%}
 
@@ -144,6 +144,6 @@ Another reason to use Julia for GAIO was the large package ecosystem. A particul
 
 # Conclusion
 
-GAIO.jl is introduced via an example of a three dimensional dynamical system. The package has been redesigned to balance high performance and elegance, no longer needing to rely on two languages to do so. Future work is planned to use these structures e.g. for homology computation in cubical complexes, as well as to even more tightly integrate into the existing scientific computing ecosystem.
+GAIO.jl is introduced via an example of a three dimensional dynamical system. The package has been redesigned to balance high performance and elegance, no longer needing to rely on two languages to do so. Future work is planned to use these structures e.g., for homology computation in cubical complexes, as well as to even more tightly integrate into the existing scientific computing ecosystem.
 
 # References 
