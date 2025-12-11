@@ -31,25 +31,25 @@ U, σ, V = svds(T; nsv=32, maxiter=maxiter, tol=tol, v0=v0)
 
 σ</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">32-element Vector{Float64}:
  1.0
- 0.9999667529824439
- 0.9998753180044381
- 0.9998711805027466
- 0.9998276390873286
- 0.9998233162413814
- 0.9997971943727411
- 0.9996932575197699
- 0.9996145813928398
- 0.9995697900007197
+ 0.9999667529824368
+ 0.9998753180044363
+ 0.9998711805027448
+ 0.999827639087328
+ 0.9998233162413794
+ 0.9997971943727392
+ 0.999693257519772
+ 0.9996145813928338
+ 0.9995697900007199
  ⋮
- 0.9990048108041221
- 0.9989567143661751
- 0.998922495310833
- 0.9989116047695611
- 0.998900185707294
- 0.9988661553791491
- 0.9987727359682239
- 0.9987053450068214
- 0.998671710738242</code></pre><pre><code class="language-julia hljs">μ = U[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BoxMeasure in 256 x 128 - element BoxGrid with 32768 boxes in its suport</code></pre><pre><code class="language-julia hljs">using Plots
+ 0.9990048108041222
+ 0.9989567143661744
+ 0.9989224953108327
+ 0.9989116047695598
+ 0.9989001857072933
+ 0.9988661553791501
+ 0.9987727359682235
+ 0.9987053450068208
+ 0.998671710738243</code></pre><pre><code class="language-julia hljs">μ = U[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BoxMeasure in 256 x 128 - element BoxGrid with 32768 boxes in its suport</code></pre><pre><code class="language-julia hljs">using Plots
 
 p = plot(sign ∘ μ, colormap=:redsblues);</code></pre><p><img src="../sv1.png" alt="Second left singular measure"/></p><pre><code class="language-julia hljs">n_frames = 120
 times = range(t₀, t₁, length=n_frames)
@@ -74,4 +74,4 @@ anim = @animate for t in times
 
     plot(μ, clims=(-1,1), colormap=:redsblues)
 end;
-gif(anim, &quot;coherent.gif&quot;, fps=20)</code></pre><p><img src="../../assets/coherent.gif" alt="Coherent Sets"/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../cyclic/">« Cyclic Sets</a><a class="docs-footer-nextpage" href="../seba/">Extracting Multiple Sets via SEBA »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Wednesday 10 December 2025 09:40">Wednesday 10 December 2025</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+gif(anim, &quot;coherent.gif&quot;, fps=20)</code></pre><p><img src="../../assets/coherent.gif" alt="Coherent Sets"/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../cyclic/">« Cyclic Sets</a><a class="docs-footer-nextpage" href="../seba/">Extracting Multiple Sets via SEBA »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 11 December 2025 11:38">Thursday 11 December 2025</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

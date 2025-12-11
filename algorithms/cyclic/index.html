@@ -19,26 +19,26 @@ p = plot(C)</code></pre><p><img src="../recurrent.png" alt="Recurrent Set"/></p>
 λ, ev = eigs(T; nev=32, which=:LM)
 
 λ</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">32-element Vector{ComplexF64}:
-  1.0000000000000053 + 0.0im
- 0.49999966711616073 + 0.8660253816376066im
- 0.49999966711616073 - 0.8660253816376066im
- -0.4999999625772863 + 0.8660247898984552im
- -0.4999999625772863 - 0.8660247898984552im
- -0.9999992700378539 + 0.0im
-  0.8630061226535517 + 0.0847479723716105im
-  0.8630061226535517 - 0.0847479723716105im
-  0.5048957483412261 + 0.7050116685671846im
-  0.5048957483412261 - 0.7050116685671846im
-                     ⋮
- -0.8110847919669453 + 0.0im
- -0.3486953259390599 + 0.7055562580020118im
- -0.3486953259390599 - 0.7055562580020118im
- 0.43669051000156756 + 0.6547478908120322im
- 0.43669051000156756 - 0.6547478908120322im
- -0.7853702000863243 + 0.05078854956992042im
- -0.7853702000863243 - 0.05078854956992042im
-  0.7853616536917789 + 0.050814354753988156im
-  0.7853616536917789 - 0.050814354753988156im</code></pre><pre><code class="language-julia hljs">p = scatter(λ)</code></pre><p><img src="../evs.png" alt="Eigenvalues"/></p><p>We see that the <span>$6$</span>th roots of unity clearly seem to be part of the spectrum. We therefore can conclude that there is an approximate 6-cycle, and can extract the sets corresponding to the cycle. </p><pre><code class="language-julia hljs"># by inspection we see that λ[1:6] are ω₆ᵏ, k = 0, ..., 5
+    1.000000000000002 + 0.0im
+  0.49999966711616184 + 0.8660253816376084im
+  0.49999966711616184 - 0.8660253816376084im
+  -0.4999999625772906 + 0.8660247898984574im
+  -0.4999999625772906 - 0.8660247898984574im
+  -0.9999992700378574 + 0.0im
+    0.863006122653561 + 0.08474797237161061im
+    0.863006122653561 - 0.08474797237161061im
+   0.5048957483412266 + 0.7050116685671804im
+   0.5048957483412266 - 0.7050116685671804im
+                      ⋮
+  -0.8110847919669428 + 0.0im
+ -0.34869532593906016 + 0.7055562580020099im
+ -0.34869532593906016 - 0.7055562580020099im
+   0.4366905100015668 + 0.6547478908120323im
+   0.4366905100015668 - 0.6547478908120323im
+  -0.7853702000863263 + 0.05078854956992085im
+  -0.7853702000863263 - 0.05078854956992085im
+   0.7853616536917785 + 0.05081435475398882im
+   0.7853616536917785 - 0.05081435475398882im</code></pre><pre><code class="language-julia hljs">p = scatter(λ)</code></pre><p><img src="../evs.png" alt="Eigenvalues"/></p><p>We see that the <span>$6$</span>th roots of unity clearly seem to be part of the spectrum. We therefore can conclude that there is an approximate 6-cycle, and can extract the sets corresponding to the cycle. </p><pre><code class="language-julia hljs"># by inspection we see that λ[1:6] are ω₆ᵏ, k = 0, ..., 5
 ω = λ[1:6]
 ν = ev[1:6]
 
@@ -68,4 +68,4 @@ A</code></pre><pre class="documenter-example-output"><code class="nohighlight hl
 for (i, Aᵢ) in enumerate(A)
     global p;
     p = plot!(p, Aᵢ, color=i, fillalpha=0.6);
-end</code></pre><p><img src="../supps.png" alt="Cyclic Sets"/></p><p>Note that we can also approximate the cyclic sets from the measures <code>μ</code> using sparse eigenbasis approximation (SEBA) as described in the corresponding section of the documentation. </p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../almost_invariant/">« Almost Invariant (metastable) Sets</a><a class="docs-footer-nextpage" href="../coherent/">Coherent Sets »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Wednesday 10 December 2025 09:40">Wednesday 10 December 2025</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><p><img src="../supps.png" alt="Cyclic Sets"/></p><p>Note that we can also approximate the cyclic sets from the measures <code>μ</code> using sparse eigenbasis approximation (SEBA) as described in the corresponding section of the documentation. </p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../almost_invariant/">« Almost Invariant (metastable) Sets</a><a class="docs-footer-nextpage" href="../coherent/">Coherent Sets »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 11 December 2025 11:38">Thursday 11 December 2025</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
